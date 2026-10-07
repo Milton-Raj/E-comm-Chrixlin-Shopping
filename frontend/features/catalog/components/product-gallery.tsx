@@ -27,12 +27,13 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
         onPointerLeave={() => setOrigin(null)}
       >
         <Image
+          key={image.url}
           src={image.url}
           alt={image.alt}
           fill
           preload
           sizes="(min-width: 1024px) 55vw, 100vw"
-          className={cn("object-cover transition-transform duration-500 ease-out motion-reduce:transition-none", origin && "scale-175")}
+          className={cn("animate-fade object-cover transition-transform duration-500 ease-out motion-reduce:transition-none", origin && "scale-175")}
           style={origin ? { transformOrigin: origin } : undefined}
         />
       </div>

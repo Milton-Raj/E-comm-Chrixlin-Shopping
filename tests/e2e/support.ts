@@ -11,6 +11,25 @@ export function uniqueEmail(prefix: string): string {
 
 /** Fails on serious/critical WCAG 2.2 AA violations (TESTING.md §1). */
 export async function expectNoA11yViolations(page: Page) {
+  // Scroll through the page like a shopper so scroll-reveal content is shown, then let
+  // entrance animations settle: contrast is only meaningful at the final colours.
+  // Endless decorative loops (ribbon, scroll cue) never finish, so they are skipped.
+  await page.evaluate(async () => {
+    const y = window.scrollY;
+    for (let top = 0; top < document.body.scrollHeight; top += window.innerHeight * 0.8) {
+      window.scrollTo(0, top);
+      await new Promise((r) => setTimeout(r, 60));
+    }
+    window.scrollTo(0, y);
+  });
+  await page.waitForTimeout(100);
+  await page.evaluate(() =>
+    Promise.all(
+      document.getAnimations()
+        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).analyze();
   const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);

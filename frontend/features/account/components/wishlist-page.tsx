@@ -1,5 +1,6 @@
 "use client";
 
+import { Reveal } from "@/components/motion/reveal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -34,15 +35,17 @@ export function WishlistPage() {
   }
 
   return (
+    <Reveal stagger>
     <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3 xl:grid-cols-4">
       {wishlist.data.map(({ uuid, product }) => (
         <li key={uuid} className="grid gap-3">
           <ProductCard product={product} />
-          <button type="button" className="eyebrow inline-flex min-h-11 items-center justify-center border border-border hover:border-foreground" onClick={() => remove.mutate(product.uuid)}>
+          <button type="button" className="eyebrow inline-flex min-h-11 items-center justify-center border border-border transition-colors duration-300 hover:border-foreground hover:bg-foreground hover:text-background" onClick={() => remove.mutate(product.uuid)}>
             Remove
           </button>
         </li>
       ))}
     </ul>
+    </Reveal>
   );
 }

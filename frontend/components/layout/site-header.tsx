@@ -39,8 +39,8 @@ export function SiteHeader() {
           <ul className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-6">
             {primaryNav.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className="eyebrow inline-flex min-h-11 items-center px-4 text-muted-foreground transition-colors hover:text-primary">
-                  {t(item.label)}
+                <Link href={item.href} className="eyebrow inline-flex min-h-11 items-center px-4 text-muted-foreground transition-colors duration-300 hover:text-primary">
+                  <span className="link-draw pb-0.5">{t(item.label)}</span>
                 </Link>
               </li>
             ))}

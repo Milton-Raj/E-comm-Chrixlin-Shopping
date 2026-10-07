@@ -18,7 +18,7 @@ export function SiteFooter() {
             <ul className="mt-4 grid gap-1">
               {group.items.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="inline-flex min-h-11 items-center text-sm text-brand-grullo transition-colors hover:text-brand-cultured md:min-h-8">
+                  <Link href={item.href} className="group inline-flex min-h-11 items-center text-sm text-brand-grullo transition-all duration-300 hover:translate-x-1 hover:text-brand-cultured md:min-h-8">
                     {t(item.label)}
                   </Link>
                 </li>
