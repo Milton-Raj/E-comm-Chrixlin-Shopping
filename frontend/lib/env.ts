@@ -19,7 +19,9 @@ const parsed = publicEnvSchema.safeParse({
 
 if (!parsed.success) {
   throw new Error(
-    `Invalid public environment configuration: ${z.prettifyError(parsed.error)}`,
+    `Invalid public environment configuration: ${z.prettifyError(parsed.error)}\n` +
+      "Set these variables before building: locally in frontend/.env.local (copy .env.example); " +
+      "on Vercel in Project → Settings → Environment Variables, then redeploy. See docs/DEPLOYMENT.md §3.",
   );
 }
 
