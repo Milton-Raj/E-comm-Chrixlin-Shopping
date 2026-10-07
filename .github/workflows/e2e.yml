@@ -1,0 +1,62 @@
+name: E2E
+
+on:
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ecom
+        ports: ["3306:3306"]
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=5s --health-retries=20
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_STORE_NAME: Commerce
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, bcmath, pdo_mysql, gd, zip, sodium
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Backend
+        working-directory: backend
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          sed -i 's/^DB_USERNAME=.*/DB_USERNAME=root/; s/^DB_PASSWORD=.*/DB_PASSWORD=root/; s/^DEMO_PASSWORD=.*/DEMO_PASSWORD=password123/; s/^MAIL_MAILER=.*/MAIL_MAILER=log/' .env
+          php artisan migrate --seed --force
+          php artisan serve --port=8000 > /tmp/api.log 2>&1 &
+      - name: Frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          npm run start -- --port 3000 > /tmp/web.log 2>&1 &
+      - name: Playwright
+        working-directory: tests/e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          for url in http://localhost:8000/api/v1/health http://localhost:3000; do
+            curl --retry 30 --retry-delay 2 --retry-all-errors -fsS -o /dev/null "$url"
+          done
+          E2E_SKIP_DB_RESET=1 npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report

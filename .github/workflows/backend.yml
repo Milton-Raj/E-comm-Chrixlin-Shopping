@@ -1,0 +1,65 @@
+name: Backend
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", ".github/workflows/backend.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests (${{ matrix.db.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Production may be MySQL or MariaDB on Hostinger (ARCHITECTURE D6).
+        db:
+          - { name: mysql-8.0, image: "mysql:8.0", connection: mysql }
+          - { name: mariadb-10.11, image: "mariadb:10.11", connection: mariadb }
+    services:
+      db:
+        image: ${{ matrix.db.image }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ecom_testing
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: ecom_testing
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot || healthcheck.sh --connect"
+          --health-interval=5s --health-retries=20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      DB_CONNECTION: ${{ matrix.db.connection }}
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, intl, bcmath, pdo_mysql, gd, zip, sodium
+          coverage: none
+      - uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - run: cp .env.example .env && php artisan key:generate
+      - name: Lint
+        run: composer lint
+      - name: Tests
+        run: php vendor/bin/pest --parallel
+        env:
+          DB_CONNECTION: ${{ matrix.db.connection }}
+      - name: Dependency audit
+        run: composer audit

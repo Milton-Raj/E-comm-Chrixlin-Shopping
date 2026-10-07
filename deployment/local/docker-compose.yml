@@ -1,0 +1,37 @@
+# Local development services (ARCHITECTURE §4 / DEPLOYMENT §2).
+# Usage: docker compose -f deployment/local/docker-compose.yml up -d
+name: ecom-local
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    ports: ["127.0.0.1:3306:3306"]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ecom
+      MYSQL_USER: ecom
+      MYSQL_PASSWORD: ecom
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      retries: 20
+  mariadb:
+    # Production engine on Hostinger may be MariaDB (ARCHITECTURE D6). Optional: start with `--profile mariadb`.
+    image: mariadb:10.11
+    profiles: ["mariadb"]
+    ports: ["127.0.0.1:3307:3306"]
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: ecom_testing
+      MARIADB_USER: ecom
+      MARIADB_PASSWORD: ecom
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports: ["127.0.0.1:1025:1025", "127.0.0.1:8025:8025"]
+volumes:
+  mysql-data:
