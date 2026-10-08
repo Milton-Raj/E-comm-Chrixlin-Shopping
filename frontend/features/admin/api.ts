@@ -129,7 +129,7 @@ export type SalesReport = {
   by_category: { category: string; units: number; revenue: Money }[];
 };
 export type StoreSettings = {
-  store: { name: string; currency: string; state_code: string; support_email: string | null };
+  store: { name: string; currency: string; state_code: string; support_email: string | null; legal_name: string | null; gstin: string | null; address: string | null };
   tax_classes: { uuid: string; name: string; rate_bps: number; is_default: boolean }[];
   shipping_methods: { uuid: string; code: string; zone: string; name: string; amount: number; free_over: number | null; days_min: number; days_max: number; is_active: boolean }[];
   payments: { key: string; name: string; description: string }[];

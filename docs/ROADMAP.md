@@ -108,4 +108,5 @@ DEPLOYMENT.md §9 checklist: domains, SSL, DB, backend, frontend (Vercel Pro), m
 - Backend 119 Pest tests · Larastan clean · E2E commerce spec incl. stage flow and wishlist.
 - Excel exports (`app/Domain/Reports/Export`, PhpSpreadsheet): branded workbooks with frozen headers, filters, currency/date formats, totals and print setup for products, inventory, orders (+ items), customers, digital access (+ download log), coupons, and a full report (summary, daily sales, by product/category, then every permitted area). Shared `SalesReport` feeds both the Reports screen and the workbook.
 - Fixed: dashboard crash when switching to 7 days (chart labels were looked up by position). Buy now is now a solid button.
+- GST tax invoices (`app/Domain/Invoices`, dompdf): issued once per order when payment is captured, numbered INVyy-yy/NNNNNN consecutively per Indian financial year (locked sequence), seller details snapshotted; PDF attached to the order confirmation email and downloadable by the customer (or guest token) and by staff. Seller legal name, GSTIN (validated against the business state) and address are set in Settings. Credit notes for refunds are not yet issued.
 

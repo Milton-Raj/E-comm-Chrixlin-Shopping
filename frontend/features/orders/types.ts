@@ -22,6 +22,7 @@ export type OrderSummary = {
   fulfillment_status: string;
   email: string;
   requires_shipping: boolean | null;
+  invoice_number: string | null;
   placed_at: string | null;
   paid_at: string | null;
   currency: string;

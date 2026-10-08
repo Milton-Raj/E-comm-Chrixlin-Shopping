@@ -65,6 +65,7 @@ Route::prefix('checkout')->name('checkout.')->middleware('throttle:checkout')->g
 Route::prefix('orders')->name('orders.')->middleware('throttle:checkout')->group(function () {
     Route::get('/', [OrderController::class, 'index'])->middleware('auth:sanctum')->name('index');
     Route::get('{orderNumber}', [OrderController::class, 'show'])->name('show');
+    Route::get('{orderNumber}/invoice', [OrderController::class, 'invoice'])->name('invoice');
     Route::post('{orderNumber}/cancel', [OrderController::class, 'cancel'])->name('cancel');
     Route::post('{orderNumber}/payment/confirm', [OrderController::class, 'confirmPayment'])->middleware('idempotent')->name('payment.confirm');
     Route::post('{orderNumber}/payment/retry', [OrderController::class, 'retryPayment'])->name('payment.retry');
@@ -151,6 +152,7 @@ Route::prefix('admin')->name('admin.')
 
         Route::get('orders', [Admin\OrderController::class, 'index'])->middleware('can:orders.view')->name('orders.index');
         Route::get('orders/{order}', [Admin\OrderController::class, 'show'])->middleware('can:orders.view')->name('orders.show');
+        Route::get('orders/{order}/invoice', [Admin\OrderController::class, 'invoice'])->middleware('can:orders.view')->name('orders.invoice');
         Route::post('orders/{order}/status', [Admin\OrderController::class, 'transition'])->middleware('can:orders.edit')->name('orders.status');
         Route::post('orders/{order}/courier-booking', [Admin\OrderController::class, 'bookCourier'])->middleware('can:shipments.manage')->name('orders.courier');
         Route::post('orders/{order}/shipments', [Admin\OrderController::class, 'ship'])->middleware('can:shipments.manage')->name('orders.ship');

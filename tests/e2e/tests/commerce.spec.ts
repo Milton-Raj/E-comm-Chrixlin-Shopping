@@ -20,7 +20,8 @@ test("guest buys a physical product with a coupon and pays (test gateway)", asyn
   await expect(page.getByText("FREESHIP").first()).toBeVisible();
   await page.getByRole("link", { name: "Proceed to checkout" }).click();
 
-  await page.getByLabel("Email").fill(uniqueEmail("guest"));
+  const guestEmail = uniqueEmail("guest");
+  await page.getByLabel("Email").fill(guestEmail);
   await page.getByRole("button", { name: "Continue" }).click();
   await fillAddress(page);
   await page.getByRole("button", { name: "Continue to payment" }).click();
@@ -37,6 +38,20 @@ test("guest buys a physical product with a coupon and pays (test gateway)", asyn
   await expect(page.getByText("Payment confirmed", { exact: true })).toBeVisible();
   await expect(page.getByRole("link", { name: "Grained Leather Card Case" })).toBeVisible();
   await expectNoA11yViolations(page);
+
+  // The GST tax invoice is downloadable (guest token) and was emailed as a PDF attachment.
+  await expect(page.getByText(/tax invoice INV\d{2}-\d{2}\/\d{6} attached/)).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download invoice" }).click();
+  expect((await download).suggestedFilename()).toMatch(/^Invoice-INV\d{2}-\d{2}-\d{6}\.pdf$/);
+
+  const mailpit = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
+  const search = await (await page.request.get(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${guestEmail}`)}`)).json();
+  expect(search.messages_count ?? search.messages.length).toBeGreaterThan(0);
+  const message = await (await page.request.get(`${mailpit}/api/v1/message/${search.messages[0].ID}`)).json();
+  expect(message.Subject).toMatch(/^Order ORD-\d{4}-\d{6} confirmed$/);
+  expect(message.Attachments.map((a: { FileName: string; ContentType: string }) => [a.FileName, a.ContentType]))
+    .toEqual([[expect.stringMatching(/^Invoice-INV\d{2}-\d{2}-\d{6}\.pdf$/), "application/pdf"]]);
 });
 
 test("customer buys a digital product and downloads it", async ({ page, browserName }, testInfo) => {

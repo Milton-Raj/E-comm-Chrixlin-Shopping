@@ -4,6 +4,7 @@ namespace App\Domain\Payments\Actions;
 
 use App\Domain\Digital\EntitlementService;
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Invoices\IssueInvoice;
 use App\Domain\Orders\Enums\OrderStatus;
 use App\Domain\Orders\OrderStateMachine;
 use App\Domain\Payments\Enums\PaymentStatus;
@@ -32,6 +33,7 @@ class ProcessGatewayEvent
         private readonly InventoryService $inventory,
         private readonly OrderStateMachine $states,
         private readonly EntitlementService $entitlements,
+        private readonly IssueInvoice $invoices,
     ) {}
 
     /** @return string status: processed | duplicate | ignored | failed */
@@ -132,6 +134,7 @@ class ProcessGatewayEvent
         }
 
         $this->entitlements->grantForOrder($order);
+        $this->invoices->handle($order); // GST tax invoice, numbered once; emailed with the confirmation
         if (! $order->requiresShipping()) {
             $this->states->transition($order, OrderStatus::Delivered, 'system', null, 'Digital items delivered');
         } else {
@@ -143,7 +146,7 @@ class ProcessGatewayEvent
         }
 
         DB::afterCommit(function () use ($order) {
-            Notification::route('mail', $order->email)->notify(new OrderPaidNotification($order->fresh(['items', 'entitlements']) ?? $order));
+            Notification::route('mail', $order->email)->notify(new OrderPaidNotification($order->fresh(['items', 'entitlements', 'invoice']) ?? $order));
         });
 
         Log::channel('payments')->info('Payment captured.', ['order' => $order->order_number, 'amount' => $payment->amount]);

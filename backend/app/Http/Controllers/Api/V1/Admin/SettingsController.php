@@ -26,6 +26,9 @@ class SettingsController extends Controller
                 'currency' => $settings->get('store.currency'),
                 'state_code' => $settings->get('store.state_code', 'TN'),
                 'support_email' => $settings->get('store.support_email'),
+                'legal_name' => $settings->get('store.legal_name'),
+                'gstin' => $settings->get('store.gstin'),
+                'address' => $settings->get('store.address'),
             ],
             'tax_classes' => TaxClass::query()->orderBy('rate_bps')->get(['uuid', 'name', 'rate_bps', 'is_default']),
             'shipping_methods' => ShippingMethod::query()->orderBy('zone')->orderBy('sort_order')->get(['uuid', 'code', 'zone', 'name', 'amount', 'free_over', 'days_min', 'days_max', 'is_active']),
@@ -100,6 +103,17 @@ class SettingsController extends Controller
             'store.name' => ['required', 'string', 'max:120'],
             'store.state_code' => ['required', 'string', 'max:8'],
             'store.support_email' => ['nullable', 'email', 'max:255'],
+            // Printed on every tax invoice as the seller.
+            'store.legal_name' => ['nullable', 'string', 'max:160'],
+            'store.address' => ['nullable', 'string', 'max:400'],
+            'store.gstin' => ['nullable', 'string', 'size:15', 'regex:/^[0-9]{2}[A-Za-z]{5}[0-9]{4}[A-Za-z][1-9A-Za-z][Zz][0-9A-Za-z]$/',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                    $state = strtoupper((string) $request->input('store.state_code'));
+                    $code = config("regions.gst_state_codes.{$state}");
+                    if ($value && $code && ! str_starts_with((string) $value, (string) $code)) {
+                        $fail("A GSTIN registered in this business state starts with {$code}.");
+                    }
+                }],
             'tax_classes' => ['array'],
             'tax_classes.*.uuid' => ['required', 'uuid'],
             'tax_classes.*.rate_bps' => ['required', 'integer', 'min:0', 'max:5000'],
@@ -113,7 +127,7 @@ class SettingsController extends Controller
         ]);
 
         foreach ($data['store'] as $key => $value) {
-            $settings->set("store.{$key}", $key === 'state_code' ? strtoupper((string) $value) : $value, $request->user()->getKey());
+            $settings->set("store.{$key}", in_array($key, ['state_code', 'gstin'], true) && $value !== null ? strtoupper((string) $value) : $value, $request->user()->getKey());
         }
         foreach ($data['tax_classes'] ?? [] as $row) {
             TaxClass::query()->where('uuid', $row['uuid'])->update(['rate_bps' => $row['rate_bps']]);

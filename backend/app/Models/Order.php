@@ -50,6 +50,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Refund> $refunds
  * @property-read Payment|null $latestPayment
  * @property-read User|null $user
+ * @property-read Invoice|null $invoice
  */
 class Order extends Model
 {
@@ -136,6 +137,12 @@ class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** @return HasOne<Invoice, $this> */
+    public function invoice(): HasOne
+    {
+        return $this->hasOne(Invoice::class);
     }
 
     public function requiresShipping(): bool

@@ -91,6 +91,7 @@ class PlaceOrder
                     'line_subtotal' => $line->lineSubtotal,
                     'discount_total' => $line->discount,
                     'tax_total' => $line->taxTotal,
+                    'tax_rate_bps' => $line->taxRateBps,
                     'line_total' => $line->lineTotal(),
                     'requires_shipping' => $line->requiresShipping,
                 ]);

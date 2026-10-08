@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Storefront;
 
+use App\Domain\Invoices\InvoiceDocument;
 use App\Domain\Orders\Actions\CancelOrder;
 use App\Domain\Payments\Actions\ProcessGatewayEvent;
 use App\Domain\Payments\Enums\PaymentStatus;
@@ -14,6 +15,7 @@ use App\Models\Payment;
 use App\Support\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -32,9 +34,22 @@ class OrderController extends Controller
     public function show(Request $request, string $orderNumber): JsonResponse
     {
         $order = $this->ownedOrder($request, $orderNumber);
-        $order->load(['items.product', 'addresses', 'history', 'shipments', 'entitlements.product.files', 'entitlements.order']);
+        $order->load(['items.product', 'addresses', 'history', 'shipments', 'entitlements.product.files', 'entitlements.order', 'invoice']);
 
         return ApiResponse::success(new OrderResource($order));
+    }
+
+    /** The GST tax invoice PDF, for the order's owner (or a guest holding the order token). */
+    public function invoice(Request $request, string $orderNumber, InvoiceDocument $document): Response
+    {
+        $invoice = $this->ownedOrder($request, $orderNumber)->invoice()->first();
+        abort_unless($invoice !== null, 404, 'The invoice is issued once payment is confirmed.');
+
+        return response($document->pdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$document->filename($invoice).'"',
+            'Cache-Control' => 'no-store, private',
+        ]);
     }
 
     public function cancel(Request $request, string $orderNumber, CancelOrder $cancel): JsonResponse

@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $line_subtotal
  * @property int $discount_total
  * @property int $tax_total
+ * @property int|null $tax_rate_bps
  * @property int $line_total
  * @property bool $requires_shipping
  * @property int $refunded_quantity

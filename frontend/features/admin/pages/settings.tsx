@@ -13,7 +13,7 @@ import { indianStates } from "@/lib/regions";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/services/api-client";
 import { miscAdminApi, type StoreSettings } from "../api";
-import { AdminPage, checkboxLabelClass, Field, FormActions, inputClass, Panel, RequiredNote } from "../components/kit/admin-page";
+import { AdminPage, checkboxLabelClass, Field, FormActions, inputClass, Panel, RequiredNote, textareaClass } from "../components/kit/admin-page";
 
 const settingsKey = ["admin", "settings"] as const;
 
@@ -26,7 +26,10 @@ export function SettingsPage() {
 
 function SettingsForm({ settings }: { settings: StoreSettings }) {
   const queryClient = useQueryClient();
-  const [store, setStore] = useState({ name: settings.store.name, state_code: settings.store.state_code, support_email: settings.store.support_email ?? "" });
+  const [store, setStore] = useState({
+    name: settings.store.name, state_code: settings.store.state_code, support_email: settings.store.support_email ?? "",
+    legal_name: settings.store.legal_name ?? "", gstin: settings.store.gstin ?? "", address: settings.store.address ?? "",
+  });
   const [taxes, setTaxes] = useState(settings.tax_classes.map((t) => ({ ...t, rate: String(t.rate_bps / 100) })));
   const [shipping, setShipping] = useState(settings.shipping_methods.map((m) => ({ ...m, amountText: fromMinorUnits(m.amount), freeText: fromMinorUnits(m.free_over), minText: String(m.days_min), maxText: String(m.days_max) })));
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -34,7 +37,10 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
 
   const save = useMutation({
     mutationFn: () => miscAdminApi.saveSettings({
-      store: { name: store.name, state_code: store.state_code, support_email: store.support_email || null },
+      store: {
+        name: store.name, state_code: store.state_code, support_email: store.support_email || null,
+        legal_name: store.legal_name.trim() || null, gstin: store.gstin.trim().toUpperCase() || null, address: store.address.trim() || null,
+      },
       tax_classes: taxes.map((t) => ({ uuid: t.uuid, rate_bps: Math.round(Number(t.rate) * 100) })),
       shipping_methods: shipping.map((m) => ({
         uuid: m.uuid, amount: toMinorUnits(m.amountText) ?? 0, free_over: toMinorUnits(m.freeText), is_active: m.is_active,
@@ -60,6 +66,19 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
           </Field>
           <Field label="Support email" htmlFor="s-email" error={err("store.support_email")}><input id="s-email" type="email" className={inputClass} value={store.support_email} onChange={(e) => setStore({ ...store, support_email: e.target.value })} /></Field>
           <p className="text-sm text-muted-foreground">Currency: {settings.store.currency} · all prices include GST.</p>
+        </Panel>
+
+        <Panel title="Tax invoice details">
+          <p className="text-sm text-muted-foreground">Printed as the seller on every GST invoice. A PDF invoice is emailed to the customer automatically as soon as payment is confirmed.</p>
+          <Field label="Registered business name" htmlFor="s-legal" hint="As on your GST registration. Leave empty to use the store name." error={err("store.legal_name")}>
+            <input id="s-legal" className={inputClass} placeholder={store.name} value={store.legal_name} onChange={(e) => setStore({ ...store, legal_name: e.target.value })} />
+          </Field>
+          <Field label="GSTIN" htmlFor="s-gstin" hint="15 characters, starting with your state's GST code." error={err("store.gstin")}>
+            <input id="s-gstin" className={cn(inputClass, "font-mono uppercase")} maxLength={15} placeholder="33ABCDE1234F1Z5" value={store.gstin} onChange={(e) => setStore({ ...store, gstin: e.target.value.toUpperCase() })} />
+          </Field>
+          <Field label="Registered address" htmlFor="s-address" hint="Printed on invoices exactly as typed." error={err("store.address")}>
+            <textarea id="s-address" className={textareaClass} value={store.address} onChange={(e) => setStore({ ...store, address: e.target.value })} />
+          </Field>
         </Panel>
 
         <Panel title="GST rates">

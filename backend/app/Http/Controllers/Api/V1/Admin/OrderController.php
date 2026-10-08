@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Domain\Invoices\InvoiceDocument;
+use App\Domain\Invoices\IssueInvoice;
 use App\Domain\Orders\Actions\CancelOrder;
 use App\Domain\Orders\Actions\RefundOrder;
 use App\Domain\Orders\Enums\OrderStatus;
@@ -15,6 +17,7 @@ use App\Support\Audit\Audit;
 use App\Support\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
@@ -70,6 +73,20 @@ class OrderController extends Controller
         }
 
         return ApiResponse::success((new OrderResource($this->find($order)))->forAdmin(), $message);
+    }
+
+    /** Downloads the GST tax invoice; issues it first for paid orders placed before invoicing existed. */
+    public function invoice(string $order, IssueInvoice $issue, InvoiceDocument $document): Response
+    {
+        $model = $this->find($order);
+        abort_unless(in_array($model->payment_status->value, ['captured', 'partially_refunded', 'refunded'], true), 409, 'Unpaid orders have no invoice.');
+        $invoice = $model->invoice()->first() ?? $issue->handle($model);
+
+        return response($document->pdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="'.$document->filename($invoice).'"',
+            'Cache-Control' => 'no-store, private',
+        ]);
     }
 
     /** Retries (or makes) the Shiprocket booking for a packed order. */
@@ -139,7 +156,7 @@ class OrderController extends Controller
     private function find(string $orderNumber): Order
     {
         return Order::query()->where('order_number', $orderNumber)
-            ->with(['items.product', 'addresses', 'history', 'shipments', 'payments', 'refunds', 'user', 'entitlements.product.files', 'entitlements.order'])
+            ->with(['items.product', 'addresses', 'history', 'shipments', 'payments', 'refunds', 'user', 'entitlements.product.files', 'entitlements.order', 'invoice'])
             ->firstOrFail();
     }
 }

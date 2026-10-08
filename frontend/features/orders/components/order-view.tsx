@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/money";
 import { ApiError } from "@/services/api-client";
 import { ordersApi } from "../api";
 import { DownloadButton } from "./download-button";
+import { InvoiceButton } from "./invoice-button";
 
 const steps = ["paid", "processing", "shipped", "delivered"];
 
@@ -46,9 +47,11 @@ export function OrderView({ orderNumber, token, confirmation = false }: { orderN
           <p className="eyebrow text-muted-foreground">{paid ? "Payment confirmed" : "Order received"}</p>
           <h1 className="font-display-tight text-4xl md:text-5xl">Thank you for your order</h1>
           <p className="max-w-lg text-muted-foreground">
-            Order <strong className="text-foreground">{order.order_number}</strong> · a confirmation has been sent to {order.email}.
+            Order <strong className="text-foreground">{order.order_number}</strong> · a confirmation has been sent to {order.email}
+            {order.invoice_number ? <> with your tax invoice <strong className="text-foreground">{order.invoice_number}</strong> attached</> : null}.
             {order.downloads.length ? " Your digital items are ready to download below." : ""}
           </p>
+          {order.invoice_number ? <InvoiceButton orderNumber={order.order_number} invoiceNumber={order.invoice_number} token={token} /> : null}
           {!user ? (
             <div className="mt-2 grid gap-2">
               <p className="text-sm text-muted-foreground">Create an account to track orders and keep your downloads in one place.</p>
@@ -63,7 +66,10 @@ export function OrderView({ orderNumber, token, confirmation = false }: { orderN
             <h1 className="font-display-tight text-4xl md:text-5xl">{order.order_number}</h1>
             <p className="mt-2 text-sm text-muted-foreground">Placed {order.placed_at ? new Date(order.placed_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : ""}</p>
           </div>
-          <span className="eyebrow border border-foreground px-3 py-1.5">{order.status_label}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            {order.invoice_number ? <InvoiceButton orderNumber={order.order_number} invoiceNumber={order.invoice_number} token={token} /> : null}
+            <span className="eyebrow border border-foreground px-3 py-1.5">{order.status_label}</span>
+          </div>
         </header>
       )}
 

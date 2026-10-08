@@ -39,6 +39,8 @@ class OrderResource extends JsonResource
             'payment_status' => $this->payment_status->value,
             'fulfillment_status' => $this->fulfillment_status->value,
             'email' => $this->email,
+            'requires_shipping' => $this->relationLoaded('items') ? $this->requiresShipping() : null,
+            'invoice_number' => $this->relationLoaded('invoice') ? $this->invoice?->invoice_number : null,
             'placed_at' => $this->placed_at?->toIso8601String(),
             'paid_at' => $this->paid_at?->toIso8601String(),
             'currency' => $this->currency,

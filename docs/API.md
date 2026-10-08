@@ -191,6 +191,7 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 | Method | Path | Auth | Ph |
 |---|---|---|---|
 | POST | `/api/webhooks/payment/{provider}` | provider signature | 5 |
+| GET | `/api/v1/orders/{orderNumber}/invoice` | owner or guest `X-Order-Token` | GST tax invoice PDF; 404 until payment is confirmed |
 | POST | `/api/webhooks/delivery-updates` | Shiprocket `x-api-key` token | courier tracking → order stage (deduped in `webhook_events`, never moves an order backwards; RTO/lost flags `requires_attention`) |
 
 Behaviour: ARCHITECTURE §6.11. Always responds `200` for valid signature (including duplicates), `401` invalid signature, `404` unknown/disabled provider. CSRF-exempt.
@@ -226,6 +227,7 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 | POST | `/admin/orders/{order}/status` | `orders.edit` | `to` ∈ processing, packed, out_for_delivery, delivered; walks intermediate stages; cannot pass "shipped" (409 `shipment_required`). Reaching packed books Shiprocket when configured |
 | POST | `/admin/orders/{order}/courier-booking` | `shipments.manage` | (Re)try the Shiprocket booking for a packed order; resumes from the last successful step |
 | POST | `/admin/settings/shiprocket/test` | `settings.manage` | Logs in to Shiprocket and lists pickup locations |
+| GET | `/admin/orders/{order}/invoice` | `orders.view` | GST tax invoice PDF (issued on demand for older paid orders) |
 | GET | `/admin/exports/{type}` | `exports.run` + area permission | `.xlsx` download; type ∈ products, inventory, orders, customers, digital, coupons, report (`from`/`to` for orders and report). Report includes only the areas the user may view. Audited as `export.downloaded` |
 
 ## 4. Frontend → API mapping (public URLs, §50)

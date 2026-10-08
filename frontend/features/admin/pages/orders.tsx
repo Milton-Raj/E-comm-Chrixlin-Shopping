@@ -15,6 +15,7 @@ import { fromMinorUnits, toMinorUnits } from "@/lib/money-input";
 import { ApiError } from "@/services/api-client";
 import type { OrderSummary } from "@/features/orders/types";
 import { ordersAdminApi, type AdminOrderDetail } from "../api";
+import { InvoiceButton } from "@/features/orders/components/invoice-button";
 import { CourierPanel, nextStaffStage, StageTracker, stageLabel } from "../components/order-stages";
 import { ExportButton } from "../components/export-button";
 import { AdminPage, checkboxLabelClass, Field, FilterBar, FormActions, inputClass, Pagination, Panel, StatusBadge } from "../components/kit/admin-page";
@@ -120,7 +121,7 @@ export function OrderDetailPage({ orderNumber }: { orderNumber: string }) {
     <AdminPage
       title={o.order_number}
       description={`Placed ${o.placed_at ? new Date(o.placed_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }) : ""} · ${o.email}`}
-      actions={<><StatusBadge value={o.status} /><StatusBadge value={o.payment_status} /></>}
+      actions={<div className="flex flex-wrap items-center gap-2">{paid || o.payment_status === "refunded" ? <InvoiceButton admin orderNumber={o.order_number} invoiceNumber={o.invoice_number} /> : null}<StatusBadge value={o.status} /><StatusBadge value={o.payment_status} /></div>}
     >
       {o.requires_attention ? <p className="border-l-4 border-primary bg-primary/5 px-4 py-3 text-sm">This order needs attention: the payment arrived after the order expired, the amount did not match, or stock was insufficient. Review payments below and refund or fulfil manually.</p> : null}
       {paid || o.status === "delivered" ? <StageTracker order={o} pending={transition.isPending} onMove={(s) => transition.mutate(s)} /> : null}

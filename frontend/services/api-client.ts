@@ -139,13 +139,17 @@ export async function apiRequestWithMeta<T>(
  * Downloads a file (e.g. an Excel export) with the session cookie and saves it in the
  * browser. Errors arrive as the usual JSON envelope and are thrown as ApiError.
  */
-export async function apiDownload(path: string, fallbackName: string): Promise<string> {
+export async function apiDownload(
+  path: string,
+  fallbackName: string,
+  { accept = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers = {} }: { accept?: string; headers?: Record<string, string> } = {},
+): Promise<string> {
   const requestId = newRequestId();
   let response: Response;
   try {
     response = await fetch(`${env.apiUrl}${path.startsWith("/") ? path : `/${path}`}`, {
       credentials: "include",
-      headers: { Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/json", "X-Request-ID": requestId },
+      headers: { Accept: `${accept}, application/json`, "X-Request-ID": requestId, ...headers },
     });
   } catch {
     throw new ApiError("We couldn't reach the server. Check your connection and try again.", 0, "network_error", {}, requestId);
