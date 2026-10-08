@@ -239,7 +239,7 @@ function RefundPanel({ order, onSaved, onError }: { order: AdminOrderDetail; onS
         ) : null}
         <FormActions className="md:col-span-2">
           <Button type="submit" variant={confirming ? "default" : "outline"} disabled={refund.isPending || !reason.trim() || !amount}>{confirming ? `Confirm refund of ₹${amount}` : "Issue refund"}</Button>
-          {confirming ? <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>Cancel</Button> : null}
+          {confirming ? <Button type="button" variant="ghost" className="animate-expand" onClick={() => setConfirming(false)}>Cancel</Button> : null}
         </FormActions>
       </form>
     </Panel>

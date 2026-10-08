@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function AdminPage({ title, description, actions, children }: { title: string; description?: string; actions?: ReactNode; children: ReactNode }) {
@@ -31,6 +33,13 @@ export function Panel({ title, actions, children, className }: { title?: string;
 }
 
 export function StatusBadge({ value }: { value: string }) {
+  // Pop once when the value changes (e.g. Processing → Packed), not on every first render.
+  const [seen, setSeen] = useState(value);
+  const [changes, setChanges] = useState(0);
+  if (seen !== value) {
+    setSeen(value);
+    setChanges((n) => n + 1);
+  }
   const tone: Record<string, string> = {
     active: "bg-emerald-100 text-emerald-900", published: "bg-emerald-100 text-emerald-900", delivered: "bg-emerald-100 text-emerald-900",
     captured: "bg-emerald-100 text-emerald-900", available: "bg-emerald-100 text-emerald-900", processing: "bg-amber-100 text-amber-900",
@@ -39,12 +48,12 @@ export function StatusBadge({ value }: { value: string }) {
     cancelled: "bg-stone-200 text-stone-800", archived: "bg-stone-200 text-stone-800", failed: "bg-red-100 text-red-900", revoked: "bg-red-100 text-red-900",
     refunded: "bg-red-100 text-red-900", partially_refunded: "bg-red-100 text-red-900", refund_requested: "bg-red-100 text-red-900",
   };
-  return <span className={`inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium whitespace-nowrap capitalize ${tone[value] ?? "bg-muted text-foreground"}`}>{value.replaceAll("_", " ")}</span>;
+  return <span key={changes} className={cn("inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium whitespace-nowrap capitalize transition-colors duration-300", tone[value] ?? "bg-muted text-foreground", changes > 0 && "animate-pop")}>{value.replaceAll("_", " ")}</span>;
 }
 
 export function Pagination({ page, lastPage, onChange }: { page: number; lastPage: number; onChange: (page: number) => void }) {
   if (lastPage <= 1) return null;
-  const button = "inline-flex min-h-10 items-center border border-border px-3 text-sm disabled:opacity-40";
+  const button = "inline-flex min-h-10 items-center border border-border px-3 text-sm hover:border-foreground hover:bg-card disabled:opacity-40";
   return (
     <nav aria-label="Pagination" className="flex items-center justify-end gap-2">
       <button type="button" className={button} disabled={page <= 1} onClick={() => onChange(page - 1)}>Previous</button>

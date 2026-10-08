@@ -53,6 +53,11 @@ export function StageTracker({ order, pending, onMove }: { order: AdminOrderDeta
 
   return (
     <Panel title="Order stage">
+      {current >= 0 ? (
+        <div className="h-1 overflow-hidden rounded-full bg-muted" aria-hidden>
+          <div className="animate-grow-x h-full rounded-full bg-primary transition-[width] duration-700 ease-out" style={{ width: `${(current / Math.max(1, path.length - 1)) * 100}%` }} />
+        </div>
+      ) : null}
       <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6" aria-label="Delivery stages">
         {path.map((stage, i) => {
           const done = current >= 0 && i < current;
@@ -60,10 +65,10 @@ export function StageTracker({ order, pending, onMove }: { order: AdminOrderDeta
           const at = reachedAt(stage);
           return (
             <li key={stage} aria-current={isCurrent ? "step" : undefined}
-              className={cn("grid content-start gap-1 rounded-sm border p-3", isCurrent ? "border-primary bg-primary/5" : done ? "border-border bg-muted/40" : "border-dashed border-border")}>
+              className={cn("grid content-start gap-1 rounded-sm border p-3 transition-colors duration-500", isCurrent ? "border-primary bg-primary/5" : done ? "border-border bg-muted/40" : "border-dashed border-border")}>
               <span className="flex items-center gap-2">
-                <span className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
-                  done ? "bg-primary text-primary-foreground" : isCurrent ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
+                <span key={done ? "done" : isCurrent ? "now" : "next"} className={cn("flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-colors duration-500",
+                  done ? "animate-pop bg-primary text-primary-foreground" : isCurrent ? "animate-pulse-ring bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
                   {done ? <Check className="size-3.5" aria-hidden /> : i + 1}
                 </span>
                 <span className={cn("text-sm font-semibold", !done && !isCurrent && "text-muted-foreground")}>{stageLabel(stage)}</span>

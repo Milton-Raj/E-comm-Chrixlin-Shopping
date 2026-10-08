@@ -265,9 +265,7 @@
 @utility animate-page {
   animation: rise 0.9s var(--ease-lux) both;
 }
-@utility animate-page-quick {
-  animation: fade-in 0.45s ease-out both;
-}
+
 
 /* Scroll reveals (components/motion/reveal.tsx). Hidden only when JS can reveal them. */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
@@ -307,6 +305,147 @@
   [data-stagger] li:nth-child(n + 9) { --i: 8; }
 }
 
+/* ── Admin motion. Quick and functional: it shows what changed, never makes you wait. ──
+   Scoped to [data-admin] (components/admin-shell.tsx) so the storefront is unaffected. */
+@keyframes admin-in {
+  from { opacity: 0; transform: translate3d(0, 10px, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes admin-row-in {
+  from { opacity: 0; transform: translate3d(-6px, 0, 0); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes admin-pop {
+  0% { transform: scale(0.82); opacity: 0.4; }
+  60% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes admin-pulse-ring {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 45%, transparent); }
+  100% { box-shadow: 0 0 0 10px color-mix(in oklch, var(--primary) 0%, transparent); }
+}
+@keyframes admin-expand {
+  from { opacity: 0; transform: translate3d(0, -6px, 0); clip-path: inset(0 0 100% 0); }
+  to { opacity: 1; transform: none; clip-path: inset(0 0 0 0); }
+}
+@keyframes admin-grow-x {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes admin-indeterminate {
+  from { transform: translate3d(-100%, 0, 0); }
+  to { transform: translate3d(250%, 0, 0); }
+}
+@keyframes shimmer {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+
+/* Page entrance on every admin navigation (app/(admin)/admin/template.tsx). */
+@utility animate-page-quick {
+  animation: admin-in 0.45s var(--ease-lux) both;
+}
+/* Inline forms and confirmations slide open instead of popping in. */
+@utility animate-expand {
+  animation: admin-expand 0.35s var(--ease-lux) both;
+}
+/* Bars that fill from the left on first paint (split bars, progress). */
+@utility animate-grow-x {
+  transform-origin: left center;
+  animation: admin-grow-x 0.9s var(--ease-lux) both;
+  animation-delay: var(--delay, 120ms);
+}
+/* Status chips pop when their value changes (they remount on change). */
+@utility animate-pop {
+  animation: admin-pop 0.45s var(--ease-lux) both;
+}
+@utility animate-pulse-ring {
+  animation: admin-pulse-ring 1.8s ease-out infinite;
+}
+/* Thin moving bar shown while new figures load. */
+@utility progress-indeterminate {
+  position: relative;
+  overflow: hidden;
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 40%;
+    background: var(--primary);
+    animation: admin-indeterminate 1.1s var(--ease-lux) infinite;
+  }
+}
+/* Loading placeholders: a soft sweep instead of a blink. */
+@utility skeleton-shimmer {
+  background-image: linear-gradient(90deg, var(--muted) 0%, color-mix(in oklch, var(--muted), white 55%) 50%, var(--muted) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+/* Panels, tiles and grids cascade in; nth-child gives each a slightly later start. */
+[data-admin] main section,
+[data-admin] [data-cascade] > * {
+  animation: admin-in 0.5s var(--ease-lux) both;
+  animation-delay: calc(var(--n, 0) * 45ms);
+}
+[data-admin] main :is(section, [data-cascade] > *):nth-child(2) { --n: 1; }
+[data-admin] main :is(section, [data-cascade] > *):nth-child(3) { --n: 2; }
+[data-admin] main :is(section, [data-cascade] > *):nth-child(4) { --n: 3; }
+[data-admin] main :is(section, [data-cascade] > *):nth-child(5) { --n: 4; }
+[data-admin] main :is(section, [data-cascade] > *):nth-child(6) { --n: 5; }
+[data-admin] main :is(section, [data-cascade] > *):nth-child(7) { --n: 6; }
+[data-admin] main :is(section, [data-cascade] > *):nth-child(n + 8) { --n: 7; }
+
+/* Table rows slide in one after another (also after paging or filtering, as rows remount). */
+[data-admin] main tbody tr {
+  animation: admin-row-in 0.4s var(--ease-lux) both;
+  animation-delay: calc(var(--r, 0) * 22ms);
+  transition: background-color 0.2s ease;
+}
+[data-admin] main tbody tr:nth-child(2) { --r: 1; }
+[data-admin] main tbody tr:nth-child(3) { --r: 2; }
+[data-admin] main tbody tr:nth-child(4) { --r: 3; }
+[data-admin] main tbody tr:nth-child(5) { --r: 4; }
+[data-admin] main tbody tr:nth-child(6) { --r: 5; }
+[data-admin] main tbody tr:nth-child(7) { --r: 6; }
+[data-admin] main tbody tr:nth-child(8) { --r: 7; }
+[data-admin] main tbody tr:nth-child(9) { --r: 8; }
+[data-admin] main tbody tr:nth-child(10) { --r: 9; }
+[data-admin] main tbody tr:nth-child(n + 11) { --r: 10; }
+/* Rows inside a closed <details> are not rendered, so their animation would sit paused;
+   start it only when the section is opened (it then plays as the table appears). */
+[data-admin] main details:not([open]) tbody tr { animation: none; }
+
+/* Every admin button presses in slightly; colours and borders ease. */
+[data-admin] button,
+[data-admin] main a {
+  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease, opacity 0.2s ease;
+}
+[data-admin] button:active:not(:disabled) { transform: scale(0.97); }
+[data-admin] main :is(input, select, textarea) {
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, background-color 0.2s ease;
+}
+
+/* Sidebar: a burgundy bar grows beside the active page; links ease right on hover. */
+[data-admin] nav[data-admin-nav] a {
+  position: relative;
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 22%;
+    bottom: 22%;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--primary);
+    transform: scaleY(0);
+    transition: transform 0.35s var(--ease-lux);
+  }
+  & > span { display: inline-block; transition: transform 0.25s var(--ease-lux); }
+  &:hover > span { transform: translate3d(3px, 0, 0); }
+  &[aria-current="page"]::before { transform: scaleY(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -315,7 +454,10 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  .animate-marquee { animation: none !important; }
+  .animate-marquee,
+  .animate-pulse-ring,
+  .skeleton-shimmer,
+  .progress-indeterminate::after { animation: none !important; }
 }
 
 /* Store wordmark: widely tracked serif capitals. */

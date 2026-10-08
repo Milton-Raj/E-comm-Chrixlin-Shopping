@@ -16,24 +16,24 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
   const nav = visibleAdminNav(me.permissions);
 
   return (
-    <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
+    <div data-admin className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
       <aside className="border-b bg-muted/30 lg:min-h-dvh lg:border-r lg:border-b-0">
         <div className="flex h-16 items-center px-4 font-semibold">
           <Link href="/admin">{env.storeName} · {t("admin.title")}</Link>
         </div>
-        <nav aria-label={t("admin.title")} className="overflow-x-auto px-2 pb-2 lg:pb-6">
+        <nav data-admin-nav aria-label={t("admin.title")} className="overflow-x-auto px-2 pb-2 lg:pb-6">
           <ul className="flex gap-1 lg:flex-col">
             {nav.map((item) => {
               const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
               const className = cn(
-                "flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm",
+                "flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-all duration-300",
                 active ? "bg-background font-semibold shadow-sm" : "text-muted-foreground",
                 item.available ? "hover:bg-background hover:text-foreground" : "cursor-not-allowed opacity-50",
               );
               return (
                 <li key={item.href}>
                   {item.available ? (
-                    <Link href={item.href} aria-current={active ? "page" : undefined} className={className}>{label(item.label)}</Link>
+                    <Link href={item.href} aria-current={active ? "page" : undefined} className={className}><span>{label(item.label)}</span></Link>
                   ) : (
                     <span aria-disabled="true" className={className}>{label(item.label)}</span>
                   )}

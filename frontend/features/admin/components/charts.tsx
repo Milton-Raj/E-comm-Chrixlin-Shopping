@@ -100,7 +100,7 @@ export function TimeColumns({ title, summary, data, valueKey, valueName, format,
             <XAxis dataKey="bucket" tickFormatter={(b: string) => bucketLabel(b)} tick={{ fill: AXIS_TEXT, fontSize: 12 }} tickLine={false} axisLine={{ stroke: GRID }} interval="preserveStartEnd" minTickGap={18} />
             <YAxis tickFormatter={axisFormat} tick={{ fill: AXIS_TEXT, fontSize: 12 }} tickLine={false} axisLine={false} width={64} allowDecimals={false} />
             <Tooltip cursor={{ fill: "rgba(10,9,8,0.04)" }} content={(p) => tooltipBox({ ...(p as object), format, name: valueName, long: !monthly } as Parameters<typeof tooltipBox>[0])} />
-            <Bar dataKey={valueKey} fill={SERIES.one} radius={[4, 4, 0, 0]} maxBarSize={24} isAnimationActive={false}>
+            <Bar dataKey={valueKey} fill={SERIES.one} radius={[4, 4, 0, 0]} maxBarSize={24} animationDuration={900} animationEasing="ease-out">
               <LabelList dataKey={valueKey} position="top" content={(props) => {
                 const { x, y, width, value } = props as { x: number; y: number; width: number; value: number };
                 if (!showLabel(Number(value), false)) return null;
@@ -131,7 +131,7 @@ export function TimeLine({ title, summary, data, valueKey, valueName, format, he
             <XAxis dataKey="bucket" tickFormatter={(b: string) => bucketLabel(b)} tick={{ fill: AXIS_TEXT, fontSize: 12 }} tickLine={false} axisLine={{ stroke: GRID }} interval="preserveStartEnd" minTickGap={18} />
             <YAxis tick={{ fill: AXIS_TEXT, fontSize: 12 }} tickLine={false} axisLine={false} width={40} allowDecimals={false} />
             <Tooltip content={(p) => tooltipBox({ ...(p as object), format, name: valueName, long: !monthly } as Parameters<typeof tooltipBox>[0])} />
-            <Line type="monotone" dataKey={valueKey} stroke={SERIES.one} strokeWidth={2} strokeLinecap="round" dot={{ r: 4, fill: SERIES.one, stroke: "#f8f9f8", strokeWidth: 2 }} activeDot={{ r: 6 }} isAnimationActive={false}>
+            <Line type="monotone" dataKey={valueKey} stroke={SERIES.one} strokeWidth={2} strokeLinecap="round" dot={{ r: 4, fill: SERIES.one, stroke: "#f8f9f8", strokeWidth: 2 }} activeDot={{ r: 6 }} animationDuration={900} animationEasing="ease-out">
               <LabelList dataKey={valueKey} content={(props) => {
                 const { x, y, value } = props as { x: number; y: number; value: number };
                 if (!showLabel(Number(value), false)) return null;
@@ -165,7 +165,7 @@ export function RankedBars({ title, summary, data, valueName, format, empty = "N
               <XAxis type="number" hide domain={[0, "dataMax"]} />
               <YAxis type="category" dataKey="label" width={170} tick={{ fill: INK, fontSize: 13 }} tickLine={false} axisLine={{ stroke: GRID }} interval={0} />
               <Tooltip cursor={{ fill: "rgba(10,9,8,0.04)" }} formatter={(v) => [format(Number(v)), valueName]} contentStyle={{ fontSize: 12 }} />
-              <Bar dataKey="value" fill={SERIES.one} radius={[0, 4, 4, 0]} maxBarSize={22} isAnimationActive={false}>
+              <Bar dataKey="value" fill={SERIES.one} radius={[0, 4, 4, 0]} maxBarSize={22} animationDuration={900} animationEasing="ease-out">
                 {/* Each row carries its own label text: label positions are not stable when the data changes. */}
                 <LabelList dataKey="tip" position="right" content={(props) => {
                   const { x, y, width, height: h, value } = props as { x: number; y: number; width: number; height: number; value?: string };
@@ -190,7 +190,7 @@ export function SplitBar({ title, parts, format }: { title: string; parts: { lab
     <ChartFrame title={title} summary={`Total ${format(total)}`}>
       {total > 0 ? (
         <>
-          <div className="flex h-9 gap-0.5 overflow-hidden rounded-sm" role="img" aria-label={parts.map((p) => `${p.label} ${format(p.value)} (${Math.round((p.value / total) * 100)}%)`).join(", ")}>
+          <div className="animate-grow-x flex h-9 gap-0.5 overflow-hidden rounded-sm" role="img" aria-label={parts.map((p) => `${p.label} ${format(p.value)} (${Math.round((p.value / total) * 100)}%)`).join(", ")}>
             {parts.map((p, i) => p.value > 0 ? (
               <div key={p.label} className="flex items-center justify-center text-xs font-semibold text-white" style={{ width: `${(p.value / total) * 100}%`, background: colours[i] }}>
                 {p.value / total >= 0.12 ? `${Math.round((p.value / total) * 100)}%` : ""}

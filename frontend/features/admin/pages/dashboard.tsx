@@ -3,13 +3,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ErrorState } from "@/components/states/error-state";
 import { LoadingState } from "@/components/states/loading-state";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { adminApi, type Dashboard } from "../api";
 import { bucketLabel, formatCount, formatInr, formatInrCompact, RankedBars, SplitBar, TimeColumns, TimeLine } from "../components/charts";
+import { CountUp } from "../components/count-up";
 import { AdminPage, Panel, StatusBadge } from "../components/kit/admin-page";
 
 const ranges = [
@@ -22,24 +23,55 @@ const ranges = [
 export function DashboardPage() {
   const [range, setRange] = useState<number>(30);
   const query = useQuery({ queryKey: ["admin", "dashboard", range], queryFn: () => adminApi.dashboard(range), placeholderData: (p) => p });
+  const refreshing = query.isFetching && query.isPlaceholderData;
 
   return (
     <AdminPage
       title="Dashboard"
       description="How the store is performing. Every figure compares with the previous period of the same length."
       actions={
-        <div className="inline-flex rounded-sm border border-border bg-card p-1" role="group" aria-label="Date range">
-          {ranges.map((r) => (
-            <button key={r.days} type="button" aria-pressed={range === r.days} onClick={() => setRange(r.days)}
-              className={cn("min-h-9 rounded-sm px-3 text-sm font-medium", range === r.days ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
-              {r.label}
-            </button>
-          ))}
-        </div>
+        <RangeSwitch value={range} onChange={setRange} />
       }
     >
-      {query.isPending ? <LoadingState lines={10} /> : query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : <DashboardBody d={query.data} />}
+      <div className={cn("h-0.5 w-full bg-transparent transition-opacity duration-300", refreshing ? "progress-indeterminate opacity-100" : "opacity-0")} aria-hidden />
+      {query.isPending ? <LoadingState lines={10} /> : query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : (
+        <div aria-busy={refreshing} className={cn("transition-opacity duration-300", refreshing && "opacity-55")}>
+          <DashboardBody d={query.data} />
+        </div>
+      )}
     </AdminPage>
+  );
+}
+
+/** Segmented range control; a highlight slides to the chosen option. */
+function RangeSwitch({ value, onChange }: { value: number; onChange: (days: number) => void }) {
+  const refs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [pill, setPill] = useState<{ left: number; width: number } | null>(null);
+  const active = ranges.findIndex((r) => r.days === value);
+
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = refs.current[active];
+      if (el) setPill({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [active]);
+
+  return (
+    <div className="relative inline-flex rounded-sm border border-border bg-card p-1" role="group" aria-label="Date range">
+      {pill ? (
+        <span aria-hidden className="absolute top-1 bottom-1 rounded-sm bg-primary shadow-sm transition-all duration-400 ease-out" style={{ left: pill.left, width: pill.width }} />
+      ) : null}
+      {ranges.map((r, i) => (
+        <button key={r.days} ref={(el) => { refs.current[i] = el; }} type="button" aria-pressed={value === r.days} onClick={() => onChange(r.days)}
+          className={cn("relative z-10 min-h-9 rounded-sm px-3 text-sm font-medium transition-colors duration-300",
+            value === r.days ? (pill ? "text-primary-foreground" : "bg-primary text-primary-foreground") : "text-muted-foreground hover:text-foreground")}>
+          {r.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -61,15 +93,15 @@ function DashboardBody({ d }: { d: Dashboard }) {
         </Link>
       ) : null}
 
-      <ul className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Key figures">
-        <Tile label="Revenue" value={formatMoney(d.kpis.revenue.current)} current={d.kpis.revenue.current.amount} previous={d.kpis.revenue.previous.amount} period={period} sub={`Today ${formatMoney(d.today.revenue)}`} />
-        <Tile label="Paid orders" value={formatCount(d.kpis.orders.current)} current={d.kpis.orders.current} previous={d.kpis.orders.previous} period={period} sub={`Today ${d.today.orders}`} />
-        <Tile label="Average order value" value={formatMoney(d.kpis.average_order_value.current)} current={d.kpis.average_order_value.current.amount} previous={d.kpis.average_order_value.previous.amount} period={period} />
-        <Tile label="Units sold" value={formatCount(d.kpis.units_sold.current)} current={d.kpis.units_sold.current} previous={d.kpis.units_sold.previous} period={period} />
-        <Tile label="New customers" value={formatCount(d.kpis.new_customers.current)} current={d.kpis.new_customers.current} previous={d.kpis.new_customers.previous} period={period} sub={`${formatCount(d.totals.customers)} customers in total`} />
-        <Tile label="Checkout conversion" value={`${d.kpis.conversion.current}%`} current={d.kpis.conversion.current} previous={d.kpis.conversion.previous} period={period} sub="Orders placed → paid" />
-        <Tile label="Refunds" value={formatMoney(d.kpis.refunds.current)} current={d.kpis.refunds.current.amount} previous={d.kpis.refunds.previous.amount} period={period} upIsGood={false} />
-        <Tile label="Digital downloads" value={formatCount(d.kpis.downloads.current)} current={d.kpis.downloads.current} previous={d.kpis.downloads.previous} period={period} />
+      <ul data-cascade className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="Key figures">
+        <Tile label="Revenue" display={(n) => formatMoney({ amount: Math.round(n), currency: d.kpis.revenue.current.currency })} current={d.kpis.revenue.current.amount} previous={d.kpis.revenue.previous.amount} period={period} sub={`Today ${formatMoney(d.today.revenue)}`} />
+        <Tile label="Paid orders" display={(n) => formatCount(Math.round(n))} current={d.kpis.orders.current} previous={d.kpis.orders.previous} period={period} sub={`Today ${d.today.orders}`} />
+        <Tile label="Average order value" display={(n) => formatMoney({ amount: Math.round(n), currency: d.kpis.revenue.current.currency })} current={d.kpis.average_order_value.current.amount} previous={d.kpis.average_order_value.previous.amount} period={period} />
+        <Tile label="Units sold" display={(n) => formatCount(Math.round(n))} current={d.kpis.units_sold.current} previous={d.kpis.units_sold.previous} period={period} />
+        <Tile label="New customers" display={(n) => formatCount(Math.round(n))} current={d.kpis.new_customers.current} previous={d.kpis.new_customers.previous} period={period} sub={`${formatCount(d.totals.customers)} customers in total`} />
+        <Tile label="Checkout conversion" display={(n) => `${(Math.round(n * 10) / 10).toString()}%`} current={d.kpis.conversion.current} previous={d.kpis.conversion.previous} period={period} sub="Orders placed → paid" />
+        <Tile label="Refunds" display={(n) => formatMoney({ amount: Math.round(n), currency: d.kpis.revenue.current.currency })} current={d.kpis.refunds.current.amount} previous={d.kpis.refunds.previous.amount} period={period} upIsGood={false} />
+        <Tile label="Digital downloads" display={(n) => formatCount(Math.round(n))} current={d.kpis.downloads.current} previous={d.kpis.downloads.previous} period={period} />
       </ul>
 
       <TimeColumns
@@ -119,7 +151,7 @@ function DashboardBody({ d }: { d: Dashboard }) {
             parts={d.by_type.map((t) => ({ label: t.type === "physical" ? "Physical" : "Digital", value: t.revenue.amount, sub: `${formatCount(t.units)} units` }))}
             format={formatInr}
           />
-          <ul className="grid grid-cols-2 gap-3">
+          <ul data-cascade className="grid grid-cols-2 gap-3">
             <MiniStat label="Active products" value={d.totals.active_products} sub={`${d.totals.digital_products} digital`} href="/admin/products?status=active" />
             <MiniStat label="Orders to ship" value={d.totals.orders_to_fulfil} sub="Status: processing" href="/admin/orders?status=processing" />
             <MiniStat label="Low-stock variants" value={d.totals.low_stock_variants} sub="At or below threshold" href="/admin/inventory?low=1" />
@@ -170,7 +202,7 @@ function trendText(current: number, previous: number): string {
   return change === 0 ? "flat" : `${change > 0 ? "▲" : "▼"} ${Math.abs(change)}%`;
 }
 
-function Tile({ label, value, current, previous, period, sub, upIsGood = true }: { label: string; value: string; current: number; previous: number; period: string; sub?: string; upIsGood?: boolean }) {
+function Tile({ label, display, current, previous, period, sub, upIsGood = true }: { label: string; display: (n: number) => string; current: number; previous: number; period: string; sub?: string; upIsGood?: boolean }) {
   const change = previous === 0 ? (current > 0 ? null : 0) : ((current - previous) / previous) * 100;
   const up = change === null ? current > 0 : change > 0; // from zero to something counts as a rise
   const flat = change === 0;
@@ -178,9 +210,9 @@ function Tile({ label, value, current, previous, period, sub, upIsGood = true }:
   const Icon = flat ? Minus : up ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <li className="grid content-start gap-1 border border-border bg-card p-4">
+    <li className="grid content-start gap-1 border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold tracking-tight md:text-3xl">{value}</p>
+      <p className="text-2xl font-semibold tracking-tight md:text-3xl"><CountUp value={current} format={display} /></p>
       <p className={cn("flex items-center gap-1 text-xs font-medium", good === null ? "text-muted-foreground" : good ? "text-emerald-700" : "text-red-700")}>
         <Icon className="size-3.5" aria-hidden />
         {change === null ? "New this period" : flat ? "No change" : `${up ? "+" : "−"}${Math.abs(change).toFixed(change !== 0 && Math.abs(change) < 10 ? 1 : 0)}%`}
@@ -195,9 +227,9 @@ function MiniStat({ label, value, sub, href }: { label: string; value: number; s
   const body = (
     <>
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="text-2xl font-semibold">{formatCount(value)}</p>
+      <p className="text-2xl font-semibold"><CountUp value={value} format={(n) => formatCount(Math.round(n))} /></p>
       <p className="text-xs text-muted-foreground">{sub}</p>
     </>
   );
-  return <li className="border border-border bg-card p-4">{href ? <Link href={href} className="block hover:text-primary">{body}</Link> : body}</li>;
+  return <li className="border border-border bg-card p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">{href ? <Link href={href} className="block hover:text-primary">{body}</Link> : body}</li>;
 }

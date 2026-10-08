@@ -218,7 +218,7 @@ function SecurityPanel({ security }: { security: StoreSettings["security"] }) {
             enabled ? "bg-primary" : "bg-stone-300",
           )}
         >
-          <span className={cn("inline-block size-6 rounded-full bg-white shadow transition-transform", enabled ? "translate-x-5" : "translate-x-0")} />
+          <span className={cn("inline-block size-6 rounded-full bg-white shadow transition-transform duration-300 ease-out", enabled ? "translate-x-5" : "translate-x-0")} />
         </button>
       </div>
 
@@ -237,7 +237,7 @@ function SecurityPanel({ security }: { security: StoreSettings["security"] }) {
       ) : null}
 
       {pending !== null ? (
-        <form className="grid items-start gap-3 rounded-sm border border-dashed border-border p-3 sm:grid-cols-[1fr_auto]" onSubmit={(e) => { e.preventDefault(); toggle.mutate(pending); }}>
+        <form className="animate-expand grid items-start gap-3 rounded-sm border border-dashed border-border p-3 sm:grid-cols-[1fr_auto]" onSubmit={(e) => { e.preventDefault(); toggle.mutate(pending); }}>
           <Field label={`Confirm your password to turn ${pending ? "on" : "off"}`} htmlFor="twofa-password" required>
             <input id="twofa-password" type="password" autoComplete="current-password" className={inputClass} value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
           </Field>
