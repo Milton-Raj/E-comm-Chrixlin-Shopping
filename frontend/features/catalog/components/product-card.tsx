@@ -51,7 +51,8 @@ export function ProductCard({ product, preload = false, tone = "light" }: { prod
             <span className="link-draw">{product.name}</span>
           </Link>
         </h3>
-        <Rating average={product.rating.average} count={product.rating.count} className={`hidden sm:flex ${tone === "dark" ? "text-brand-grullo" : ""}`} />
+        {/* Stars appear once a piece has reviews; an empty 0.0 rating reads as unpopular. */}
+        {product.rating.count > 0 ? <Rating average={product.rating.average} count={product.rating.count} className={`hidden sm:flex ${tone === "dark" ? "text-brand-grullo" : ""}`} /> : null}
         <Price price={product.price} compareAt={product.compare_at_price} tone={tone} className="mt-1 text-sm font-medium" />
       </div>
     </article>

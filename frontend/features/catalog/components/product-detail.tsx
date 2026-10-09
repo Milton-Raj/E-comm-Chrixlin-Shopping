@@ -35,7 +35,7 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
         <div className="lg:sticky lg:top-36 lg:self-start">
           {product.brand ? <p className="eyebrow text-muted-foreground">{product.brand.name}</p> : null}
           <h1 className="font-display-tight mt-3 text-4xl md:text-5xl">{product.name}</h1>
-          <Rating average={product.rating.average} count={product.rating.count} className="mt-4" />
+          {product.rating.count > 0 ? <Rating average={product.rating.average} count={product.rating.count} className="mt-4" /> : null}
           <div className="mt-6 flex items-center gap-3">
             <Price price={product.price} compareAt={product.compare_at_price} className="text-2xl" />
             {discount ? <span className="eyebrow bg-primary px-2.5 py-1 text-primary-foreground">{t("catalog.off", { percent: discount })}</span> : null}

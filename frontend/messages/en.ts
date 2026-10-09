@@ -101,7 +101,7 @@ export const en = {
   "catalog.searchResults": "Results for “{q}”",
   "catalog.breadcrumb": "Breadcrumb",
 
-  "home.eyebrow": "The Autumn Collection",
+  "home.eyebrow": "Handmade by Chrixlin",
   "hero.label": "Featured collections",
   "home.srTitle": "Chrixlin — handmade dessert candles and Jesmonite décor",
   "brand.tagline": "Indulgence, poured by hand.",
