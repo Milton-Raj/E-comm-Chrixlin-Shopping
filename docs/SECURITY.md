@@ -26,7 +26,7 @@ Trust boundaries: browser ↔ Vercel (untrusted client), Vercel ↔ Laravel (ser
 | **Download link sharing** | Customer posts link publicly | Single-use 5-min tokens; per-entitlement limits; logging (IP, UA); admin revocation; tokens bound to an IP-prefix hash (soft, logged mismatch rather than hard fail to avoid mobile-network false positives — decision recorded in Phase 6). |
 | **Direct file access** | `https://api.<domain>/storage/…/course.zip` | Digital files on private disk outside web root; `.htaccess` deny on `storage/`; `public` disk holds only catalog media. |
 | **Account takeover** | Credential stuffing | Rate limits + progressive lockout, generic error messages, bcrypt/argon2id, optional customer 2FA, password breach check (HIBP k-anonymity) on register/reset, session regeneration on login, login notifications for staff. |
-| **Admin takeover** | Phished staff password | Mandatory TOTP 2FA for any staff permission, 30-min idle admin session timeout, re-auth (password confirm) for sensitive actions (refund, role change, 2FA reset, settings), IP/device logging, audit log. |
+| **Admin takeover** | Phished staff password | TOTP 2FA for staff (on by default; owner-switchable — see §3), 30-min idle admin session timeout, re-auth (password confirm) for sensitive actions (refund, role change, 2FA reset, settings), IP/device logging, audit log. |
 | **CSRF** | Cross-site POST using session cookie | Sanctum CSRF (`XSRF-TOKEN`), `SameSite=Lax` cookies, CORS limited to `https://www.<domain>`, `supports_credentials` only for that origin. |
 | **XSS** | Script in review/product description/CMS | React escaping by default; CMS/product HTML sanitized server-side on write (HTML Purifier allow-list) and never rendered with unsanitized `dangerouslySetInnerHTML`; strict CSP with nonces; uploaded SVG disallowed (or sanitized); `X-Content-Type-Options: nosniff`. |
 | **SQL injection** | Filters/sort params | Eloquent/query builder bindings only; whitelisted sort/filter keys (unknown → 422); no raw interpolation; FULLTEXT query string sanitized of boolean operators before adding `*`. |
@@ -45,7 +45,8 @@ Trust boundaries: browser ↔ Vercel (untrusted client), Vercel ↔ Laravel (ser
 - Password reset tokens: hashed, 60-min expiry, single use; all other sessions invalidated on reset.
 - Sessions: database driver, `Secure`, `HttpOnly`, `SameSite=Lax`, `Domain=.<domain>`, 120-min lifetime (customers, sliding) / 30-min idle for admin routes (`EnsureAdminSessionFresh`). Session id regenerated on login and privilege change.
 - "Log out all devices": delete user's `sessions` rows, rotate `remember_token`.
-- Local development may set `ADMIN_REQUIRE_2FA=false` (ARCHITECTURE D20); `EnsureAdminAccess` ignores it in production and tests pin it to `true`.
+- The staff 2FA requirement is a setting (default on, `ADMIN_REQUIRE_2FA`). **Owner decision 2026-10-09:** it may be switched off in any environment, including production, from Settings → Security; the change needs the current password, is audited (`settings.security_2fa_*`) and emails every active owner/administrator. Accepted risk: with it off, a stolen staff password alone opens the admin.
+- Password change from the admin "My account" page is confirmed by a single-use 6-digit code emailed to the account (10-minute expiry, 5 attempts, hashed at rest); success signs out other devices and emails a confirmation.
 - 2FA: TOTP (RFC 6238, ±1 window, replay-protected by storing last used timestep), 8 one-time recovery codes (hashed). Staff cannot access admin API until 2FA is confirmed (`two_factor_required` error drives the UI to setup). 2FA reset for staff requires another user with `users.manage` and is audited.
 
 ## 4. Permission catalog

@@ -46,7 +46,7 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
       <div className="min-w-0">
         <header className="flex h-16 items-center justify-end gap-4 border-b px-4 text-sm text-muted-foreground md:px-6">
           <Link href="/" className="underline-offset-4 hover:underline">View store</Link>
-          <span>{t("admin.welcome", { name: me.user.name })}</span>
+          <Link href="/admin/account" className="underline-offset-4 hover:underline">{t("admin.welcome", { name: me.user.name })}</Link>
         </header>
         <main id="main" className="p-4 md:p-6">{children}</main>
       </div>

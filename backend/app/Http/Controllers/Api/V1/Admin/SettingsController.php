@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Domain\Identity\PermissionCatalog;
 use App\Domain\Payments\GatewayManager;
 use App\Domain\Shipping\Courier\ShiprocketClient;
 use App\Exceptions\ApiException;
@@ -9,11 +10,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnsureAdminAccess;
 use App\Models\ShippingMethod;
 use App\Models\TaxClass;
+use App\Models\User;
+use App\Notifications\SecuritySettingChangedNotification;
 use App\Support\Audit\Audit;
 use App\Support\Http\ApiResponse;
 use App\Support\Settings\Settings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 /** Store, tax and shipping settings (no secrets — those stay in the environment). */
 class SettingsController extends Controller
@@ -50,7 +54,7 @@ class SettingsController extends Controller
             ],
             'security' => [
                 'admin_requires_2fa' => EnsureAdminAccess::twoFactorRequired(),
-                'locked' => app()->isProduction(),
+                'locked' => false,
                 'you_have_2fa' => request()->user()->hasTwoFactorEnabled(),
             ],
         ]);
@@ -73,7 +77,7 @@ class SettingsController extends Controller
 
     /**
      * Turns the staff 2FA requirement on/off. Requires the current password; refuses to
-     * lock the current admin out, and is fixed "on" in production.
+     * lock the current admin out. Turning it off emails a security alert to owners/administrators.
      */
     public function security(Request $request, Settings $settings): JsonResponse
     {
@@ -83,9 +87,6 @@ class SettingsController extends Controller
         ]);
         $enable = (bool) $data['admin_require_2fa'];
 
-        if (app()->isProduction() && ! $enable) {
-            throw new ApiException('Two-factor authentication is always required for staff in production.', 409, 'locked_in_production');
-        }
         if ($enable && ! $request->user()->hasTwoFactorEnabled()) {
             throw new ApiException('Set up two-factor authentication on your own account first, or you would be locked out of the admin.', 409, 'two_factor_setup_required');
         }
@@ -93,6 +94,10 @@ class SettingsController extends Controller
         $before = ['admin_require_2fa' => EnsureAdminAccess::twoFactorRequired()];
         $settings->set('security.admin_require_2fa', $enable, $request->user()->getKey());
         Audit::record('settings.security_2fa_'.($enable ? 'enabled' : 'disabled'), null, $before, ['admin_require_2fa' => $enable], $request->user());
+        if ($before['admin_require_2fa'] !== $enable) {
+            $owners = User::query()->role([PermissionCatalog::SUPER_ADMIN, 'administrator'])->where('is_active', true)->get();
+            Notification::sendNow($owners, new SecuritySettingChangedNotification($enable, $request->user()->name, (string) $request->ip()));
+        }
 
         return ApiResponse::success(['admin_requires_2fa' => $enable], $enable ? 'Staff two-factor authentication is now required.' : 'Staff two-factor authentication is no longer required.');
     }

@@ -18,6 +18,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin/content", label: "admin.content", permission: "content.manage", available: true },
   { href: "/admin/settings", label: "admin.settings", permission: "settings.manage", available: true },
   { href: "/admin/audit", label: "Audit log", permission: "audit.view", available: true },
+  { href: "/admin/account", label: "My account", permission: null, available: true },
 ];
 
 export function visibleAdminNav(permissions: readonly string[]): AdminNavItem[] {

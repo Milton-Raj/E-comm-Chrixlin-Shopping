@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Account\MeController;
+use App\Http\Controllers\Api\V1\Account\PasswordCodeController;
 use App\Http\Controllers\Api\V1\Account\PasswordController;
 use App\Http\Controllers\Api\V1\Account\SessionController;
 use App\Http\Controllers\Api\V1\Account\TwoFactorController;
@@ -106,6 +107,8 @@ Route::middleware(['auth:sanctum', 'throttle:account'])->group(function () {
 
     Route::prefix('account')->name('account.')->group(function () {
         Route::put('password', [PasswordController::class, 'update'])->name('password.update');
+        Route::post('password/code', [PasswordCodeController::class, 'send'])->middleware('throttle:3,10')->name('password.code');
+        Route::put('password/with-code', [PasswordCodeController::class, 'update'])->middleware('throttle:10,10')->name('password.with-code');
         Route::get('sessions', [SessionController::class, 'index'])->name('sessions.index');
         Route::post('sessions/logout-others', [SessionController::class, 'destroyOthers'])->name('sessions.logout-others');
         Route::post('two-factor', [TwoFactorController::class, 'store'])->name('two-factor.enable');

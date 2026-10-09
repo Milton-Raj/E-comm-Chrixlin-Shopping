@@ -21,15 +21,12 @@ class EnsureAdminAccess
     public const LAST_ACTIVITY_KEY = 'admin.last_activity_at';
 
     /**
-     * Admin toggle (Settings → Security) with the env value as default.
-     * Production always requires staff 2FA, whatever the toggle says (SECURITY.md §3).
+     * Admin toggle (Settings → Security), defaulting to the env value (on). The store owner
+     * may switch it off in any environment; doing so needs their password, is audited and
+     * alerts every owner/administrator by email (SECURITY.md §3).
      */
     public static function twoFactorRequired(): bool
     {
-        if (app()->isProduction()) {
-            return true;
-        }
-
         return (bool) app(Settings::class)->get('security.admin_require_2fa', (bool) config('commerce.security.admin_require_2fa', true));
     }
 

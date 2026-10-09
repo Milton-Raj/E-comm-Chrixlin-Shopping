@@ -6,6 +6,7 @@ use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\ShippingMethod;
 use App\Models\User;
+use App\Notifications\SecuritySettingChangedNotification;
 use App\Support\Settings\Settings;
 use Database\Seeders\StoreSetupSeeder;
 use Illuminate\Support\Facades\Notification;
@@ -146,11 +147,16 @@ it('lets staff without 2FA in when the requirement is off, but not switch it on 
     expect($this->putJson('/api/v1/admin/settings/security', ['admin_require_2fa' => true, 'password' => 'correct-horse-battery']))->toBeApiError(409, 'two_factor_setup_required');
 });
 
-it('always requires staff 2FA in production, whatever the toggle says', function () {
-    app(Settings::class)->set('security.admin_require_2fa', false);
-    app()->detectEnvironment(fn () => 'production');
+it('lets the owner switch staff 2FA off (no production lock), and alerts owners by email', function () {
+    Notification::fake();
+    $this->actingAs($this->admin);
 
-    expect(EnsureAdminAccess::twoFactorRequired())->toBeTrue();
+    $this->getJson('/api/v1/admin/settings')->assertJsonPath('data.security.locked', false);
+    $this->putJson('/api/v1/admin/settings/security', ['admin_require_2fa' => false, 'password' => 'password'])->assertOk();
+
+    expect(EnsureAdminAccess::twoFactorRequired())->toBeFalse();
+    Notification::assertSentTo($this->admin, SecuritySettingChangedNotification::class, fn ($n) => $n->enabled === false);
+    $this->assertDatabaseHas('audit_logs', ['action' => 'settings.security_2fa_disabled']);
 });
 
 it('lets admins set delivery days per method', function () {
@@ -172,12 +178,12 @@ it('enforces per-area permissions for staff', function () {
     $this->postJson('/api/v1/admin/coupons', [])->assertForbidden();
 });
 
-it('lets staff without 2FA in only when the local switch disables it, never in production', function () {
+it('lets staff without 2FA in only while the requirement is switched off', function () {
     $staff = User::factory()->staff('order-manager')->create(['two_factor_secret' => null, 'two_factor_confirmed_at' => null]);
 
     config(['commerce.security.admin_require_2fa' => false]);
     $this->actingAs($staff)->getJson('/api/v1/admin/me')->assertOk();
 
-    app()->detectEnvironment(fn () => 'production');
+    config(['commerce.security.admin_require_2fa' => true]);
     expect($this->actingAs($staff)->getJson('/api/v1/admin/me'))->toBeApiError(403, 'two_factor_required');
 });

@@ -59,7 +59,7 @@ Providers implement `PaymentGateway` (ARCHITECTURE §6.11) and are resolved from
 Files on the private disk only. Downloads require: authenticated owner (or guest order token), paid order, valid entitlement, download-limit and expiry validation, single-use short-lived token. Record every download event. Support revocation.
 
 ## Security
-CSRF · XSS (sanitize stored HTML, CSP) · SQL injection protection · rate limiting · secure cookies · CORS limited to the storefront origin · security headers · HTTPS · password hashing · mandatory admin 2FA · audit logging. Never log passwords, tokens, secrets, card data, cookies or authorization headers.
+CSRF · XSS (sanitize stored HTML, CSP) · SQL injection protection · rate limiting · secure cookies · CORS limited to the storefront origin · security headers · HTTPS · password hashing · admin 2FA on by default (the owner may switch the staff requirement off in Settings → Security; password-confirmed, audited, and owners/administrators are emailed) · audit logging. Never log passwords, tokens, secrets, card data, cookies or authorization headers.
 
 ## UI
 Premium modern ecommerce. Prioritize visual hierarchy, whitespace, product imagery, clear CTAs, fast navigation, excellent mobile experience. Avoid generic templates, heavy gradients/shadows, clutter, tiny text, popups, unnecessary animation.

@@ -257,7 +257,7 @@ function SecurityPanel({ security }: { security: StoreSettings["security"] }) {
 
       {pending !== null ? (
         <form className="animate-expand grid items-start gap-3 rounded-sm border border-dashed border-border p-3 sm:grid-cols-[1fr_auto]" onSubmit={(e) => { e.preventDefault(); toggle.mutate(pending); }}>
-          <Field label={`Confirm your password to turn ${pending ? "on" : "off"}`} htmlFor="twofa-password" required>
+          <Field label={`Confirm your password to turn ${pending ? "on" : "off"}`} htmlFor="twofa-password" required hint={pending ? undefined : "Owners and administrators get an email alert when this is turned off."}>
             <input id="twofa-password" type="password" autoComplete="current-password" className={inputClass} value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
           </Field>
           <FormActions className="sm:pt-6">
