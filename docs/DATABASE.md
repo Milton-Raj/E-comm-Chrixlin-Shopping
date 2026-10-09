@@ -230,6 +230,7 @@ Indexes: `(user_id, placed_at)` Q-O1 account order list; `(status, placed_at)` Q
 **page_sections** — `id, uuid, page_id FK CASCADE, type (hero|product_grid|product_carousel|category_grid|banner|text|image|video|testimonials|faq|newsletter), settings JSON, is_visible, sort_order, timestamps`. Index `(page_id, sort_order)`.
 **blog_posts** ☐SD — `id, uuid, slug UNIQUE, title, excerpt, body (sanitized HTML), cover_media_id NULL, author_id FK users, status, published_at, seo_title, seo_description, timestamps, deleted_at`. Index `(status, published_at)`.
 **banners** ☐SD — `id, uuid, title, subtitle, media_asset_id, link_url, placement (home_hero|home_promo|category_top), starts_at, ends_at, sort_order, is_active, timestamps, deleted_at`.
+**hero_slides** (built) — `id, uuid, image_path NULL (public disk, hero/…), image_alt NULL, focal_point (CSS object-position, one of 5 presets), eyebrow NULL, title, body NULL, cta_label NULL, cta_url NULL (/path or https://), sort_order, is_active, timestamps`. Index `(is_active, sort_order)`. Max 8 rows (validated). Homepage slideshow; an empty table means the storefront shows its built-in slides. Implemented instead of `banners.placement=home_hero`.
 **menus** — `id, handle UNIQUE (header|footer|mobile), name`. **menu_items** — `id, menu_id FK, parent_id NULL, label, url NULL, linkable_type NULL, linkable_id NULL, sort_order`.
 **faqs** — `id, question, answer, category, sort_order, is_active, timestamps`.
 

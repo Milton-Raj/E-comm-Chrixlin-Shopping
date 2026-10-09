@@ -175,3 +175,15 @@ export const staffApi = {
   resetTwoFactor: (uuid: string, password: string) => api.post<StaffMember>(`/admin/staff/${uuid}/two-factor-reset`, { password }),
   resendInvite: (uuid: string) => api.post(`/admin/staff/${uuid}/invitation`),
 };
+
+export type AdminHeroSlide = {
+  uuid: string; image: string | null; image_alt: string | null; focal_point: string; eyebrow: string | null; title: string; body: string | null;
+  cta_label: string | null; cta_url: string | null; sort_order: number; is_active: boolean;
+};
+
+export const heroApi = {
+  list: () => api.get<AdminHeroSlide[]>("/admin/hero-slides"),
+  save: (uuid: string | null, form: FormData) => api.post<AdminHeroSlide>(uuid ? `/admin/hero-slides/${uuid}` : "/admin/hero-slides", form),
+  reorder: (order: string[]) => api.post<AdminHeroSlide[]>("/admin/hero-slides/reorder", { order }),
+  remove: (uuid: string) => api.delete(`/admin/hero-slides/${uuid}`),
+};

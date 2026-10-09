@@ -1,6 +1,6 @@
 import { env } from "@/lib/env";
 import type { ApiEnvelope } from "@/types/api";
-import type { Category, ContentPage, Paginated, Product, ProductDetail, ProductQuery } from "./types";
+import type { Category, ContentPage, HeroSlide, Paginated, Product, ProductDetail, ProductQuery } from "./types";
 
 /**
  * Public, cookie-less catalog reads. Safe on the server (cached) and in the browser.
@@ -48,4 +48,8 @@ export async function fetchCategory(slug: string): Promise<Category | null> {
 
 export async function fetchPage(slug: string): Promise<ContentPage | null> {
   return (await get<ContentPage>(`/pages/${encodeURIComponent(slug)}`))?.data ?? null;
+}
+
+export async function fetchHeroSlides(): Promise<HeroSlide[]> {
+  return (await get<HeroSlide[]>("/hero-slides"))?.data ?? [];
 }

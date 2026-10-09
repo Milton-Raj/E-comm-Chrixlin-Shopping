@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\Storefront\CartController;
 use App\Http\Controllers\Api\V1\Storefront\CatalogController;
 use App\Http\Controllers\Api\V1\Storefront\CheckoutController;
 use App\Http\Controllers\Api\V1\Storefront\DownloadController;
+use App\Http\Controllers\Api\V1\Storefront\HeroSlideController;
 use App\Http\Controllers\Api\V1\Storefront\OrderController;
 use App\Http\Controllers\Api\V1\Storefront\PageController;
 use App\Http\Controllers\Api\V1\Storefront\WishlistController;
@@ -41,6 +42,7 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('products', [CatalogController::class, 'products'])->name('products.index');
     Route::get('products/{slug}', [CatalogController::class, 'product'])->name('products.show');
     Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
+    Route::get('hero-slides', [HeroSlideController::class, 'index'])->name('hero-slides.index');
 });
 
 // Cart (guest cookie or signed-in user)
@@ -189,6 +191,12 @@ Route::prefix('admin')->name('admin.')
         Route::patch('staff/{staff}', [Admin\StaffController::class, 'update'])->middleware('can:users.manage')->name('staff.update');
         Route::post('staff/{staff}/two-factor-reset', [Admin\StaffController::class, 'resetTwoFactor'])->middleware('can:users.manage')->name('staff.two-factor-reset');
         Route::post('staff/{staff}/invitation', [Admin\StaffController::class, 'resendInvite'])->middleware(['can:users.manage', 'throttle:6,10'])->name('staff.invitation');
+
+        Route::get('hero-slides', [Admin\HeroSlideController::class, 'index'])->middleware('can:content.manage')->name('hero-slides.index');
+        Route::post('hero-slides', [Admin\HeroSlideController::class, 'save'])->middleware('can:content.manage')->name('hero-slides.store');
+        Route::post('hero-slides/reorder', [Admin\HeroSlideController::class, 'reorder'])->middleware('can:content.manage')->name('hero-slides.reorder');
+        Route::post('hero-slides/{slide}', [Admin\HeroSlideController::class, 'save'])->middleware('can:content.manage')->name('hero-slides.update');
+        Route::delete('hero-slides/{slide}', [Admin\HeroSlideController::class, 'destroy'])->middleware('can:content.manage')->name('hero-slides.destroy');
 
         Route::get('settings', [Admin\SettingsController::class, 'show'])->middleware('can:settings.manage')->name('settings.show');
         Route::put('settings', [Admin\SettingsController::class, 'update'])->middleware('can:settings.manage')->name('settings.update');

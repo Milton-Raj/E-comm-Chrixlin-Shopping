@@ -89,3 +89,15 @@ export type ContentPage = {
   seo: { title: string; description: string | null };
   updated_at: string;
 };
+
+/** Homepage hero slide managed in Admin → Content (API.md §3.2). */
+export type HeroSlide = {
+  uuid: string;
+  image: string;
+  image_alt: string | null;
+  focal_point: string;
+  eyebrow: string | null;
+  title: string;
+  body: string | null;
+  cta: { label: string; url: string } | null;
+};

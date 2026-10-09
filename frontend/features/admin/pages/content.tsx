@@ -12,12 +12,15 @@ import { LoadingState } from "@/components/states/loading-state";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/services/api-client";
 import { miscAdminApi, type AdminPageItem } from "../api";
+import { HeroSlidesPanel } from "../components/hero-slides-panel";
 import { AdminPage, Field, inputClass, Panel, RequiredNote, StatusBadge, textareaClass } from "../components/kit/admin-page";
 
 export function ContentPage() {
   const pages = useQuery({ queryKey: ["admin", "pages"], queryFn: miscAdminApi.pages });
   return (
-    <AdminPage title="Content" description="Policy, help and information pages linked from the storefront footer." actions={<ButtonLink href="/admin/content/new">New page</ButtonLink>}>
+    <AdminPage title="Content" description="Your homepage hero and the policy, help and information pages linked from the storefront footer." actions={<ButtonLink href="/admin/content/new">New page</ButtonLink>}>
+      <HeroSlidesPanel />
+      <h2 className="text-base font-semibold">Pages</h2>
       {pages.isPending ? <LoadingState lines={6} /> : pages.isError ? <ErrorState onRetry={() => void pages.refetch()} /> : (
         <ul className="divide-y divide-border border border-border bg-card text-sm">
           {pages.data.map((p) => (

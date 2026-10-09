@@ -4,10 +4,11 @@ import Link from "next/link";
 import { ButtonLink } from "@/components/button-link";
 import { ProductCard, ProductGrid } from "@/features/catalog/components/product-card";
 import { SectionHeading } from "@/features/catalog/components/section-heading";
-import { getCategories, getProducts } from "@/features/catalog/server";
+import { HeroSlider } from "@/features/catalog/components/hero-slider";
+import { defaultHeroSlides } from "@/features/catalog/hero-defaults";
+import { getCategories, getHeroSlides, getProducts } from "@/features/catalog/server";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Fragment, Suspense, type CSSProperties } from "react";
-import { Parallax } from "@/components/motion/parallax";
+import { Suspense } from "react";
 import { Reveal } from "@/components/motion/reveal";
 import { t, type MessageKey } from "@/lib/i18n";
 
@@ -19,41 +20,14 @@ const values: { icon: typeof Truck; title: MessageKey; body: MessageKey }[] = [
   { icon: Headset, title: "home.valueSupport", body: "home.valueSupportBody" },
 ];
 
-const delay = (ms: number) => ({ "--delay": `${ms}ms` }) as CSSProperties;
-
 /** Homepage (PRD §10). Sections become CMS-configurable in Phase 4/7. */
 export default function HomePage() {
   return (
     <>
-      {/* 1 — Hero */}
-      <section className="relative isolate flex min-h-[78svh] items-end overflow-hidden bg-brand-black text-brand-cultured">
-        <Parallax className="absolute inset-0 -z-10">
-          <Image src="/demo/hero-boutique.jpg" alt="" fill preload sizes="100vw" className="animate-ken-burns object-cover opacity-70" />
-        </Parallax>
-        <div className="absolute inset-0 -z-10 bg-linear-to-t from-brand-black via-brand-black/40 to-transparent" />
-        <div className="mx-auto w-full max-w-7xl px-4 pt-32 pb-16 md:px-6 md:pb-24">
-          <p className="eyebrow animate-rise mb-5 text-brand-grullo" style={delay(150)}>{t("home.eyebrow")}</p>
-          <h1 className="font-display-tight max-w-3xl text-5xl text-balance md:text-7xl lg:text-8xl">
-            {t("home.heroTitle").split(" ").map((word, i, words) => (
-              <Fragment key={i}>
-                <span className="word-mask">
-                  <span className="animate-word" style={delay(300 + i * 110)}>{word}</span>
-                </span>
-                {i < words.length - 1 ? " " : null}
-              </Fragment>
-            ))}
-          </h1>
-          <p className="animate-rise mt-6 max-w-lg text-lg text-brand-cultured/80" style={delay(900)}>{t("home.heroBody")}</p>
-          <div className="animate-rise mt-10 flex flex-wrap gap-3" style={delay(1100)}>
-            <ButtonLink href="/shop" size="lg" variant="light" className="sheen">{t("home.shopNow")}</ButtonLink>
-            <ButtonLink href="/shop?type=digital" size="lg" variant="outline-light" className="sheen">{t("home.exploreDigital")}</ButtonLink>
-          </div>
-        </div>
-        <div className="animate-fade absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-3 text-brand-cultured/70 md:flex" style={delay(1800)} aria-hidden>
-          <span className="eyebrow text-xs">Scroll</span>
-          <span className="scroll-cue-line h-12 w-px bg-brand-cultured/20 text-brand-cultured/80" />
-        </div>
-      </section>
+      {/* 1 — Hero slideshow (Admin → Content → Homepage hero) */}
+      <Suspense fallback={<HeroSlider slides={defaultHeroSlides().slice(0, 1)} />}>
+        <Hero />
+      </Suspense>
 
       {/* Promise ribbon */}
       <div className="overflow-hidden border-b border-brand-umber/40 bg-primary py-4 text-primary-foreground">
@@ -147,6 +121,11 @@ export default function HomePage() {
       </section>
     </>
   );
+}
+
+async function Hero() {
+  const slides = await getHeroSlides();
+  return <HeroSlider slides={slides.length ? slides : defaultHeroSlides()} />;
 }
 
 async function CategoryStrip() {

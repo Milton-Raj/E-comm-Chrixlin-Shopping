@@ -446,6 +446,39 @@
   &[aria-current="page"]::before { transform: scaleY(1); }
 }
 
+/* Homepage hero slideshow (features/catalog/components/hero-slider.tsx): slides crossfade
+   while the incoming photo eases out of a gentle zoom; the outgoing one resets only once hidden. */
+.hero-stage {
+  min-height: 82svh;
+}
+.hero-slide {
+  opacity: 0;
+  transition: opacity 1.4s var(--ease-lux);
+}
+.hero-slide[data-active] {
+  opacity: 1;
+}
+.hero-slide img {
+  transform: scale(1.12);
+  transition: transform 0s linear 1.4s;
+}
+.hero-slide[data-active] img {
+  transform: scale(1.02);
+  transition: transform 9s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+@keyframes hero-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.hero-progress {
+  transform-origin: left center;
+  animation: hero-progress 6.5s linear both;
+}
+.hero-progress-paused {
+  animation: none;
+  transform: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -128,6 +128,7 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 | GET | `/search/suggest?q=` | 3 | autocomplete: products, categories, popular terms |
 | GET | `/search/popular` | 3 | popular searches |
 | GET | `/home` | 4 | resolved homepage sections (page `home`) |
+| GET | `/hero-slides` (built: active slides with an image, ordered; `cta` is `{label,url}` or null) | 7 | Homepage hero |
 | GET | `/pages/{slug}`, `/blog`, `/blog/{slug}`, `/faqs`, `/menus/{handle}`, `/banners?placement=` | 4/7 | CMS |
 | POST | `/newsletter/subscribe` | 4 | double opt-in email |
 | POST | `/events` | 4 | analytics beacon (throttled, batched) |
@@ -217,7 +218,7 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 | Coupons / promotions | CRUD `/admin/coupons`, `/admin/promotions` | `coupons.manage`, `promotions.manage` | 7/8 |
 | Reviews | `GET /admin/reviews`, `POST /admin/reviews/{uuid}/approve|reject` | `reviews.moderate` | 7 |
 | Support | `GET /admin/tickets`, `GET/PATCH /admin/tickets/{ticket_number}`, `POST …/messages`, `POST …/assign` | `support.view|reply|assign` | 7 |
-| Content | CRUD `/admin/pages` (+ `/sections` add/move/hide/edit), `/admin/blog-posts`, `/admin/banners`, `/admin/menus`, `/admin/faqs` | `content.manage` | 7 |
+| Content | **Built:** `GET /admin/hero-slides`, `POST /admin/hero-slides` (multipart: `image` required ≥1200×700, `title`, optional `eyebrow, body, cta_label, cta_url, image_alt, focal_point, is_active`), `POST /admin/hero-slides/{uuid}` (update, image optional; replaced image file is deleted), `POST /admin/hero-slides/reorder` (`order: uuid[]`), `DELETE /admin/hero-slides/{uuid}`; all audited (`hero_slide.*`) and revalidate tag `content`. Planned: CRUD `/admin/pages` (+ `/sections` add/move/hide/edit), `/admin/blog-posts`, `/admin/banners`, `/admin/menus`, `/admin/faqs` | `content.manage` | 7 |
 | Media library | `GET/POST /admin/media`, `PATCH/DELETE /admin/media/{uuid}`, `POST /admin/media/{uuid}/replace` | `media.manage` | 7 |
 | Marketing | `GET /admin/subscribers`, export | `subscribers.manage` | 8 |
 | Reports | `GET /admin/reports/{sales|products|customers|inventory|finance}` | `reports.view` (`reports.finance` for finance) | 7 |

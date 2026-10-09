@@ -1,6 +1,6 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { fetchCategories, fetchCategory, fetchPage, fetchProduct, fetchProducts } from "./api";
+import { fetchCategories, fetchCategory, fetchHeroSlides, fetchPage, fetchProduct, fetchProducts } from "./api";
 import type { ProductQuery } from "./types";
 
 /**
@@ -41,4 +41,11 @@ export async function getPage(slug: string) {
   cacheLife("minutes");
   cacheTag("content", `page:${slug}`);
   return fetchPage(slug);
+}
+
+export async function getHeroSlides() {
+  "use cache";
+  cacheLife("minutes");
+  cacheTag("content", "hero");
+  return fetchHeroSlides();
 }
