@@ -10,7 +10,8 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-4 md:px-6">
         <div className="grid content-start gap-4">
           <p className="wordmark text-xl">{env.storeName}</p>
-          <p className="max-w-xs text-sm text-brand-grullo">{t("home.heroBody")}</p>
+          <p className="font-display-tight text-lg text-brand-cultured/90">{t("brand.tagline")}</p>
+          <p className="max-w-xs text-sm text-brand-grullo">{t("brand.description")}</p>
         </div>
         {footerNav.map((group) => (
           <nav key={group.title} aria-label={t(group.title)}>

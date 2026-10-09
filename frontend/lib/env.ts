@@ -8,7 +8,7 @@ import { z } from "zod";
 const publicEnvSchema = z.object({
   NEXT_PUBLIC_API_URL: z.url(),
   NEXT_PUBLIC_SITE_URL: z.url(),
-  NEXT_PUBLIC_STORE_NAME: z.string().min(1).default("Commerce"),
+  NEXT_PUBLIC_STORE_NAME: z.string().min(1).default("Chrixlin"),
 });
 
 const parsed = publicEnvSchema.safeParse({

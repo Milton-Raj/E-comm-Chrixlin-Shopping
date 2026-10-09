@@ -7,15 +7,15 @@ test("homepage hero slideshow can be paused and navigated", async ({ page }, tes
 
   await page.goto("/");
   const hero = page.getByRole("region", { name: "Featured collections" });
-  await expect(hero.getByRole("heading", { level: 2, name: "Light that lingers." })).toBeVisible();
+  await expect(hero.getByRole("heading", { level: 2, name: "Good enough to eat. Made to light." })).toBeVisible();
   await page.waitForTimeout(1800);
   await page.screenshot({ path: testInfo.outputPath("hero-1.png") });
 
   await hero.getByRole("button", { name: "Pause slideshow" }).click();
   await expect(hero.getByRole("button", { name: "Play slideshow" })).toBeVisible();
   await hero.getByRole("button", { name: "Show slide 2" }).click();
-  await expect(hero.getByRole("heading", { level: 2, name: "Quiet objects, made to keep." })).toBeVisible();
-  await expect(hero.getByRole("link", { name: "Shop Jesmonite" })).toHaveAttribute("href", "/search?q=jesmonite");
+  await expect(hero.getByRole("heading", { level: 2, name: "Indulgence, poured by hand." })).toBeVisible();
+  await expect(hero.getByRole("link", { name: "Shop the collection" })).toHaveAttribute("href", "/shop");
   await page.waitForTimeout(1800);
   await page.screenshot({ path: testInfo.outputPath("hero-2.png") });
 

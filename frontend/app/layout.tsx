@@ -36,8 +36,8 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
-  title: { default: env.storeName, template: `%s · ${env.storeName}` },
-  description: t("home.heroBody"),
+  title: { default: `${env.storeName} · ${t("brand.titleSuffix")}`, template: `%s · ${env.storeName}` },
+  description: t("brand.description"),
 };
 
 export const viewport: Viewport = {

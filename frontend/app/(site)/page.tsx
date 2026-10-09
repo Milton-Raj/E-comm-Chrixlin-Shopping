@@ -64,14 +64,14 @@ export default function HomePage() {
       {/* 4 — Editorial banner */}
       <section className="mt-20 grid bg-primary text-primary-foreground md:mt-28 md:grid-cols-2">
         <Reveal variant="clip" className="relative min-h-80 overflow-hidden md:min-h-128">
-          <Image src="/demo/editorial-home.jpg" alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+          <Image src="/hero/arch-candle.jpg" alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
         </Reveal>
         <Reveal delay={250} className="flex flex-col justify-center gap-6 px-6 py-16 md:px-16">
           <p className="eyebrow text-brand-grullo">{t("home.editorialEyebrow")}</p>
           <h2 className="font-display-tight text-4xl md:text-5xl">{t("home.editorialTitle")}</h2>
           <p className="max-w-md text-primary-foreground/80">{t("home.editorialBody")}</p>
           <div>
-            <ButtonLink href="/categories" variant="outline-light" className="sheen">{t("home.editorialCta")}</ButtonLink>
+            <ButtonLink href="/shop" variant="outline-light" className="sheen">{t("home.editorialCta")}</ButtonLink>
           </div>
         </Reveal>
       </section>
@@ -84,24 +84,10 @@ export default function HomePage() {
         </Suspense>
       </section>
 
-      {/* 6 — Digital collection */}
-      <section className="mt-20 bg-brand-black text-brand-cultured md:mt-28">
-        <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 md:px-6 lg:grid-cols-3 lg:py-28">
-          <Reveal className="flex flex-col justify-center gap-5">
-            <p className="eyebrow text-brand-grullo">{t("home.digitalEyebrow")}</p>
-            <h2 className="font-display-tight text-4xl md:text-5xl">{t("home.digitalTitle")}</h2>
-            <p className="text-brand-cultured/75">{t("home.digitalBody")}</p>
-            <div>
-              <ButtonLink href="/shop?type=digital" variant="light" className="sheen">{t("catalog.viewAll")}</ButtonLink>
-            </div>
-          </Reveal>
-          <div className="lg:col-span-2">
-            <Suspense fallback={<GridSkeleton count={3} />}>
-              <DigitalSection />
-            </Suspense>
-          </div>
-        </div>
-      </section>
+      {/* 6 — Digital collection (only when the store sells digital products) */}
+      <Suspense fallback={null}>
+        <DigitalCollection />
+      </Suspense>
 
       {/* 9 — Why shop with us */}
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6 md:pt-28">
@@ -155,9 +141,30 @@ async function ProductSection({ query }: { query: Parameters<typeof getProducts>
   return <ProductGrid products={items} />;
 }
 
-async function DigitalSection() {
+async function DigitalCollection() {
   const { items } = await getProducts({ type: "digital", sort: "featured", per_page: 3 });
+  if (items.length === 0) return null;
 
+  return (
+      <section className="mt-20 bg-brand-black text-brand-cultured md:mt-28">
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 py-20 md:px-6 lg:grid-cols-3 lg:py-28">
+            <Reveal className="flex flex-col justify-center gap-5">
+              <p className="eyebrow text-brand-grullo">{t("home.digitalEyebrow")}</p>
+              <h2 className="font-display-tight text-4xl md:text-5xl">{t("home.digitalTitle")}</h2>
+              <p className="text-brand-cultured/75">{t("home.digitalBody")}</p>
+              <div>
+                <ButtonLink href="/shop?type=digital" variant="light" className="sheen">{t("catalog.viewAll")}</ButtonLink>
+              </div>
+            </Reveal>
+            <div className="lg:col-span-2">
+              <DigitalSection items={items} />
+            </div>
+          </div>
+        </section>
+  );
+}
+
+function DigitalSection({ items }: { items: Awaited<ReturnType<typeof getProducts>>["items"] }) {
   return (
     <Reveal stagger>
     <ul className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-3">

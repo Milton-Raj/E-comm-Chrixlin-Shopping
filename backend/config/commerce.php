@@ -10,7 +10,7 @@ return [
     'frontend_url' => rtrim((string) env('FRONTEND_URL', 'http://localhost:3000'), '/'),
 
     'store' => [
-        'name' => env('STORE_NAME', env('APP_NAME', 'Commerce')),
+        'name' => env('STORE_NAME', env('APP_NAME', 'Chrixlin')),
         'currency' => env('STORE_CURRENCY', 'INR'),
         'locale' => env('STORE_LOCALE', 'en-IN'),
         // Wall-clock zone for documents people read (exports); the app itself stores UTC.

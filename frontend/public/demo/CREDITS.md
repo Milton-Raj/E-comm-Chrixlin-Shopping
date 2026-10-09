@@ -16,7 +16,8 @@ Default slides shown until the store uploads its own in Admin → Content → Ho
 
 | File | Pexels photo |
 |---|---|
-| candles-evening.jpg | https://www.pexels.com/photo/7407305/ |
 | jesmonite-tray.jpg | https://www.pexels.com/photo/27549294/ |
-| amber-candle.jpg | https://www.pexels.com/photo/17198571/ |
-| arch-candle.jpg | https://www.pexels.com/photo/18982105/ |
+| arch-candle.jpg (also the homepage editorial image) | https://www.pexels.com/photo/18982105/ |
+
+berry-cake.jpg, berry-trio.jpg and whipped-jar.jpg are AI-generated for Chrixlin (ElevenLabs, Seedream 5 Pro),
+illustrating the dessert-candle range. Replace them with photographs of real Chrixlin products when available.
