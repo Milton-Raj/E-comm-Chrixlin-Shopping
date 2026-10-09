@@ -18,6 +18,7 @@ final class PricedLine
         public readonly int $taxRateBps,
         public readonly bool $requiresShipping,
         public readonly bool $unavailable,
+        public readonly bool $freeShipping = false,
     ) {}
 
     public function lineTotal(): int

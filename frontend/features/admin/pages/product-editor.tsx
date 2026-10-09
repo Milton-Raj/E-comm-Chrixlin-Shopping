@@ -20,7 +20,7 @@ type VariantRow = { uuid?: string; sku: string; name: string; options: Record<st
 type FormState = {
   name: string; slug: string; product_type: "physical" | "digital"; status: "draft" | "active" | "archived";
   short_description: string; description: string; brand: string; category: string; tax_class: string;
-  is_featured: boolean; is_new: boolean; is_best_seller: boolean; seo_title: string; seo_description: string;
+  is_featured: boolean; is_new: boolean; is_best_seller: boolean; free_shipping: boolean; seo_title: string; seo_description: string;
   options: { name: string; values: string }[]; specifications: { label: string; value: string }[];
   variants: VariantRow[]; download_limit: string; access_days: string; format: string;
 };
@@ -34,7 +34,7 @@ function initial(p?: AdminProductDetail): FormState {
   return {
     name: p?.name ?? "", slug: p?.slug ?? "", product_type: p?.product_type ?? "physical", status: p?.status ?? "draft",
     short_description: p?.short_description ?? "", description: p?.description ?? "", brand: p?.brand?.uuid ?? "", category: p?.category?.uuid ?? "",
-    tax_class: p?.tax_class?.uuid ?? "", is_featured: p?.is_featured ?? false, is_new: p?.is_new ?? false, is_best_seller: p?.is_best_seller ?? false,
+    tax_class: p?.tax_class?.uuid ?? "", is_featured: p?.is_featured ?? false, is_new: p?.is_new ?? false, is_best_seller: p?.is_best_seller ?? false, free_shipping: p?.free_shipping ?? false,
     seo_title: p?.seo_title ?? "", seo_description: p?.seo_description ?? "",
     options: (p?.options ?? []).map((o) => ({ name: o.name, values: o.values.join(", ") })),
     specifications: p?.specifications ?? [],
@@ -73,7 +73,7 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
         name: form.name, slug: form.slug || null, product_type: form.product_type, status: form.status,
         short_description: form.short_description || null, description: form.description || null,
         brand: form.brand || null, category: form.category || null, tax_class: form.tax_class || null,
-        is_featured: form.is_featured, is_new: form.is_new, is_best_seller: form.is_best_seller,
+        is_featured: form.is_featured, is_new: form.is_new, is_best_seller: form.is_best_seller, free_shipping: form.free_shipping,
         seo_title: form.seo_title || null, seo_description: form.seo_description || null,
         options, specifications: form.specifications.filter((s) => s.label && s.value), variants,
         digital: form.product_type === "digital" ? { download_limit: Number(form.download_limit) || null, access_days: Number(form.access_days) || null, format: form.format || null } : null,
@@ -195,6 +195,20 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
               <label key={key} className={checkboxLabelClass}><input type="checkbox" className="size-4 accent-primary" checked={form[key]} onChange={(e) => set(key, e.target.checked)} />{key === "is_featured" ? "Featured" : key === "is_new" ? "New arrival" : "Best seller"}</label>
             ))}
           </Panel>
+          {form.product_type === "physical" ? (
+            <Panel title="Delivery">
+              <fieldset className="grid gap-1">
+                <legend className="mb-1 text-sm font-medium">Delivery charge</legend>
+                <label className={checkboxLabelClass}><input type="radio" name="p-delivery" className="size-4 accent-primary" checked={!form.free_shipping} onChange={() => set("free_shipping", false)} />Customer pays delivery</label>
+                <label className={checkboxLabelClass}><input type="radio" name="p-delivery" className="size-4 accent-primary" checked={form.free_shipping} onChange={() => set("free_shipping", true)} />Free delivery</label>
+              </fieldset>
+              <p className="text-xs text-muted-foreground">
+                {form.free_shipping
+                  ? "No delivery charge is added at checkout when the bag holds only free-delivery items. If the bag also has an item with a delivery charge, the normal charge applies once."
+                  : "The delivery charge from Settings → Delivery is added at checkout."}
+              </p>
+            </Panel>
+          ) : null}
           <Panel title="Organisation">
             <Field label="Category" htmlFor="p-cat"><select id="p-cat" className={inputClass} value={form.category} onChange={(e) => set("category", e.target.value)}><option value="">None</option>{lookups.categories.map((c) => <option key={c.uuid} value={c.uuid}>{c.name}</option>)}</select></Field>
             <Field label="Brand" htmlFor="p-brand"><select id="p-brand" className={inputClass} value={form.brand} onChange={(e) => set("brand", e.target.value)}><option value="">None</option>{lookups.brands.map((b) => <option key={b.uuid} value={b.uuid}>{b.name}</option>)}</select></Field>

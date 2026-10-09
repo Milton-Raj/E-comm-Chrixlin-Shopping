@@ -44,8 +44,8 @@ it('validates registration input', function () {
         ->assertJsonValidationErrors(['name', 'email', 'password']);
 });
 
-it('rejects passwords found in breaches', function () {
-    // SHA-1 of "correct-horse-battery" starts with 5-char prefix sent to HIBP; report it as pwned.
+it('does not run breach checks on customer passwords', function () {
+    // Owner decision 2026-10-09: customers are never turned away with a "leaked password" message.
     $hash = strtoupper(sha1('correct-horse-battery'));
     $this->pwnedPasswordsBody = substr($hash, 5).':42';
 
@@ -54,7 +54,7 @@ it('rejects passwords found in breaches', function () {
         'email' => 'asha@example.test',
         'password' => 'correct-horse-battery',
         'password_confirmation' => 'correct-horse-battery',
-    ])->assertJsonValidationErrors('password');
+    ])->assertCreated();
 });
 
 it('ignores attempts to mass-assign privileged fields', function () {

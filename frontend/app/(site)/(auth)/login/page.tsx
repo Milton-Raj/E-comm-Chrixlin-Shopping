@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { AuthSwitchLink } from "@/features/auth/components/auth-switch-link";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/states/loading-state";
 import { AuthCard } from "@/features/auth/components/auth-card";
@@ -16,9 +16,9 @@ export default function LoginPage() {
       footer={
         <>
           {t("auth.login.noAccount")}{" "}
-          <Link href="/register" className="font-medium text-foreground underline-offset-4 hover:underline">
-            {t("auth.login.createAccount")}
-          </Link>
+          <Suspense fallback={null}>
+            <AuthSwitchLink href="/register">{t("auth.login.createAccount")}</AuthSwitchLink>
+          </Suspense>
         </>
       }
     >

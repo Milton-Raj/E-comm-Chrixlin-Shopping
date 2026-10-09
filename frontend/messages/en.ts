@@ -49,7 +49,7 @@ export const en = {
   "home.comingSoon": "Our catalog is being prepared. Create an account to be ready on launch day.",
 
   "announce.preview": "Indulgence, poured by hand",
-  "announce.shipping": "Complimentary shipping across India",
+  "announce.shipping": "Shipped with care across India",
 
   "catalog.new": "New",
   "catalog.sale": "Sale",
@@ -74,6 +74,7 @@ export const en = {
   "catalog.description": "Description",
   "catalog.details": "Details",
   "catalog.delivery": "Made for you",
+  "catalog.freeDelivery": "Free delivery on this piece.",
   "catalog.deliveryPhysical": "Handmade especially for you once your order is confirmed, then carefully packed and shipped across India. Your delivery estimate is shown at checkout.",
   "catalog.deliveryDigital": "Delivered instantly to your account and email after payment.",
   "catalog.digitalFormat": "Format",
@@ -145,8 +146,8 @@ export const en = {
   "home.editorialCta": "Explore the collection",
   "home.valueSecure": "Secure payments",
   "home.valueSecureBody": "UPI, cards and net banking, protected end to end.",
-  "home.valueDelivery": "Complimentary delivery",
-  "home.valueDeliveryBody": "Insured shipping across India.",
+  "home.valueDelivery": "Delivery across India",
+  "home.valueDeliveryBody": "Carefully packed and tracked to your door.",
   "home.valueInstant": "Handmade in small batches",
   "home.valueInstantBody": "Every candle poured and decorated by hand.",
   "home.valueSupport": "Concierge support",
@@ -205,7 +206,7 @@ export const en = {
 
   "validation.email": "Enter a valid email address.",
   "validation.required": "This field is required.",
-  "validation.passwordMin": "Use at least 10 characters.",
+  "validation.passwordMin": "Use at least 6 characters.",
   "validation.passwordMatch": "Passwords don't match.",
   "validation.code": "Enter the 6-digit code.",
 

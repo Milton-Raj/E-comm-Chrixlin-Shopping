@@ -53,6 +53,7 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
             <p className="eyebrow">{siteText(content, "catalog.delivery")}</p>
             <p className="text-muted-foreground">
               {product.product_type === "digital" ? t("catalog.deliveryDigital") : siteText(content, "catalog.deliveryPhysical")}
+              {product.product_type === "physical" && product.free_shipping ? <strong className="mt-1 block font-semibold text-foreground">{t("catalog.freeDelivery")}</strong> : null}
             </p>
           </div>
         </div>

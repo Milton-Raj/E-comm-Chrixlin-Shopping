@@ -74,6 +74,11 @@ export function CheckoutPage() {
     <div className="grid gap-10 lg:grid-cols-5 lg:gap-14">
       <ol className="grid content-start gap-4 lg:col-span-3">
         <StepCard n={1} title="Contact" active={step === "contact"} done={done("contact")} summary={cart.contact.email ?? undefined} onEdit={() => setStep("contact")}>
+          {user === null ? (
+            <p className="mb-4 text-sm text-muted-foreground">
+              Have an account? <Link href="/login?next=%2Fcheckout" className="font-medium text-foreground underline underline-offset-4">Sign in</Link> to fill in your details. Your bag comes with you, or continue as a guest below.
+            </p>
+          ) : null}
           <ContactStep cart={cart} defaultEmail={user?.email ?? ""} onSaved={(c) => { store(c); next("contact"); }} />
         </StepCard>
         {cart.requires_shipping ? (
@@ -203,7 +208,7 @@ function ShippingStep({ cart, onSaved }: { cart: Cart; onSaved: (cart: Cart) => 
               <span className="block font-medium">{option.name}</span>
               <span className="block text-sm text-muted-foreground">{option.description}</span>
             </span>
-            <span className="text-sm font-medium">{option.amount.amount === 0 ? "Complimentary" : formatMoney(option.amount)}</span>
+            <span className="text-sm font-medium">{option.amount.amount === 0 ? "Free" : formatMoney(option.amount)}</span>
           </label>
         ))}
       </fieldset>

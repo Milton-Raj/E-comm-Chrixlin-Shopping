@@ -141,7 +141,7 @@ export function OrderView({ orderNumber, token, confirmation = false }: { orderN
           <dl className="grid gap-2">
             <Row label="Subtotal" value={formatMoney(order.totals.subtotal)} />
             {order.totals.discount.amount ? <Row label={`Discount${order.coupon_code ? ` (${order.coupon_code})` : ""}`} value={`− ${formatMoney(order.totals.discount)}`} /> : null}
-            {physical ? <Row label="Delivery" value={order.totals.shipping.amount ? formatMoney(order.totals.shipping) : "Complimentary"} /> : null}
+            {physical ? <Row label="Delivery" value={order.totals.shipping.amount ? formatMoney(order.totals.shipping) : "Free"} /> : null}
             <div className="mt-2 flex justify-between border-t border-border pt-3 text-base"><dt>Total</dt><dd className="text-xl font-semibold">{formatMoney(order.totals.total)}</dd></div>
             {order.totals.refunded.amount ? <Row label="Refunded" value={formatMoney(order.totals.refunded)} /> : null}
           </dl>

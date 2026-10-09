@@ -49,6 +49,7 @@ export type Product = {
   stock_status: StockStatus;
   is_new: boolean;
   is_best_seller: boolean;
+  free_shipping: boolean;
   is_featured: boolean;
   images: ProductImage[];
 };

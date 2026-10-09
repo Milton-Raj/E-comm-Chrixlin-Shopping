@@ -112,6 +112,7 @@ erDiagram
 | currency | CHAR(3) — store currency at creation |
 | min_price, max_price | BIGINT — **denormalized** from active variants (recomputed on variant save) for sorting/filtering (Q-P2) |
 | is_featured, is_best_seller, is_new | TINYINT(1) — merchandising flags (§13); "best seller"/"new" can also be computed |
+| free_shipping | TINYINT(1) default 0 — "Free delivery" in the product editor; delivery is ₹0 only when every shipped item in the cart has it, otherwise the normal method charge applies once (`CartPricer`) |
 | requires_shipping | TINYINT(1) — set by type handler |
 | rating_avg | DECIMAL(3,2) NULL (display only, not money), `rating_count INT` |
 | seo_title, seo_description, canonical_url NULL, og_media_id NULL | |

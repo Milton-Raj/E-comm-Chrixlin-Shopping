@@ -61,6 +61,7 @@ class AdminProductResource extends JsonResource
                 'is_featured' => $this->is_featured,
                 'is_new' => $this->is_new,
                 'is_best_seller' => $this->is_best_seller,
+                'free_shipping' => $this->free_shipping,
                 'seo_title' => $this->seo_title,
                 'seo_description' => $this->seo_description,
                 'published_at' => $this->published_at?->toIso8601String(),

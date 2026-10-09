@@ -50,6 +50,7 @@ class SaveProduct
             'is_featured' => ['boolean'],
             'is_new' => ['boolean'],
             'is_best_seller' => ['boolean'],
+            'free_shipping' => ['boolean'],
             'seo_title' => ['nullable', 'string', 'max:200'],
             'seo_description' => ['nullable', 'string', 'max:320'],
             'variants' => ['required', 'array', 'min:1', 'max:100'],
@@ -86,6 +87,7 @@ class SaveProduct
                 'is_featured' => $data['is_featured'] ?? false,
                 'is_new' => $data['is_new'] ?? false,
                 'is_best_seller' => $data['is_best_seller'] ?? false,
+                'free_shipping' => $data['free_shipping'] ?? false,
                 'seo_title' => $data['seo_title'] ?? null,
                 'seo_description' => $data['seo_description'] ?? null,
             ]);

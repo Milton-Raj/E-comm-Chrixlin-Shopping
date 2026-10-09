@@ -9,7 +9,7 @@ export function CartTotals({ cart, showShipping = true }: { cart: Cart; showShip
       <Row label="Subtotal" value={formatMoney(totals.subtotal)} />
       {totals.discount.amount > 0 ? <Row label={cart.coupon ? `Discount (${cart.coupon.code})` : "Discount"} value={`− ${formatMoney(totals.discount)}`} className="text-primary" /> : null}
       {showShipping && cart.requires_shipping ? (
-        <Row label="Delivery" value={cart.shipping_method ? (totals.shipping.amount === 0 ? "Complimentary" : formatMoney(totals.shipping)) : "Calculated at checkout"} />
+        <Row label="Delivery" value={cart.shipping_method ? (totals.shipping.amount === 0 ? "Free" : formatMoney(totals.shipping)) : "Calculated at checkout"} />
       ) : null}
       <div className="mt-2 flex items-baseline justify-between border-t border-border pt-3 text-base">
         <dt className="font-medium">Total</dt>

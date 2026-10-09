@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests\Account;
 
+use App\Support\Auth\PasswordRules;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 class UpdatePasswordRequest extends FormRequest
 {
@@ -14,7 +14,7 @@ class UpdatePasswordRequest extends FormRequest
     {
         return [
             'current_password' => ['required', 'string', 'current_password:web'],
-            'password' => ['required', 'string', 'confirmed', 'different:current_password', Password::defaults()],
+            'password' => ['required', 'string', 'confirmed', 'different:current_password', ...PasswordRules::for($this->user())],
         ];
     }
 }

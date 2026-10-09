@@ -2,8 +2,9 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\User;
+use App\Support\Auth\PasswordRules;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rules\Password;
 
 class ResetPasswordRequest extends FormRequest
 {
@@ -15,7 +16,7 @@ class ResetPasswordRequest extends FormRequest
         return [
             'token' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255'],
-            'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            'password' => ['required', 'string', 'confirmed', ...PasswordRules::for(User::query()->where('email', (string) $this->input('email'))->first())],
         ];
     }
 }

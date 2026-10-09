@@ -1,18 +1,21 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { CheckboxField, FormMessage, TextField } from "@/components/form-field";
 import { Button } from "@/components/ui/button";
 import { t } from "@/lib/i18n";
+import { safeRedirectPath } from "@/lib/safe-redirect";
 import { applyApiErrors } from "../form-errors";
 import { useRegister } from "../hooks";
 import { registerSchema, type RegisterInput } from "../schemas";
 
 export function RegisterForm() {
   const router = useRouter();
+  // Back to the product (or checkout) the shopper was on; their account page otherwise.
+  const next = safeRedirectPath(useSearchParams().get("next"));
   const registerUser = useRegister();
   const [formError, setFormError] = useState<string | null>(null);
   const { register, handleSubmit, setError, formState: { errors } } = useForm<RegisterInput>({
@@ -24,7 +27,7 @@ export function RegisterForm() {
     setFormError(null);
     try {
       await registerUser.mutateAsync(values);
-      router.push("/account");
+      router.push(next);
     } catch (error) {
       setFormError(applyApiErrors(error, setError, ["name", "email", "password", "password_confirmation"]));
     }

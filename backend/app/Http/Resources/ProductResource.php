@@ -46,6 +46,7 @@ class ProductResource extends JsonResource
             'stock_status' => $stock,
             'is_new' => $this->is_new,
             'is_best_seller' => $this->is_best_seller,
+            'free_shipping' => $this->free_shipping,
             'is_featured' => $this->is_featured,
             'images' => $this->media->map(fn (ProductMedia $m) => ['url' => $m->url(), 'alt' => $m->alt_text ?? $this->name])->values(),
         ];

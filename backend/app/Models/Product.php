@@ -35,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_featured
  * @property bool $is_new
  * @property bool $is_best_seller
+ * @property bool $free_shipping
  * @property float $rating_avg
  * @property int $rating_count
  * @property int $units_sold
@@ -53,7 +54,7 @@ class Product extends Model
 
     protected $fillable = [
         'product_type', 'status', 'name', 'slug', 'short_description', 'description', 'brand_id', 'category_id',
-        'tax_class_id', 'currency', 'options', 'specifications', 'is_featured', 'is_new', 'is_best_seller',
+        'tax_class_id', 'currency', 'options', 'specifications', 'is_featured', 'is_new', 'is_best_seller', 'free_shipping',
         'rating_avg', 'rating_count', 'seo_title', 'seo_description', 'published_at',
     ];
 
@@ -69,6 +70,7 @@ class Product extends Model
             'is_featured' => 'boolean',
             'is_new' => 'boolean',
             'is_best_seller' => 'boolean',
+            'free_shipping' => 'boolean',
             'rating_avg' => 'float',
             'min_price' => 'integer',
             'max_price' => 'integer',

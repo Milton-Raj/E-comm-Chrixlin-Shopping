@@ -15,7 +15,7 @@ export const registerSchema = z
   .object({
     name: z.string().trim().min(1, t("validation.required")).max(120),
     email,
-    password: z.string().min(10, t("validation.passwordMin")).max(255),
+    password: z.string().min(6, t("validation.passwordMin")).max(255),
     password_confirmation: z.string(),
     marketing_opt_in: z.boolean(),
   })
@@ -46,7 +46,7 @@ export const forgotPasswordSchema = z.object({ email });
 
 export const resetPasswordSchema = z
   .object({
-    password: z.string().min(10, t("validation.passwordMin")).max(255),
+    password: z.string().min(6, t("validation.passwordMin")).max(255),
     password_confirmation: z.string(),
   })
   .refine((v) => v.password === v.password_confirmation, {

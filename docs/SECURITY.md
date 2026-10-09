@@ -25,7 +25,7 @@ Trust boundaries: browser ↔ Vercel (untrusted client), Vercel ↔ Laravel (ser
 | **Browser-redirect payment fraud** | Visiting success URL without paying | Order is `paid` only via webhook or server-side provider status fetch (§29). |
 | **Download link sharing** | Customer posts link publicly | Single-use 5-min tokens; per-entitlement limits; logging (IP, UA); admin revocation; tokens bound to an IP-prefix hash (soft, logged mismatch rather than hard fail to avoid mobile-network false positives — decision recorded in Phase 6). |
 | **Direct file access** | `https://api.<domain>/storage/…/course.zip` | Digital files on private disk outside web root; `.htaccess` deny on `storage/`; `public` disk holds only catalog media. |
-| **Account takeover** | Credential stuffing | Rate limits + progressive lockout, generic error messages, bcrypt/argon2id, optional customer 2FA, password breach check (HIBP k-anonymity) on register/reset, session regeneration on login, login notifications for staff. |
+| **Account takeover** | Credential stuffing | Rate limits + progressive lockout, generic error messages, bcrypt/argon2id, optional customer 2FA, password breach check (HIBP k-anonymity) for staff passwords, session regeneration on login, login notifications for staff. |
 | **Admin takeover** | Phished staff password | TOTP 2FA for staff (on by default; owner-switchable — see §3), 30-min idle admin session timeout, re-auth (password confirm) for sensitive actions (refund, role change, 2FA reset, settings), IP/device logging, audit log. |
 | **CSRF** | Cross-site POST using session cookie | Sanctum CSRF (`XSRF-TOKEN`), `SameSite=Lax` cookies, CORS limited to `https://www.<domain>`, `supports_credentials` only for that origin. |
 | **XSS** | Script in review/product description/CMS | React escaping by default; CMS/product HTML sanitized server-side on write (HTML Purifier allow-list) and never rendered with unsanitized `dangerouslySetInnerHTML`; strict CSP with nonces; uploaded SVG disallowed (or sanitized); `X-Content-Type-Options: nosniff`. |
@@ -40,7 +40,7 @@ Trust boundaries: browser ↔ Vercel (untrusted client), Vercel ↔ Laravel (ser
 | **Supply chain** | Malicious package | Minimal deps, lockfiles committed, `composer audit` + `npm audit` in CI, Dependabot/Renovate. |
 
 ## 3. Authentication & sessions (§62)
-- Passwords: Laravel `Hash` (bcrypt cost ≥ 12 or argon2id), min 10 chars, breached-password check, never logged or returned.
+- Passwords: Laravel `Hash` (bcrypt cost ≥ 12 or argon2id), never logged or returned. **Owner decision 2026-10-09:** customers need only 6+ characters (no complexity or breach check, so no one is turned away at sign-up); staff keep min 10 chars + breached-password check (`App\Support\Auth\PasswordRules`). Accepted risk: weaker customer passwords are mitigated by login rate limits and lockout.
 - Email verification required before: writing reviews, opening support tickets from account, enabling 2FA. **Not** required to check out (guest checkout is mandatory, §27).
 - Password reset tokens: hashed, 60-min expiry, single use; all other sessions invalidated on reset.
 - Sessions: database driver, `Secure`, `HttpOnly`, `SameSite=Lax`, `Domain=.<domain>`, 120-min lifetime (customers, sliding) / 30-min idle for admin routes (`EnsureAdminSessionFresh`). Session id regenerated on login and privilege change.

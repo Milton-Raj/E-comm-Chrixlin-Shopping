@@ -16,9 +16,11 @@ class ShippingCalculator
     }
 
     /**
+     * $freeDelivery: every shipped item in the cart is marked "Free delivery" on its product.
+     *
      * @return Collection<int, array{code: string, name: string, description: string|null, amount: int, days_min: int, days_max: int}>
      */
-    public function optionsFor(?string $countryCode, int $merchandiseTotal): Collection
+    public function optionsFor(?string $countryCode, int $merchandiseTotal, bool $freeDelivery = false): Collection
     {
         return ShippingMethod::query()
             ->where('zone', self::zoneFor($countryCode))
@@ -29,7 +31,7 @@ class ShippingCalculator
                 'code' => $m->code,
                 'name' => $m->name,
                 'description' => $m->description,
-                'amount' => $m->free_over !== null && $merchandiseTotal >= $m->free_over ? 0 : $m->amount,
+                'amount' => $freeDelivery || ($m->free_over !== null && $merchandiseTotal >= $m->free_over) ? 0 : $m->amount,
                 'days_min' => $m->days_min,
                 'days_max' => $m->days_max,
             ])

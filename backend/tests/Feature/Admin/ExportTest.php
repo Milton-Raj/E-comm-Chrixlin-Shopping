@@ -48,6 +48,7 @@ it('exports every admin area as a formatted Excel workbook', function (string $t
 ]);
 
 it('writes real numbers with currency formats and totals', function () {
+    // Free delivery is per product now, so ₹5,000 of goods plus ₹250 standard delivery.
     $order = paidOrder($this, makeProduct(price: 250_000), 2);
     $this->actingAs($this->admin);
 
@@ -56,7 +57,7 @@ it('writes real numbers with currency formats and totals', function () {
     $col = fn (string $h) => chr(ord('A') + $headers->search($h));
 
     expect($sheet->getCell('A5')->getValue())->toBe($order->order_number)
-        ->and($sheet->getCell($col('Order total').'5')->getValue())->toEqual(5000.0)
+        ->and($sheet->getCell($col('Order total').'5')->getValue())->toEqual(5250.0)
         ->and($sheet->getStyle($col('Order total').'5')->getNumberFormat()->getFormatCode())->toContain('₹')
         ->and($sheet->getCell('A6')->getValue())->toBe('Total')
         ->and($sheet->getCell($col('Order total').'6')->getValue())->toBe('=SUBTOTAL(9,'.$col('Order total').'5:'.$col('Order total').'5)');

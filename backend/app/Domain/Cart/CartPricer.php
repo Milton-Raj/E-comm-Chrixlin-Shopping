@@ -56,6 +56,7 @@ class CartPricer
                 lineSubtotal: $unavailable ? 0 : $variant->price * $quantity,
                 taxRateBps: $product->taxClass->rate_bps ?? $defaultRate,
                 requiresShipping: $product->requiresShipping(),
+                freeShipping: $product->free_shipping,
                 unavailable: $unavailable,
             );
         }
@@ -88,7 +89,9 @@ class CartPricer
 
         // Shipping
         $country = $cart->shipping_address['country_code'] ?? null;
-        $shippingOptions = $requiresShipping && $country ? $this->shipping->optionsFor($country, $subtotal - $discount)->all() : [];
+        // Delivery is free only when every item that ships is marked "Free delivery" on its product.
+        $deliveryFree = $requiresShipping && ! array_filter($sellable, fn (PricedLine $l) => $l->requiresShipping && ! $l->freeShipping);
+        $shippingOptions = $requiresShipping && $country ? $this->shipping->optionsFor($country, $subtotal - $discount, $deliveryFree)->all() : [];
         $selected = null;
         if ($requiresShipping && $shippingOptions) {
             $selected = collect($shippingOptions)->firstWhere('code', $cart->shipping_method_code) ?? null;

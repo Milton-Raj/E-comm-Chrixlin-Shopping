@@ -20,7 +20,7 @@ export type AdminVariant = {
 export type AdminProductDetail = AdminProduct & {
   short_description: string | null; description: string | null; tax_class: { uuid: string; name: string } | null;
   options: { name: string; values: string[] }[]; specifications: { label: string; value: string }[];
-  is_featured: boolean; is_new: boolean; is_best_seller: boolean; seo_title: string | null; seo_description: string | null;
+  is_featured: boolean; is_new: boolean; is_best_seller: boolean; free_shipping: boolean; seo_title: string | null; seo_description: string | null;
   published_at: string | null; media: { uuid: string; url: string; alt_text: string | null }[]; variants: AdminVariant[];
   digital: { download_limit: number | null; access_days: number | null; format: string | null } | null;
   files: { uuid: string; name: string; size_bytes: number; mime_type: string; created_at: string | null }[];

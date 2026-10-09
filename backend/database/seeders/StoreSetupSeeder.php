@@ -24,7 +24,7 @@ class StoreSetupSeeder extends Seeder
         }
 
         foreach ([
-            ['code' => 'standard', 'zone' => 'domestic', 'name' => 'Standard delivery', 'description' => 'Insured, 3–5 working days', 'amount' => 25_000, 'free_over' => 500_000, 'days_min' => 3, 'days_max' => 5, 'sort_order' => 1],
+            ['code' => 'standard', 'zone' => 'domestic', 'name' => 'Standard delivery', 'description' => 'Insured, 3–5 working days', 'amount' => 25_000, 'free_over' => null, 'days_min' => 3, 'days_max' => 5, 'sort_order' => 1],
             ['code' => 'express', 'zone' => 'domestic', 'name' => 'Express delivery', 'description' => 'Priority, 1–2 working days', 'amount' => 60_000, 'free_over' => null, 'days_min' => 1, 'days_max' => 2, 'sort_order' => 2],
             ['code' => 'standard', 'zone' => 'international', 'name' => 'International standard', 'description' => 'Tracked, 7–12 working days', 'amount' => 250_000, 'free_over' => null, 'days_min' => 7, 'days_max' => 12, 'sort_order' => 1],
             ['code' => 'express', 'zone' => 'international', 'name' => 'International express', 'description' => 'Courier, 3–5 working days', 'amount' => 450_000, 'free_over' => null, 'days_min' => 3, 'days_max' => 5, 'sort_order' => 2],
