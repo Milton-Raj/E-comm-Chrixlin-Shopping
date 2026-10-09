@@ -59,6 +59,32 @@ final class PermissionCatalog
     }
 
     /**
+     * Permissions grouped by the admin page they unlock, for the role editor's checkboxes.
+     * Every catalog permission appears in exactly one group (tested).
+     *
+     * @return list<array{label: string, permissions: list<string>}>
+     */
+    public static function groups(): array
+    {
+        return [
+            ['label' => 'Dashboard', 'permissions' => ['dashboard.view']],
+            ['label' => 'Products', 'permissions' => ['products.view', 'products.create', 'products.edit', 'products.delete', 'attributes.manage', 'reviews.moderate']],
+            ['label' => 'Categories & brands', 'permissions' => ['categories.manage', 'brands.manage']],
+            ['label' => 'Inventory', 'permissions' => ['inventory.view', 'inventory.edit']],
+            ['label' => 'Orders & shipping', 'permissions' => ['orders.view', 'orders.edit', 'orders.cancel', 'orders.refund', 'shipments.manage']],
+            ['label' => 'Customers', 'permissions' => ['customers.view', 'customers.edit']],
+            ['label' => 'Digital products', 'permissions' => ['digital.manage', 'downloads.view', 'entitlements.revoke']],
+            ['label' => 'Coupons & marketing', 'permissions' => ['coupons.manage', 'promotions.manage', 'subscribers.manage']],
+            ['label' => 'Reports & exports', 'permissions' => ['reports.view', 'reports.finance', 'exports.run', 'imports.run']],
+            ['label' => 'Content', 'permissions' => ['content.manage', 'media.manage']],
+            ['label' => 'Support', 'permissions' => ['support.view', 'support.reply', 'support.assign']],
+            ['label' => 'Staff & roles', 'permissions' => ['users.manage', 'roles.manage']],
+            ['label' => 'Settings', 'permissions' => ['settings.manage']],
+            ['label' => 'Audit log', 'permissions' => ['audit.view']],
+        ];
+    }
+
+    /**
      * Default role => permissions. `super-admin` gets everything via Gate::before.
      * Wildcards like `products.*` expand against the catalog.
      *

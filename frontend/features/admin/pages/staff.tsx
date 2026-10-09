@@ -13,13 +13,13 @@ import { ApiError } from "@/services/api-client";
 import type { AdminMe } from "@/types/api";
 import { staffApi, type StaffMember, type StaffRole } from "../api";
 import { adminMeKey } from "../components/admin-gate";
+import { roleLabel, RolesPanel, rolesKey } from "../components/roles-panel";
 import { AdminPage, Field, FormActions, inputClass, Panel, RequiredNote, StatusBadge } from "../components/kit/admin-page";
 
 const staffKey = ["admin", "staff"] as const;
 const OWNER = "super-admin";
 
-export const roleLabel = (role: string | null) =>
-  role === OWNER ? "Owner (super admin)" : role ? role.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ") : "—";
+export { roleLabel };
 
 function useFailToast(setErrors?: (e: Record<string, string[]>) => void) {
   return (e: unknown) => {
@@ -32,15 +32,37 @@ function useFailToast(setErrors?: (e: Record<string, string[]>) => void) {
 
 /** Staff accounts: invite people, change their role, deactivate them or reset their 2FA. */
 export function StaffPage() {
+  const me = useQueryClient().getQueryData<AdminMe>(adminMeKey);
+  const canManageRoles = me?.permissions.includes("roles.manage") ?? false;
+  const [tab, setTab] = useState<"staff" | "roles">("staff");
+
+  return (
+    <AdminPage title="Staff" description="People who can open the admin, and the roles that decide what each of them can do.">
+      {canManageRoles ? (
+        <div role="tablist" aria-label="Staff sections" className="flex gap-1 border-b border-border">
+          {([["staff", "Staff members"], ["roles", "Roles & access"]] as const).map(([key, label]) => (
+            <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)}
+              className={cn("-mb-px min-h-11 border-b-2 px-4 text-sm font-medium transition-colors", tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              {label}
+            </button>
+          ))}
+        </div>
+      ) : null}
+      <div role={canManageRoles ? "tabpanel" : undefined}>{tab === "roles" && canManageRoles ? <RolesPanel /> : <StaffMembers />}</div>
+    </AdminPage>
+  );
+}
+
+function StaffMembers() {
   const [adding, setAdding] = useState(false);
   const staff = useQuery({ queryKey: staffKey, queryFn: staffApi.list });
-  const roles = useQuery({ queryKey: [...staffKey, "roles"], queryFn: staffApi.roles, staleTime: 5 * 60_000 });
+  const roles = useQuery({ queryKey: [...staffKey, "roles"], queryFn: staffApi.roles });
   const me = useQueryClient().getQueryData<AdminMe>(adminMeKey);
   const viewerIsOwner = me?.roles.includes(OWNER) ?? false;
 
   return (
-    <AdminPage title="Staff" description="People who can open the admin, and what each of them can do."
-      actions={!adding ? <Button onClick={() => setAdding(true)}><UserPlus className="size-4" aria-hidden />Add staff member</Button> : null}>
+    <div className="grid gap-4">
+      {!adding ? <div><Button onClick={() => setAdding(true)}><UserPlus className="size-4" aria-hidden />Add staff member</Button></div> : null}
       {adding && roles.data ? <AddStaffPanel roles={roles.data} onDone={() => setAdding(false)} /> : null}
       {staff.isPending || roles.isPending ? <LoadingState lines={6} /> : staff.isError || roles.isError ? (
         <ErrorState onRetry={() => { void staff.refetch(); void roles.refetch(); }} />
@@ -53,7 +75,7 @@ export function StaffPage() {
           ))}
         </ul>
       )}
-    </AdminPage>
+    </div>
   );
 }
 
@@ -80,7 +102,7 @@ function AddStaffPanel({ roles, onDone }: { roles: StaffRole[]; onDone: () => vo
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const invite = useMutation({
     mutationFn: () => staffApi.invite(form),
-    onSuccess: (m) => { toast.success(`Invitation sent to ${m.email}.`); void queryClient.invalidateQueries({ queryKey: staffKey }); onDone(); },
+    onSuccess: (m) => { toast.success(`Invitation sent to ${m.email}.`); void queryClient.invalidateQueries({ queryKey: staffKey }); void queryClient.invalidateQueries({ queryKey: rolesKey }); onDone(); },
     onError: useFailToast(setErrors),
   });
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -157,7 +179,7 @@ function ManageStaff({ member, roles, onClose }: { member: StaffMember; roles: S
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const fail = useFailToast(setErrors);
-  const done = (message: string) => { toast.success(message); setPassword(""); setErrors({}); void queryClient.invalidateQueries({ queryKey: staffKey }); };
+  const done = (message: string) => { toast.success(message); setPassword(""); setErrors({}); void queryClient.invalidateQueries({ queryKey: staffKey }); void queryClient.invalidateQueries({ queryKey: rolesKey }); };
   const assignable = roles.filter((r) => r.assignable || r.name === member.role);
 
   const update = useMutation({

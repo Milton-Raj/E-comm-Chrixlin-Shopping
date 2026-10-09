@@ -14,7 +14,7 @@
 | 4 | Customer experience | ✅ Built (home, shop, PDP, bag + drawer, wishlist, account, orders, downloads); reviews pending |
 | 5 | Checkout, payments, orders | ✅ Built with test gateway; Razorpay coded, needs keys to verify live |
 | 6 | Digital products | ✅ Built (private files, single-use links, limits, expiry, revocation, logs) |
-| 7 | Admin | ✅ Built (dashboard, products, categories/brands, inventory, orders, customers, digital, coupons, reports, content, settings, audit); staff management (Admin → Staff); CSV import/export, support tickets, role-permission editor pending |
+| 7 | Admin | ✅ Built (dashboard, products, categories/brands, inventory, orders, customers, digital, coupons, reports, content, settings, audit); staff management (Admin → Staff); CSV import/export, support tickets pending |
 | 8 | Marketing | — |
 | 9 | Security audit | — |
 | 10 | Performance | — |
@@ -98,7 +98,7 @@ DEPLOYMENT.md §9 checklist: domains, SSL, DB, backend, frontend (Vercel Pro), m
 - Backend: 109 Pest tests (catalog, cart, coupons, GST, shipping, checkout, idempotency, payment verification, duplicate webhooks, oversell protection, unpaid-order expiry, downloads security, refunds, admin permissions, every admin list endpoint) · Pint + Larastan L6 clean.
 - Frontend: 34 Vitest tests · ESLint + strict typecheck + production build clean.
 - E2E: 45 Playwright journeys across mobile/tablet/desktop with axe (guest checkout with coupon and a failed-then-successful test payment, digital purchase + download, admin product creation → storefront, admin ship/deliver).
-- Still open: product reviews, support tickets, CSV import/export, role-permission editor, promotions engine, abandoned carts, email templates beyond order confirmation, Razorpay live verification, hosting deployment.
+- Still open: product reviews, support tickets, CSV import/export, promotions engine, abandoned carts, email templates beyond order confirmation, Razorpay live verification, hosting deployment.
 
 ## Build log — 2026-10-08 (fulfilment, couriers, wishlist)
 - Order stages: admin order page shows a stage tracker (Paid → Processing → Packed → Shipped → Out for delivery → Delivered) with next-step buttons; the order list has a one-click "Next step" column. `OrderStateMachine::advance` records each intermediate stage; staff cannot skip past Shipped without tracking.
@@ -111,3 +111,4 @@ DEPLOYMENT.md §9 checklist: domains, SSL, DB, backend, frontend (Vercel Pro), m
 - GST tax invoices (`app/Domain/Invoices`, dompdf): issued once per order when payment is captured, numbered INVyy-yy/NNNNNN consecutively per Indian financial year (locked sequence), seller details snapshotted; PDF attached to the order confirmation email and downloadable by the customer (or guest token) and by staff. Seller legal name, GSTIN (validated against the business state) and address are set in Settings. Credit notes for refunds are not yet issued.
 - Staff management (`StaffController`, `Domain/Identity/{StaffAccess,Actions/InviteStaffMember,UpdateStaffMember}`): invite by email (set-password link), promote existing customers, change role, deactivate/reactivate (signs out everywhere), reset 2FA, resend invitation; password-confirmed and audited. E2E `staff.spec.ts` (phone + desktop, axe).
 - Homepage hero slideshow (`HeroSlider`, `hero_slides`, Admin → Content → Homepage hero): crossfading full-bleed photos with slow zoom, per-slide copy and button, autoplay that pauses on hover/focus/hidden tab and has a pause button (WCAG 2.2.2), no autoplay for reduced motion, swipe + arrow keys. Built-in candle/Jesmonite slides (Pexels, credited) until the store uploads its own. E2E `hero.spec.ts`.
+- Roles & access (`RoleController`, `ManageRole`, `PermissionCatalog::groups`): owners create custom roles and tick access per admin page, edit default roles, delete unused roles; one role can be given to any number of staff. E2E in `staff.spec.ts`.

@@ -40,8 +40,16 @@ final class StaffAccess
 
     public static function ensureCanGrant(User $actor, ?string $role): void
     {
-        if ($role === PermissionCatalog::SUPER_ADMIN && ! $actor->hasRole(PermissionCatalog::SUPER_ADMIN)) {
+        if ($role === null || $actor->hasRole(PermissionCatalog::SUPER_ADMIN)) {
+            return;
+        }
+        if ($role === PermissionCatalog::SUPER_ADMIN) {
             throw new ApiException('Only an owner (super admin) can make someone an owner.', 403, 'super_admin_only');
+        }
+        // Nobody hands out access they don't have themselves.
+        $granted = Role::findByName($role, 'web')->permissions->pluck('name')->all();
+        if (array_diff($granted, $actor->permissionNames()) !== []) {
+            throw new ApiException('This role includes access you don’t have yourself, so you can’t give it to someone.', 403, 'role_exceeds_your_access');
         }
     }
 

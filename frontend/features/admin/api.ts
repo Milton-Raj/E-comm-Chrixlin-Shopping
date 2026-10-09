@@ -187,3 +187,13 @@ export const heroApi = {
   reorder: (order: string[]) => api.post<AdminHeroSlide[]>("/admin/hero-slides/reorder", { order }),
   remove: (uuid: string) => api.delete(`/admin/hero-slides/${uuid}`),
 };
+
+export type AdminRole = { name: string; permissions: string[]; staff_count: number; is_default: boolean; locked: boolean; yours: boolean };
+export type PermissionGroup = { label: string; permissions: { name: string; description: string }[] };
+
+export const rolesApi = {
+  list: () => api.get<{ roles: AdminRole[]; groups: PermissionGroup[] }>("/admin/roles"),
+  create: (body: { name: string; permissions: string[]; password: string }) => api.post<{ name: string }>("/admin/roles", body),
+  update: (name: string, body: { name?: string; permissions: string[]; password: string }) => api.put<{ name: string }>(`/admin/roles/${encodeURIComponent(name)}`, body),
+  remove: (name: string, password: string) => api.delete(`/admin/roles/${encodeURIComponent(name)}`, { password }),
+};

@@ -95,7 +95,7 @@ Seeded by `PermissionSeeder` (idempotent, all environments). Guard: `web` (Sanct
 | `finance-manager` | dashboard.view, orders.view, orders.refund, reports.view, reports.finance, exports.run |
 | `customer` | none (customer abilities are ownership policies, not permissions) |
 
-Roles and their permissions are editable by `roles.manage` holders; `super-admin` cannot be assigned/removed except by another super-admin (audited).
+Roles and their permissions are editable by `roles.manage` holders in Admin → Staff → Roles & access (custom roles can be created; default roles edited; unused roles deleted; all password-confirmed and audited as `role.*`). `super-admin` and `customer` roles are fixed; nobody edits a role they hold or grants a permission they lack (also checked when assigning a role to staff). `PermissionSeeder` gives default roles their catalog permissions only when first created, so owner edits survive re-seeding. `super-admin` cannot be assigned/removed except by another super-admin (audited).
 
 ## 5. Authorization rules
 - Every route declares authorization: `can:` middleware or FormRequest `authorize()` calling a Policy. A test (`RouteAuthorizationTest`) enumerates all `/api/v1/admin/*` routes and fails if any lacks a permission middleware.

@@ -192,6 +192,11 @@ Route::prefix('admin')->name('admin.')
         Route::post('staff/{staff}/two-factor-reset', [Admin\StaffController::class, 'resetTwoFactor'])->middleware('can:users.manage')->name('staff.two-factor-reset');
         Route::post('staff/{staff}/invitation', [Admin\StaffController::class, 'resendInvite'])->middleware(['can:users.manage', 'throttle:6,10'])->name('staff.invitation');
 
+        Route::get('roles', [Admin\RoleController::class, 'index'])->middleware('can:roles.manage')->name('roles.index');
+        Route::post('roles', [Admin\RoleController::class, 'store'])->middleware('can:roles.manage')->name('roles.store');
+        Route::put('roles/{role}', [Admin\RoleController::class, 'update'])->middleware('can:roles.manage')->name('roles.update');
+        Route::delete('roles/{role}', [Admin\RoleController::class, 'destroy'])->middleware('can:roles.manage')->name('roles.destroy');
+
         Route::get('hero-slides', [Admin\HeroSlideController::class, 'index'])->middleware('can:content.manage')->name('hero-slides.index');
         Route::post('hero-slides', [Admin\HeroSlideController::class, 'save'])->middleware('can:content.manage')->name('hero-slides.store');
         Route::post('hero-slides/reorder', [Admin\HeroSlideController::class, 'reorder'])->middleware('can:content.manage')->name('hero-slides.reorder');

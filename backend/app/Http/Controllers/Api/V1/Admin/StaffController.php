@@ -30,11 +30,12 @@ class StaffController extends Controller
     {
         $catalog = PermissionCatalog::permissions();
         $isOwner = $request->user()->hasRole(PermissionCatalog::SUPER_ADMIN);
+        $mine = $request->user()->permissionNames();
         $roles = Role::query()->whereIn('name', StaffAccess::staffRoles())->with('permissions')->orderBy('name')->get();
 
         return ApiResponse::success($roles->map(fn (Role $role) => [
             'name' => $role->name,
-            'assignable' => $role->name !== PermissionCatalog::SUPER_ADMIN || $isOwner,
+            'assignable' => $isOwner || ($role->name !== PermissionCatalog::SUPER_ADMIN && $role->permissions->pluck('name')->diff($mine)->isEmpty()),
             'everything' => $role->name === PermissionCatalog::SUPER_ADMIN,
             'permissions' => $role->permissions->pluck('name')->sort()->values()->map(fn (string $p) => $catalog[$p] ?? $p)->all(),
         ])->values());

@@ -10,8 +10,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Idempotent; runs in every environment including production (DATABASE.md §5).
- * Existing custom role assignments made by admins are only extended, never reset,
- * except for the catalog's default roles which are synced to the catalog.
+ * Default roles get the catalog's permissions only when they are first created: after
+ * that the owner edits them in Admin → Staff → Roles, and re-seeding never undoes it.
  */
 class PermissionSeeder extends Seeder
 {
@@ -24,7 +24,10 @@ class PermissionSeeder extends Seeder
         }
 
         foreach (array_keys(PermissionCatalog::roles()) as $roleName) {
-            Role::findOrCreate($roleName, 'web')
+            if (Role::query()->where('name', $roleName)->where('guard_name', 'web')->exists()) {
+                continue;
+            }
+            Role::create(['name' => $roleName, 'guard_name' => 'web'])
                 ->syncPermissions(PermissionCatalog::permissionsForRole($roleName));
         }
 
