@@ -166,7 +166,7 @@
   </div>
 
   <div class="notes">
-    Prices include GST. Tax is not payable on reverse charge. Keep this invoice for warranty and returns.
+    Prices include GST. Tax is not payable on reverse charge. Please keep this invoice for your records.
     @if (! $seller['gstin'])<br>GSTIN not provided by the seller.@endif
     @if ($seller['email'])<br>Questions about this invoice? Write to {{ $seller['email'] }} quoting {{ $invoice->invoice_number }}.@endif
   </div>

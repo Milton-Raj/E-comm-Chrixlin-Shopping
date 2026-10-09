@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Lock, ShieldCheck } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -309,7 +310,7 @@ function PaymentStep({ cart, gateways, placed, idempotencyKey, onPlaced, onPaid,
           <Button size="lg" onClick={() => void placeAndPay()} disabled={busy || !gateway}>
             {busy ? "Please wait…" : `Pay ${formatMoney(cart.totals.total)}`}
           </Button>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="size-4" aria-hidden /> By placing your order you agree to our terms and refund policy.</p>
+          <p className="flex items-center gap-2 text-xs text-muted-foreground"><ShieldCheck className="size-4" aria-hidden /> <span>By placing your order you agree to our <Link href="/pages/terms" className="underline underline-offset-4 hover:text-foreground">Terms &amp; conditions</Link>.</span></p>
         </>
       ) : placed.payment.gateway === "test" ? (
         <div className="grid gap-4 border border-dashed border-primary/50 bg-muted/40 p-5">

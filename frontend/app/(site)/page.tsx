@@ -1,4 +1,4 @@
-import { CreditCard, Download, Headset, RotateCcw, Truck } from "lucide-react";
+import { CreditCard, Download, Headset, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/button-link";
@@ -16,7 +16,6 @@ const values: { icon: typeof Truck; title: MessageKey; body: MessageKey }[] = [
   { icon: CreditCard, title: "home.valueSecure", body: "home.valueSecureBody" },
   { icon: Truck, title: "home.valueDelivery", body: "home.valueDeliveryBody" },
   { icon: Download, title: "home.valueInstant", body: "home.valueInstantBody" },
-  { icon: RotateCcw, title: "home.valueReturns", body: "home.valueReturnsBody" },
   { icon: Headset, title: "home.valueSupport", body: "home.valueSupportBody" },
 ];
 
@@ -92,7 +91,7 @@ export default function HomePage() {
       {/* 9 — Why shop with us */}
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6 md:pt-28">
         <Reveal stagger>
-        <ul className="grid grid-cols-2 gap-8 border-y border-border py-12 md:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-8 border-y border-border py-12 md:grid-cols-4">
           {values.map(({ icon: Icon, title, body }) => (
             <li key={title} className="group flex flex-col items-center gap-3 text-center">
               <span className="flex size-12 items-center justify-center rounded-full border border-border transition-all duration-500 group-hover:-translate-y-1 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground">
