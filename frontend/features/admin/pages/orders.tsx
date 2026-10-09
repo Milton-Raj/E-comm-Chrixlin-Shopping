@@ -221,25 +221,38 @@ function RefundPanel({ order, onSaved, onError }: { order: AdminOrderDetail; onS
   const [confirming, setConfirming] = useState(false);
   const refund = useMutation({
     mutationFn: () => ordersAdminApi.refund(order.order_number, { amount: toMinorUnits(amount) ?? 0, reason, restock }),
-    onSuccess: (o) => { onSaved(o); toast.success("Refund processed through the payment gateway."); setReason(""); setConfirming(false); },
+    onSuccess: (o) => {
+      onSaved(o);
+      toast.success(full ? "Order cancelled. The money is on its way back to the customer, and they've been emailed." : "Refund sent to the customer's account, and they've been emailed.");
+      setReason(""); setConfirming(false);
+    },
     onError: (e) => { setConfirming(false); onError(e); },
   });
   if (remaining <= 0) return null;
+  // The full remaining amount cancels the order; anything less is a partial refund.
+  const full = (toMinorUnits(amount) ?? 0) >= remaining;
+  const nothingRefundedYet = order.totals.refunded.amount === 0;
 
   return (
-    <Panel title="Refund">
+    <Panel title={nothingRefundedYet ? "Cancel & refund" : "Refund"}>
+      {nothingRefundedYet ? (
+        <p className="text-sm text-muted-foreground">
+          To cancel a paid order (for example, within the 6-hour cancellation window), keep the full amount and confirm.
+          Razorpay sends the money back to the customer&apos;s card, UPI or bank automatically, and the customer gets an email. Lower the amount for a partial refund instead.
+        </p>
+      ) : null}
       <form className="grid items-start gap-4 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); if (confirming) refund.mutate(); else setConfirming(true); }}>
         <Field label="Amount (₹)" htmlFor="refund-amount" required hint={`Up to ${formatMoney({ amount: remaining, currency: order.currency })}. A full refund revokes digital access.`}>
           <input id="refund-amount" inputMode="decimal" className={inputClass} value={amount} onChange={(e) => setAmount(e.target.value)} required />
         </Field>
         <Field label="Reason" htmlFor="refund-reason" required hint="Shown in the order timeline and audit log.">
-          <input id="refund-reason" className={inputClass} placeholder="e.g. Damaged in transit" value={reason} onChange={(e) => setReason(e.target.value)} required />
+          <input id="refund-reason" className={inputClass} placeholder="e.g. Customer cancelled within 6 hours" value={reason} onChange={(e) => setReason(e.target.value)} required />
         </Field>
         {order.items.some((i) => i.product_type === "physical") ? (
           <label className={cn(checkboxLabelClass, "md:col-span-2")}><input type="checkbox" className="size-4 accent-primary" checked={restock} onChange={(e) => setRestock(e.target.checked)} /> Return physical items to stock (full refund)</label>
         ) : null}
         <FormActions className="md:col-span-2">
-          <Button type="submit" variant={confirming ? "default" : "outline"} disabled={refund.isPending || !reason.trim() || !amount}>{confirming ? `Confirm refund of ₹${amount}` : "Issue refund"}</Button>
+          <Button type="submit" variant={confirming ? "default" : "outline"} disabled={refund.isPending || !reason.trim() || !amount}>{confirming ? (full ? `Confirm: cancel & refund ₹${amount}` : `Confirm refund of ₹${amount}`) : (full ? "Cancel & refund" : "Refund part of the amount")}</Button>
           {confirming ? <Button type="button" variant="ghost" className="animate-expand" onClick={() => setConfirming(false)}>Cancel</Button> : null}
         </FormActions>
       </form>

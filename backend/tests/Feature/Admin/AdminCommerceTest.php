@@ -6,6 +6,7 @@ use App\Models\InventoryTransaction;
 use App\Models\Product;
 use App\Models\ShippingMethod;
 use App\Models\User;
+use App\Notifications\OrderRefundedNotification;
 use App\Notifications\SecuritySettingChangedNotification;
 use App\Support\Settings\Settings;
 use Database\Seeders\StoreSetupSeeder;
@@ -75,6 +76,7 @@ it('ships and delivers an order through allowed transitions only', function () {
 });
 
 it('refunds in full: restocks physical items and revokes digital access', function () {
+    Notification::fake();
     $physical = makeProduct(stock: 3);
     $order = paidOrder($this, $physical, 2);
     expect(variantOf($physical)->inventory->on_hand)->toBe(1);
@@ -84,9 +86,26 @@ it('refunds in full: restocks physical items and revokes digital access', functi
         ->assertOk()->assertJsonPath('data.status', 'refunded')->assertJsonPath('data.payment_status', 'refunded');
 
     expect(variantOf($physical)->inventory->on_hand)->toBe(3);
+    Notification::assertSentOnDemand(OrderRefundedNotification::class, fn ($n, $channels, $notifiable) => $n->fully
+        && $n->amount === $order->grand_total && $notifiable->routes['mail'] === $order->email);
 
     expect($this->withHeader('Idempotency-Key', (string) Str::uuid())
         ->postJson("/api/v1/admin/orders/{$order->order_number}/refunds", ['amount' => 100, 'reason' => 'again']))->toBeApiError(409);
+});
+
+it('emails the customer about a partial refund', function () {
+    Notification::fake();
+    $order = paidOrder($this, makeProduct(price: 200_000));
+
+    $this->actingAs($this->admin)->withHeader('Idempotency-Key', (string) Str::uuid())
+        ->postJson("/api/v1/admin/orders/{$order->order_number}/refunds", ['amount' => 50_000, 'reason' => 'Goodwill', 'restock' => false])
+        ->assertOk()->assertJsonPath('data.payment_status', 'partially_refunded');
+
+    Notification::assertSentOnDemand(OrderRefundedNotification::class, function ($n) {
+        $mail = $n->toMail(new stdClass);
+
+        return ! $n->fully && $n->amount === 50_000 && str_contains($mail->subject, 'A refund for order');
+    });
 });
 
 it('serves dashboard KPIs and sales reports from paid orders', function () {

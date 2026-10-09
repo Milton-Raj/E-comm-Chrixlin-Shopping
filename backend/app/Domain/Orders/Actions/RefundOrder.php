@@ -14,8 +14,10 @@ use App\Models\Payment;
 use App\Models\ProductVariant;
 use App\Models\Refund;
 use App\Models\User;
+use App\Notifications\OrderRefundedNotification;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * Full or partial refund through the original gateway (ARCHITECTURE §6.11).
@@ -32,7 +34,7 @@ class RefundOrder
 
     public function handle(Order $order, int $amount, string $reason, bool $restock, User $actor): Refund
     {
-        return DB::transaction(function () use ($order, $amount, $reason, $restock, $actor) {
+        $refund = DB::transaction(function () use ($order, $amount, $reason, $restock, $actor) {
             $order = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             /** @var Payment|null $payment */
             $payment = $order->payments()->whereIn('status', [PaymentStatus::Captured, PaymentStatus::PartiallyRefunded])->latest('id')->first();
@@ -78,5 +80,11 @@ class RefundOrder
 
             return $refund;
         });
+
+        // Tell the customer once the refund is committed (queued, so a mail hiccup never undoes it).
+        $order->refresh();
+        Notification::route('mail', $order->email)->notify(new OrderRefundedNotification($order, $amount, $order->refunded_total >= $order->grand_total));
+
+        return $refund;
     }
 }
