@@ -9,7 +9,7 @@ set -euo pipefail
 REF="${1:-origin/main}"
 SSH_TARGET="${SSH_TARGET:-u462102226@45.84.204.68}"
 SSH_PORT="${SSH_PORT:-65002}"
-SITE_URL="${SITE_URL:-https://chrixlin.com}"
+SITE_URL="${SITE_URL:-https://www.chrixlin.com}"
 API_URL="${API_URL:-https://api.chrixlin.com/api/v1}"
 STORE_NAME="${STORE_NAME:-Chrixlin}"
 ROOT="$(git rev-parse --show-toplevel)"
