@@ -5,7 +5,7 @@ import type { ProductQuery } from "./types";
 
 /**
  * Cached server reads (ARCHITECTURE §6.17). Tagged so the backend can invalidate them
- * on change via /api/revalidate; otherwise they refresh within minutes.
+ * on change via /revalidate; otherwise they refresh within minutes.
  */
 
 export async function getProducts(params: ProductQuery = {}) {

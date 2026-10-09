@@ -90,7 +90,7 @@ E-com/                       # "commerce-platform"
 │   │   ├── (auth)/          # /login, /register, /forgot-password, /reset-password, /verify-email
 │   │   ├── (admin)/admin/   # /admin/** (permission-gated layout)
 │   │   ├── (content)/       # /pages/[slug], /blog, /blog/[slug], /faq
-│   │   └── api/revalidate/  # on-demand ISR endpoint (secret-protected)
+│   │   └── revalidate/      # on-demand ISR endpoint (secret-protected; not under /api, which is the API host path)
 │   ├── components/ui/       # design-system primitives (shadcn-generated, token-driven)
 │   ├── components/          # shared composites (ProductCard, CartDrawer, Header, BottomNav)
 │   ├── features/<domain>/   # catalog, cart, checkout, account, wishlist, admin/<area> — components+hooks+schemas
@@ -322,7 +322,7 @@ If the plan's cron minimum interval is > 1 minute, the worker command uses `--ma
 | Layer | What |
 |---|---|
 | Vercel CDN / Next.js | Catalog, category, product, CMS pages statically rendered with time-based revalidation (e.g. 300 s) **plus** on-demand tag revalidation. Cart/checkout/account/admin are dynamic, never cached. |
-| On-demand revalidation | Laravel listener on `ProductUpdated`, `CategoryUpdated`, `PageUpdated`… queues `RevalidateStorefront` job → `POST https://www.<domain>/api/revalidate` with HMAC secret + tags (`product:{uuid}`, `category:{uuid}`, `home`). |
+| On-demand revalidation | Laravel listener on `ProductUpdated`, `CategoryUpdated`, `PageUpdated`… queues `RevalidateStorefront` job → `POST https://<domain>/revalidate` with HMAC secret + tags (`product:{uuid}`, `category:{uuid}`, `home`). |
 | Laravel cache | `CACHE_STORE=database` (no Redis on Premium): settings, permission cache, menus, facet counts, search term list. Keys namespaced and tag-like prefixes invalidated by events. |
 | HTTP | Public GET catalog endpoints send `Cache-Control: public, max-age=60, stale-while-revalidate=300` + `ETag`; authenticated endpoints `private, no-store`. |
 | Media | Immutable hashed filenames, `Cache-Control: public, max-age=31536000, immutable`, behind CDN. |

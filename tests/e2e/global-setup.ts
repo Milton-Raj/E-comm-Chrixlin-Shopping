@@ -15,7 +15,7 @@ export default async function globalSetup() {
 
   // Reseeding changes ids, so drop the storefront's cached catalog (same hook the API uses after admin edits).
   const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
-  await fetch(`${baseURL}/api/revalidate`, {
+  await fetch(`${baseURL}/revalidate`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Revalidate-Secret": process.env.REVALIDATE_SECRET ?? "local-revalidate-secret" },
     body: JSON.stringify({ tags: ["catalog", "content"] }),

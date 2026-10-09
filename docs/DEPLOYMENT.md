@@ -59,7 +59,7 @@ cd tests/e2e && npm install && npx playwright install chromium && npm run e2e
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | PRD §92 `PAYMENT_SECRET` / `PAYMENT_WEBHOOK_SECRET`, namespaced per provider |
 | `SHIPROCKET_EMAIL`, `SHIPROCKET_PASSWORD`, `SHIPROCKET_WEBHOOK_TOKEN`, `SHIPROCKET_PICKUP_LOCATION` (+ `SHIPROCKET_PACKAGE_*`, `SHIPROCKET_DEFAULT_WEIGHT_GRAMS`) | Courier booking on "Packed" and tracking webhooks. API user from Shiprocket → Settings → API; webhook URL `https://api.<domain>/api/webhooks/delivery-updates` with the token as `x-api-key` |
 | `STRIPE_KEY`, `STRIPE_SECRET`, `STRIPE_WEBHOOK_SECRET` | when Stripe is enabled |
-| `REVALIDATE_URL=https://www.<domain>/api/revalidate`, `REVALIDATE_SECRET` | on-demand ISR |
+| `REVALIDATE_URL=https://<domain>/revalidate`, `REVALIDATE_SECRET` | on-demand ISR |
 | `LOG_CHANNEL=stack`, `LOG_LEVEL=info`, `LOG_DAILY_DAYS=30` | |
 | `HEALTH_TOKEN` | detailed `/health` |
 
