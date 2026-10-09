@@ -16,6 +16,9 @@ it('publishes the footer pages and explains made-to-order sales only in terms an
         expect(strtolower((string) Page::where('slug', $slug)->value('body')))->not->toContain('refund')->not->toContain('return');
     }
 
+    expect(Page::where('slug', 'terms')->value('body'))->toContain('## Cancelling your order')->toContain('within 6 hours of placing your order');
+    expect(Page::where('slug', 'faq')->value('body'))->toContain('## Can I cancel my order?');
+
     $this->getJson('/api/v1/pages/terms')->assertOk()->assertJsonPath('data.title', 'Terms & conditions')
         ->assertJsonFragment(['## Why every order is final']);
 });
