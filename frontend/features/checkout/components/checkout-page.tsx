@@ -46,7 +46,7 @@ export function CheckoutPage() {
   const [idempotencyKey] = useState(() => crypto.randomUUID());
 
   const store = (cart: Cart) => {
-    queryClient.setQueryData(checkoutKey, (old: { cart: Cart; gateways: Gateway[] } | undefined) => (old ? { ...old, cart } : old));
+    queryClient.setQueryData(checkoutKey, (old: { cart: Cart; gateways: Gateway[]; saved_address: Address | null } | undefined) => (old ? { ...old, cart } : old));
     queryClient.setQueryData(cartKey, cart);
   };
 
@@ -79,12 +79,12 @@ export function CheckoutPage() {
               Have an account? <Link href="/login?next=%2Fcheckout" className="font-medium text-foreground underline underline-offset-4">Sign in</Link> to fill in your details. Your bag comes with you, or continue as a guest below.
             </p>
           ) : null}
-          <ContactStep cart={cart} defaultEmail={user?.email ?? ""} onSaved={(c) => { store(c); next("contact"); }} />
+          <ContactStep cart={cart} defaultEmail={user?.email ?? ""} defaultPhone={checkout.data.saved_address?.phone ?? ""} onSaved={(c) => { store(c); next("contact"); }} />
         </StepCard>
         {cart.requires_shipping ? (
           <>
             <StepCard n={2} title="Delivery address" active={step === "address"} done={done("address")} summary={cart.shipping_address ? `${cart.shipping_address.name}, ${cart.shipping_address.city} ${cart.shipping_address.postal_code}` : undefined} onEdit={() => setStep("address")}>
-              <AddressStep cart={cart} defaultName={user?.name ?? ""} onSaved={(c) => { store(c); next("address"); }} />
+              <AddressStep cart={cart} saved={checkout.data.saved_address} defaultName={user?.name ?? ""} onSaved={(c) => { store(c); next("address"); }} />
             </StepCard>
             <StepCard n={3} title="Delivery method" active={step === "shipping"} done={done("shipping")} summary={cart.shipping_method?.name} onEdit={() => setStep("shipping")}>
               <ShippingStep cart={cart} onSaved={(c) => { store(c); next("shipping"); }} />
@@ -139,11 +139,11 @@ function StepCard({ n, title, active, done, summary, onEdit, children }: { n: nu
   );
 }
 
-function ContactStep({ cart, defaultEmail, onSaved }: { cart: Cart; defaultEmail: string; onSaved: (cart: Cart) => void }) {
+function ContactStep({ cart, defaultEmail, defaultPhone, onSaved }: { cart: Cart; defaultEmail: string; defaultPhone: string; onSaved: (cart: Cart) => void }) {
   // Typed value wins; otherwise fall back to the saved contact or the signed-in account (which may load later).
   const [typedEmail, setEmail] = useState<string | null>(null);
   const email = typedEmail ?? cart.contact.email ?? defaultEmail;
-  const [phone, setPhone] = useState(cart.contact.phone ?? "");
+  const [phone, setPhone] = useState(cart.contact.phone ?? defaultPhone);
   const save = useMutation({ mutationFn: () => checkoutApi.contact(email.trim(), phone.trim() || null), onSuccess: onSaved });
 
   return (
@@ -156,15 +156,39 @@ function ContactStep({ cart, defaultEmail, onSaved }: { cart: Cart; defaultEmail
   );
 }
 
-function AddressStep({ cart, defaultName, onSaved }: { cart: Cart; defaultName: string; onSaved: (cart: Cart) => void }) {
-  const [address, setAddress] = useState<Address>(cart.shipping_address ?? { name: defaultName, phone: cart.contact.phone, line1: "", line2: "", city: "", state_code: "TN", postal_code: "", country_code: "IN" });
-  const save = useMutation({ mutationFn: () => checkoutApi.address(address), onSuccess: onSaved });
+function AddressStep({ cart, saved, defaultName, onSaved }: { cart: Cart; saved: Address | null; defaultName: string; onSaved: (cart: Cart) => void }) {
+  const [address, setAddress] = useState<Address>(cart.shipping_address ?? saved ?? { name: defaultName, phone: cart.contact.phone, line1: "", line2: "", city: "", state_code: "TN", postal_code: "", country_code: "IN" });
+  // Returning customers confirm their saved address each time; "Change address" opens the form.
+  const [confirming, setConfirming] = useState(Boolean(saved && !cart.shipping_address));
+  const save = useMutation({ mutationFn: (a: Address) => checkoutApi.address(a), onSuccess: onSaved });
   const fieldError = (name: string) => (save.error instanceof ApiError ? save.error.fieldErrors[name]?.[0] : undefined);
   const set = (key: keyof Address) => (e: { target: { value: string } }) => setAddress((a) => ({ ...a, [key]: e.target.value }));
   const india = address.country_code === "IN";
 
+  if (confirming && saved) {
+    const state = saved.country_code === "IN" ? (indianStates.find((s) => s.code === saved.state_code)?.name ?? saved.state_code) : saved.state_code;
+    return (
+      <div className="grid gap-4">
+        <FormMessage message={save.isError ? message(save.error) : null} />
+        <p className="text-sm font-medium">Deliver to the same address as last time?</p>
+        <address className="grid gap-0.5 border border-border bg-muted/30 p-4 text-sm not-italic">
+          <strong className="font-semibold">{saved.name}</strong>
+          <span>{saved.line1}</span>
+          {saved.line2 ? <span>{saved.line2}</span> : null}
+          <span>{saved.city}, {state} {saved.postal_code}</span>
+          {saved.country_code !== "IN" ? <span>{countries.find((c) => c.code === saved.country_code)?.name ?? saved.country_code}</span> : null}
+          {saved.phone ? <span className="text-muted-foreground">Phone: {saved.phone}</span> : null}
+        </address>
+        <div className="flex flex-wrap gap-3">
+          <Button type="button" size="lg" disabled={save.isPending} onClick={() => save.mutate(saved)}>{save.isPending ? "Saving…" : "Yes, deliver here"}</Button>
+          <Button type="button" size="lg" variant="outline" onClick={() => setConfirming(false)}>Change address</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form className="grid gap-4 md:grid-cols-2" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(); }}>
+    <form className="grid gap-4 md:grid-cols-2" onSubmit={(e: FormEvent) => { e.preventDefault(); save.mutate(address); }}>
       <div className="md:col-span-2"><FormMessage message={save.isError && !(save.error instanceof ApiError && save.error.isValidation) ? message(save.error) : null} /></div>
       <div className="md:col-span-2"><TextField id="name" autoComplete="name" label="Full name" required value={address.name} onChange={set("name")} error={fieldError("name")} /></div>
       <div className="md:col-span-2"><TextField id="line1" autoComplete="address-line1" label="Address" required value={address.line1} onChange={set("line1")} error={fieldError("line1")} /></div>

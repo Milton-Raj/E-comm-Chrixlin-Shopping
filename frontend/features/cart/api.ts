@@ -11,7 +11,8 @@ export const cartApi = {
 };
 
 export const checkoutApi = {
-  get: () => api.get<{ cart: Cart; gateways: Gateway[] }>("/checkout"),
+  /** `saved_address`: the signed-in customer's last delivery address, offered for confirmation. */
+  get: () => api.get<{ cart: Cart; gateways: Gateway[]; saved_address: Address | null }>("/checkout"),
   contact: (email: string, phone: string | null) => api.put<Cart>("/checkout/contact", { email, phone }),
   address: (address: Address) => api.put<Cart>("/checkout/address", address),
   shippingMethod: (code: string) => api.put<Cart>("/checkout/shipping-method", { code }),

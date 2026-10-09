@@ -247,3 +247,5 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 ## 5. Contract testing
 - Each endpoint has a Pest API test asserting envelope shape, status codes, authorization (owner vs other user vs guest vs staff without permission), and validation errors (TESTING.md).
 - Frontend DTO types are kept in sync manually per phase; a later phase may add OpenAPI generation (`dedoc/scramble`) if drift becomes a problem.
+
+> Checkout: `GET /checkout` also returns `saved_address` — the signed-in customer's delivery address from their latest placed order (null for guests). The storefront asks the customer to confirm it every time; it is never applied silently.

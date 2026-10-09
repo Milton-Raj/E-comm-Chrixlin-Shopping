@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Storefront;
 use App\Domain\Cart\CartPricer;
 use App\Domain\Cart\CartService;
 use App\Domain\Checkout\PlaceOrder;
+use App\Domain\Checkout\SavedAddress;
 use App\Domain\Payments\GatewayManager;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
@@ -23,13 +24,14 @@ class CheckoutController extends Controller
 {
     public function __construct(private readonly CartService $carts, private readonly CartPricer $pricer, private readonly GatewayManager $gateways) {}
 
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, SavedAddress $saved): JsonResponse
     {
         $cart = $this->carts->currentOrCreate($request);
 
         return ApiResponse::success([
             'cart' => (new CartResource($this->pricer->price($cart)))->resolve($request),
             'gateways' => $this->gateways->available(),
+            'saved_address' => $saved->forUser($request->user()),
         ]);
     }
 
