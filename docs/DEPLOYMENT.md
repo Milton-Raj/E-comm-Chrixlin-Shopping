@@ -3,6 +3,19 @@
 > Topology: Next.js on **Vercel**, Laravel API + DB + files on **Hostinger Premium** (ARCHITECTURE D1).
 > Items marked **VERIFY** must be checked in hPanel during Phase 1 and this document updated with the actual values.
 
+## 0. Live setup (chrixlin.com, 2026-10-09) — everything on Hostinger, no Vercel
+
+| Piece | Where | Notes |
+|---|---|---|
+| Store (Next.js standalone) | `~/apps/ecom-web/current` → served for `chrixlin.com` by LiteSpeed's Node runner (`~/domains/chrixlin.com/public_html/.htaccess`, `PassengerStartupFile app.js`) | Built **locally** by `deployment/hostinger/release-web.sh` (the shared plan's process limit stops `next build` on the server); keeps the last 3 releases. Server-only settings in `~/apps/ecom-web/shared/runtime.env`. |
+| API (Laravel) | `~/apps/ecom` (git checkout of `main`); web root `~/domains/chrixlin.com/public_html/api` = `api.chrixlin.com` (`index.php` requires `backend/public/index.php`; `.htaccess` has `PassengerEnabled off`) | Update: `cd ~/apps/ecom && git pull && bash deployment/hostinger/deploy.sh` (set `PHP_BIN=/opt/alt/php84/usr/bin/php`). PHP 8.4 is set for the site in hPanel. |
+| Database | Hostinger MariaDB 11.8, `u462102226_Chrixlin_Shop` | Credentials only in `backend/.env` (mode 600). |
+| DNS / CDN | Hostinger nameservers (`ns1/ns2.dns-parking.com`), Hostinger CDN in front | `www` → 301 to `chrixlin.com`. LiteSpeed passes the real client IP as `REMOTE_ADDR` (verified), so no proxy trust settings are needed. |
+| Mail | `order@chrixlin.com` via `smtp.hostinger.com:465` | MX records at Hostinger. |
+| Cron | hPanel → Cron Jobs, every minute: `/opt/alt/php84/usr/bin/php /home/u462102226/apps/ecom/backend/artisan schedule:run` | |
+
+Because the `api` subdomain folder sits inside the store's web root, every `chrixlin.com/api/*` path reaches Laravel — storefront routes must stay out of `/api` (the revalidate endpoint is `/revalidate`).
+
 ## 1. Environments
 
 | Env | Frontend | API | DB | Notes |
