@@ -1,6 +1,6 @@
 "use client";
 
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus, Trash2, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { productHref } from "@/features/catalog/catalog";
@@ -44,8 +44,11 @@ export function CartLines({ cart, compact = false }: { cart: Cart; compact?: boo
             <div className="mt-auto flex items-center justify-between gap-3">
               {item.product.product_type === "physical" ? (
                 <div className="inline-flex items-center border border-border" role="group" aria-label={`Quantity for ${item.product.name}`}>
-                  <button type="button" className="inline-flex size-10 items-center justify-center hover:bg-muted disabled:opacity-40" disabled={busy || item.quantity <= 1} onClick={() => update.mutate({ item: item.uuid, quantity: item.quantity - 1 })} aria-label="Decrease quantity">
-                    <Minus className="size-3.5" aria-hidden />
+                  {/* At 1, minus takes the piece out of the bag (same as the ✕), so quantity can reach zero. */}
+                  <button type="button" className="inline-flex size-10 items-center justify-center hover:bg-muted disabled:opacity-40" disabled={busy}
+                    onClick={() => (item.quantity <= 1 ? remove.mutate(item.uuid) : update.mutate({ item: item.uuid, quantity: item.quantity - 1 }))}
+                    aria-label={item.quantity <= 1 ? `Remove ${item.product.name}` : "Decrease quantity"}>
+                    {item.quantity <= 1 ? <Trash2 className="size-3.5" aria-hidden /> : <Minus className="size-3.5" aria-hidden />}
                   </button>
                   <output className="w-8 text-center text-sm">{item.quantity}</output>
                   <button type="button" className="inline-flex size-10 items-center justify-center hover:bg-muted disabled:opacity-40" disabled={busy || item.quantity >= item.max_quantity} onClick={() => update.mutate({ item: item.uuid, quantity: item.quantity + 1 })} aria-label="Increase quantity">
