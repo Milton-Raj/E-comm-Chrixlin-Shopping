@@ -7,6 +7,7 @@ import { SectionHeading } from "@/features/catalog/components/section-heading";
 import { HeroSlider } from "@/features/catalog/components/hero-slider";
 import { defaultHeroSlides } from "@/features/catalog/hero-defaults";
 import { getCategories, getHeroSlides, getProducts } from "@/features/catalog/server";
+import { getSiteContent, siteText } from "@/features/catalog/site-content";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Suspense } from "react";
 import { Reveal } from "@/components/motion/reveal";
@@ -20,7 +21,10 @@ const values: { icon: typeof Truck; title: MessageKey; body: MessageKey }[] = [
 ];
 
 /** Homepage (PRD §10). Sections become CMS-configurable in Phase 4/7. */
-export default function HomePage() {
+export default async function HomePage() {
+  const content = await getSiteContent();
+  const st = (key: MessageKey) => siteText(content, key);
+
   return (
     <>
       {/* 1 — Hero slideshow (Admin → Content → Homepage hero) */}
@@ -35,7 +39,7 @@ export default function HomePage() {
             <ul key={copy} className="flex shrink-0 items-center gap-12">
               {[...values, ...values].map(({ title }, i) => (
                 <li key={`${copy}-${i}`} className="eyebrow flex items-center gap-12 whitespace-nowrap">
-                  {t(title)}
+                  {st(title)}
                   <span className="text-brand-grullo">✦</span>
                 </li>
               ))}
@@ -46,7 +50,7 @@ export default function HomePage() {
 
       {/* 2 — Categories */}
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6 md:pt-28">
-        <SectionHeading title={t("home.categoriesTitle")} href="/categories" />
+        <SectionHeading title={st("home.categoriesTitle")} href="/categories" />
         <Suspense fallback={<GridSkeleton count={7} />}>
           <CategoryStrip />
         </Suspense>
@@ -54,7 +58,7 @@ export default function HomePage() {
 
       {/* 3 — New arrivals */}
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6 md:pt-28">
-        <SectionHeading eyebrow={t("catalog.new")} title={t("home.newArrivals")} href="/shop?sort=newest" />
+        <SectionHeading eyebrow={t("catalog.new")} title={st("home.newArrivals")} href="/shop?sort=newest" />
         <Suspense fallback={<GridSkeleton count={4} />}>
           <ProductSection query={{ sort: "newest", type: "physical", per_page: 4 }} />
         </Suspense>
@@ -63,21 +67,21 @@ export default function HomePage() {
       {/* 4 — Editorial banner */}
       <section className="mt-20 grid bg-primary text-primary-foreground md:mt-28 md:grid-cols-2">
         <Reveal variant="clip" className="relative min-h-80 overflow-hidden md:min-h-128">
-          <Image src="/hero/arch-candle.jpg" alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
+          <Image src={content.editorial_image ?? "/hero/arch-candle.jpg"} alt="" fill sizes="(min-width: 768px) 50vw, 100vw" className="object-cover" />
         </Reveal>
         <Reveal delay={250} className="flex flex-col justify-center gap-6 px-6 py-16 md:px-16">
-          <p className="eyebrow text-brand-grullo">{t("home.editorialEyebrow")}</p>
-          <h2 className="font-display-tight text-4xl md:text-5xl">{t("home.editorialTitle")}</h2>
-          <p className="max-w-md text-primary-foreground/80">{t("home.editorialBody")}</p>
+          <p className="eyebrow text-brand-grullo">{st("home.editorialEyebrow")}</p>
+          <h2 className="font-display-tight text-4xl md:text-5xl">{st("home.editorialTitle")}</h2>
+          <p className="max-w-md text-primary-foreground/80">{st("home.editorialBody")}</p>
           <div>
-            <ButtonLink href="/shop" variant="outline-light" className="sheen">{t("home.editorialCta")}</ButtonLink>
+            <ButtonLink href="/shop" variant="outline-light" className="sheen">{st("home.editorialCta")}</ButtonLink>
           </div>
         </Reveal>
       </section>
 
       {/* 5 — Best sellers */}
       <section className="mx-auto max-w-7xl px-4 pt-20 md:px-6 md:pt-28">
-        <SectionHeading eyebrow={t("catalog.bestSeller")} title={t("home.bestSellers")} href="/shop?sort=best_selling" />
+        <SectionHeading eyebrow={t("catalog.bestSeller")} title={st("home.bestSellers")} href="/shop?sort=best_selling" />
         <Suspense fallback={<GridSkeleton count={8} />}>
           <ProductSection query={{ sort: "best_selling", type: "physical", per_page: 8 }} />
         </Suspense>
@@ -97,8 +101,8 @@ export default function HomePage() {
               <span className="flex size-12 items-center justify-center rounded-full border border-border transition-all duration-500 group-hover:-translate-y-1 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground">
                 <Icon className="size-5 text-primary transition-colors duration-500 group-hover:text-primary-foreground" aria-hidden />
               </span>
-              <p className="eyebrow">{t(title)}</p>
-              <p className="text-sm text-muted-foreground">{t(body)}</p>
+              <p className="eyebrow">{st(title)}</p>
+              <p className="text-sm text-muted-foreground">{st(body)}</p>
             </li>
           ))}
         </ul>

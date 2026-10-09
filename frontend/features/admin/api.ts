@@ -197,3 +197,12 @@ export const rolesApi = {
   update: (name: string, body: { name?: string; permissions: string[]; password: string }) => api.put<{ name: string }>(`/admin/roles/${encodeURIComponent(name)}`, body),
   remove: (name: string, password: string) => api.delete(`/admin/roles/${encodeURIComponent(name)}`, { password }),
 };
+
+export type SiteTextField = { key: string; group: string; label: string; max: number; multiline?: boolean };
+export type AdminSiteContent = { fields: SiteTextField[]; texts: Record<string, string>; editorial_image: string | null };
+
+export const siteContentApi = {
+  get: () => api.get<AdminSiteContent>("/admin/site-content"),
+  save: (texts: Record<string, string | null>) => api.put<AdminSiteContent>("/admin/site-content", { texts }),
+  editorialImage: (form: FormData) => api.post<AdminSiteContent>("/admin/site-content/editorial-image", form),
+};

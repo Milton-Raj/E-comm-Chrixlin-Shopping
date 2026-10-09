@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { env } from "@/lib/env";
 import { t } from "@/lib/i18n";
+import { getSiteContent, siteText } from "@/features/catalog/site-content";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -34,11 +35,14 @@ const geistMono = localFont({
   src: [{ path: "../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2", weight: "100 900", style: "normal" }],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(env.siteUrl),
-  title: { default: `${env.storeName} · ${t("brand.titleSuffix")}`, template: `%s · ${env.storeName}` },
-  description: t("brand.description"),
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const content = await getSiteContent();
+  return {
+    metadataBase: new URL(env.siteUrl),
+    title: { default: `${env.storeName} · ${siteText(content, "brand.titleSuffix")}`, template: `%s · ${env.storeName}` },
+    description: siteText(content, "brand.description"),
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

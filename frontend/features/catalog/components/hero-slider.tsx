@@ -14,8 +14,9 @@ const delay = (ms: number) => ({ "--delay": `${ms}ms` }) as CSSProperties;
 
 /**
  * Full-bleed homepage slideshow: crossfading photos with a slow zoom, one message per slide.
- * Auto-advances, but pauses on hover, keyboard focus, a hidden tab, or the pause button
- * (WCAG 2.2.2), and never auto-advances for reduced motion. Swipe and arrow keys work too.
+ * Auto-advances everywhere, pausing only for the pause button (WCAG 2.2.2), keyboard focus
+ * inside the slideshow, or a hidden tab; never auto-advances for reduced motion. A resting mouse
+ * does not pause it (on desktop the cursor often sits over the hero). Swipe and arrow keys work too.
  */
 export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
   const [index, setIndex] = useState(0);
@@ -53,9 +54,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       aria-roledescription="carousel"
       aria-label={t("hero.label")}
       className="relative isolate hero-stage flex items-end overflow-hidden bg-brand-black text-brand-cultured"
-      onMouseEnter={() => setHeld(true)}
-      onMouseLeave={() => setHeld(false)}
-      onFocus={() => setHeld(true)}
+      onFocus={(e) => { if (e.target.matches(":focus-visible")) setHeld(true); }}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHeld(false); }}
       onKeyDown={(e) => {
         if (e.key === "ArrowRight") go(index + 1);

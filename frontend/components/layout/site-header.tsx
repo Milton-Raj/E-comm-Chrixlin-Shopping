@@ -2,6 +2,7 @@ import { Search } from "lucide-react";
 import Link from "next/link";
 import { env } from "@/lib/env";
 import { t } from "@/lib/i18n";
+import { getSiteContent, siteText } from "@/features/catalog/site-content";
 import { primaryNav } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { BagButton } from "@/features/cart/components/bag-link";
@@ -10,13 +11,15 @@ import { AccountLink } from "./account-link";
 
 const iconLink = "inline-flex size-11 items-center justify-center rounded-full transition-colors hover:bg-muted hover:text-primary";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const content = await getSiteContent();
+
   return (
     <>
       <div className="bg-brand-black text-brand-cultured">
         <p className="eyebrow mx-auto max-w-7xl px-4 py-2.5 text-center">
-          {t("announce.preview")}
-          <span className="hidden md:inline"> · {t("announce.shipping")}</span>
+          {siteText(content, "announce.preview")}
+          <span className="hidden md:inline"> · {siteText(content, "announce.shipping")}</span>
         </p>
       </div>
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">

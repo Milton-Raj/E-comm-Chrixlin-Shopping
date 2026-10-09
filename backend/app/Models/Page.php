@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $body
  * @property string $status
  * @property Carbon|null $published_at
+ * @property Carbon|null $created_at
  * @property Carbon $updated_at
  */
 class Page extends Model

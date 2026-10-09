@@ -2,16 +2,19 @@ import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { env } from "@/lib/env";
 import { t } from "@/lib/i18n";
+import { getSiteContent, siteText } from "@/features/catalog/site-content";
 import { footerNav } from "@/lib/navigation";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const content = await getSiteContent();
+
   return (
     <footer className="mt-24 bg-brand-black pb-20 text-brand-cultured lg:pb-0">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-4 md:px-6">
         <div className="grid content-start gap-4">
           <p className="wordmark text-xl">{env.storeName}</p>
-          <p className="font-display-tight text-lg text-brand-cultured/90">{t("brand.tagline")}</p>
-          <p className="max-w-xs text-sm text-brand-grullo">{t("brand.description")}</p>
+          <p className="font-display-tight text-lg text-brand-cultured/90">{siteText(content, "brand.tagline")}</p>
+          <p className="max-w-xs text-sm text-brand-grullo">{siteText(content, "brand.description")}</p>
         </div>
         {footerNav.map((group) => (
           <nav key={group.title} aria-label={t(group.title)}>

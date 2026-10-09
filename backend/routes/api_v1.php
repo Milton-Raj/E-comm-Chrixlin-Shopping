@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\Storefront\DownloadController;
 use App\Http\Controllers\Api\V1\Storefront\HeroSlideController;
 use App\Http\Controllers\Api\V1\Storefront\OrderController;
 use App\Http\Controllers\Api\V1\Storefront\PageController;
+use App\Http\Controllers\Api\V1\Storefront\SiteContentController;
 use App\Http\Controllers\Api\V1\Storefront\WishlistController;
 use App\Http\Controllers\Api\V1\System\HealthController;
 use App\Http\Controllers\Api\V1\System\PublicSettingsController;
@@ -43,6 +44,7 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('products/{slug}', [CatalogController::class, 'product'])->name('products.show');
     Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
     Route::get('hero-slides', [HeroSlideController::class, 'index'])->name('hero-slides.index');
+    Route::get('site-content', SiteContentController::class)->name('site-content');
 });
 
 // Cart (guest cookie or signed-in user)
@@ -196,6 +198,10 @@ Route::prefix('admin')->name('admin.')
         Route::post('roles', [Admin\RoleController::class, 'store'])->middleware('can:roles.manage')->name('roles.store');
         Route::put('roles/{role}', [Admin\RoleController::class, 'update'])->middleware('can:roles.manage')->name('roles.update');
         Route::delete('roles/{role}', [Admin\RoleController::class, 'destroy'])->middleware('can:roles.manage')->name('roles.destroy');
+
+        Route::get('site-content', [Admin\SiteContentController::class, 'show'])->middleware('can:content.manage')->name('site-content.show');
+        Route::put('site-content', [Admin\SiteContentController::class, 'update'])->middleware('can:content.manage')->name('site-content.update');
+        Route::post('site-content/editorial-image', [Admin\SiteContentController::class, 'editorialImage'])->middleware('can:content.manage')->name('site-content.editorial-image');
 
         Route::get('hero-slides', [Admin\HeroSlideController::class, 'index'])->middleware('can:content.manage')->name('hero-slides.index');
         Route::post('hero-slides', [Admin\HeroSlideController::class, 'save'])->middleware('can:content.manage')->name('hero-slides.store');

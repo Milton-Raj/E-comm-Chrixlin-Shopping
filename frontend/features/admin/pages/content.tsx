@@ -13,27 +13,50 @@ import { Button } from "@/components/ui/button";
 import { ApiError } from "@/services/api-client";
 import { miscAdminApi, type AdminPageItem } from "../api";
 import { HeroSlidesPanel } from "../components/hero-slides-panel";
+import { SiteTextPanel } from "../components/site-text-panel";
 import { AdminPage, Field, inputClass, Panel, RequiredNote, StatusBadge, textareaClass } from "../components/kit/admin-page";
 
+type ContentTab = "hero" | "text" | "pages";
+const CONTENT_TABS: [ContentTab, string][] = [["hero", "Homepage hero"], ["text", "Site text"], ["pages", "Pages"]];
+
 export function ContentPage() {
-  const pages = useQuery({ queryKey: ["admin", "pages"], queryFn: miscAdminApi.pages });
+  const [tab, setTab] = useState<ContentTab>("hero");
   return (
-    <AdminPage title="Content" description="Your homepage hero and the policy, help and information pages linked from the storefront footer." actions={<ButtonLink href="/admin/content/new">New page</ButtonLink>}>
-      <HeroSlidesPanel />
-      <h2 className="text-base font-semibold">Pages</h2>
-      {pages.isPending ? <LoadingState lines={6} /> : pages.isError ? <ErrorState onRetry={() => void pages.refetch()} /> : (
-        <ul className="divide-y divide-border border border-border bg-card text-sm">
-          {pages.data.map((p) => (
-            <li key={p.uuid}>
-              <Link href={`/admin/content/${p.uuid}`} className="flex items-center justify-between gap-3 p-3 hover:bg-muted/40">
-                <span><span className="font-medium">{p.title}</span> <span className="text-muted-foreground">/{p.slug === "faq" ? "faq" : `pages/${p.slug}`}</span></span>
-                <span className="flex items-center gap-3"><StatusBadge value={p.status} /><span className="text-xs text-muted-foreground">{new Date(p.updated_at).toLocaleDateString("en-IN")}</span></span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+    <AdminPage title="Content" description="Everything customers read on your store: the homepage slideshow, site wording, and your policy and help pages."
+      actions={tab === "pages" ? <ButtonLink href="/admin/content/new">New page</ButtonLink> : null}>
+      <div role="tablist" aria-label="Content sections" className="flex gap-1 overflow-x-auto border-b border-border">
+        {CONTENT_TABS.map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)}
+            className={cn("-mb-px min-h-11 shrink-0 border-b-2 px-4 text-sm font-medium transition-colors", tab === key ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground")}>
+            {label}
+          </button>
+        ))}
+      </div>
+      <div role="tabpanel">
+        {tab === "hero" ? <HeroSlidesPanel /> : tab === "text" ? <SiteTextPanel /> : <PagesList />}
+      </div>
     </AdminPage>
+  );
+}
+
+function PagesList() {
+  const pages = useQuery({ queryKey: ["admin", "pages"], queryFn: miscAdminApi.pages });
+  if (pages.isPending) return <LoadingState lines={6} />;
+  if (pages.isError) return <ErrorState onRetry={() => void pages.refetch()} />;
+  return (
+    <div className="grid gap-3">
+      <p className="text-sm text-muted-foreground">Your Terms, Privacy, Shipping, FAQ and Contact pages, linked from the store footer. Click a page to edit it. Start a line with “## ” to make it a heading.</p>
+      <ul className="divide-y divide-border border border-border bg-card text-sm">
+        {pages.data.map((p) => (
+          <li key={p.uuid}>
+            <Link href={`/admin/content/${p.uuid}`} className="flex items-center justify-between gap-3 p-3 hover:bg-muted/40">
+              <span><span className="font-medium">{p.title}</span> <span className="text-muted-foreground">/{p.slug === "faq" ? "faq" : `pages/${p.slug}`}</span></span>
+              <span className="flex items-center gap-3"><StatusBadge value={p.status} /><span className="text-xs text-muted-foreground">{new Date(p.updated_at).toLocaleDateString("en-IN")}</span></span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

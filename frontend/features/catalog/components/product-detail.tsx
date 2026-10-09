@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { t } from "@/lib/i18n";
+import { getSiteContent, siteText } from "../site-content";
 import { discountPercent } from "../catalog";
 import type { Product, ProductDetail as ProductDetailType } from "../types";
 import { Price } from "./price";
@@ -10,7 +11,8 @@ import { Rating } from "./rating";
 import { SectionHeading } from "./section-heading";
 
 /** Product detail page body (PRD §58), shared by /product and /digital routes. */
-export function ProductDetail({ product, related }: { product: ProductDetailType; related: Product[] }) {
+export async function ProductDetail({ product, related }: { product: ProductDetailType; related: Product[] }) {
+  const content = await getSiteContent();
   const discount = discountPercent(product);
   const stockLabel =
     product.stock_status === "low_stock" ? t("catalog.lowStock") : product.stock_status === "out_of_stock" ? t("catalog.outOfStock") : t("catalog.inStock");
@@ -48,9 +50,9 @@ export function ProductDetail({ product, related }: { product: ProductDetailType
           </div>
 
           <div className="mt-8 grid gap-2 border-t border-border pt-6 text-sm">
-            <p className="eyebrow">{t("catalog.delivery")}</p>
+            <p className="eyebrow">{siteText(content, "catalog.delivery")}</p>
             <p className="text-muted-foreground">
-              {product.product_type === "digital" ? t("catalog.deliveryDigital") : t("catalog.deliveryPhysical")}
+              {product.product_type === "digital" ? t("catalog.deliveryDigital") : siteText(content, "catalog.deliveryPhysical")}
             </p>
           </div>
         </div>

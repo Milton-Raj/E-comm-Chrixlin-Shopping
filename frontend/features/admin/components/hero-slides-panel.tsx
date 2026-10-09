@@ -42,14 +42,14 @@ export function HeroSlidesPanel() {
     <Panel title="Homepage hero" actions={slides.data && slides.data.length < MAX_SLIDES && editing === null
       ? <Button size="sm" onClick={() => setEditing("new")}><ImagePlus className="size-4" aria-hidden />Add slide</Button> : null}>
       <p className="text-sm text-muted-foreground">
-        The large photos that rotate at the top of your homepage. Until you add your own, the built-in candle and Jesmonite slides are shown.
+        The large photos that rotate at the top of your homepage, in this order. Edit a slide to change its photo, words or button; hide a slide to take it off the store without deleting it.
         Use wide, bright photos at least 1200 × 700 pixels (2400 px wide is ideal).
       </p>
 
       {editing ? <SlideEditor key={editing === "new" ? "new" : editing.uuid} slide={editing === "new" ? null : editing} onDone={() => { setEditing(null); refresh(); }} /> : null}
 
       {slides.isPending ? <LoadingState lines={3} /> : slides.isError ? <ErrorState onRetry={() => void slides.refetch()} /> : slides.data.length === 0 ? (
-        <p className="border border-dashed border-border p-4 text-sm text-muted-foreground">No custom slides yet. Your homepage is showing the 4 built-in slides.</p>
+        <p className="border border-dashed border-border p-4 text-sm text-muted-foreground">No slides yet. Your homepage is showing the 4 built-in slides until you add one.</p>
       ) : (
         <ol className="grid gap-3">
           {slides.data.map((s, i, list) => (

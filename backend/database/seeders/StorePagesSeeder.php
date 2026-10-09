@@ -3,26 +3,55 @@
 namespace Database\Seeders;
 
 use App\Models\Page;
+use App\Support\Settings\Settings;
 use Illuminate\Database\Seeder;
 
 /**
- * Chrixlin's footer pages (terms, privacy, shipping, FAQ, contact). Runs in every
- * environment and only creates missing pages, so edits made in Admin → Content are kept.
+ * Chrixlin's footer pages (terms, privacy, shipping, FAQ, contact). Runs in every environment.
+ * Missing pages are created; a page is only updated when the owner has never edited it,
+ * so changes made in Admin → Content are always kept.
  * Body format: blank-line paragraphs; a paragraph starting with "## " is a heading.
  */
 class StorePagesSeeder extends Seeder
 {
+    private const SEEDED = 'content.seeded_page_hashes';
+
     public function run(): void
     {
         $store = (string) config('commerce.store.name', 'Chrixlin');
         $email = (string) config('mail.from.address');
+        $settings = app(Settings::class);
+        $seeded = (array) $settings->get(self::SEEDED, []);
 
         foreach ($this->pages($store, $email) as $slug => [$title, $description, $body]) {
-            Page::query()->firstOrCreate(['slug' => $slug], [
-                'title' => $title, 'seo_description' => $description, 'body' => $body,
-                'status' => 'published', 'published_at' => now(),
-            ]);
+            $page = Page::query()->where('slug', $slug)->first();
+
+            if (! $page) {
+                Page::query()->create([
+                    'slug' => $slug, 'title' => $title, 'seo_description' => $description, 'body' => $body,
+                    'status' => 'published', 'published_at' => now(),
+                ]);
+            } elseif ($page->body !== $body && $this->untouched($page, $seeded[$slug] ?? null)) {
+                // Our wording changed and the owner never edited this page: roll the update out.
+                $page->forceFill(['title' => $title, 'seo_description' => $description, 'body' => $body])->save();
+            } elseif ($page->body !== $body) {
+                continue;
+            }
+            $seeded[$slug] = sha1($body);
         }
+
+        $settings->set(self::SEEDED, $seeded);
+    }
+
+    /** True when the page still holds exactly what this seeder last wrote. */
+    private function untouched(Page $page, ?string $seededHash): bool
+    {
+        if ($seededHash !== null) {
+            return sha1((string) $page->body) === $seededHash;
+        }
+
+        // Pages seeded before hashes were recorded: unchanged since creation.
+        return $page->created_at !== null && $page->updated_at->equalTo($page->created_at);
     }
 
     /** @return array<string, array{0: string, 1: string, 2: string}> */
@@ -43,6 +72,8 @@ class StorePagesSeeder extends Seeder
                 'When you place an order, you will receive an email confirming the details. Your order is accepted once your payment has been confirmed by our payment partner. We may decline or cancel an order if a product is unavailable or a payment cannot be verified; if that happens after payment, the full amount will be returned to your original payment method.',
                 'Each piece is made for you after your order is confirmed, so please check your order, delivery address and contact details carefully before you pay. If you notice a mistake, write to us straight away with your order number and we will do our best to help before work on your piece begins.',
                 $madeForYou,
+                '## If your order arrives damaged',
+                "We pack every piece with great care, but parcels sometimes have a rough journey. If your order arrives damaged, or you receive a different item from the one you ordered, please email {$email} within 24 hours of delivery with your order number and clear photos of the item and its packaging (an unboxing video helps too). We will look into it straight away and arrange a replacement piece for you.",
                 '## Prices and payment',
                 'All prices are shown in Indian Rupees and include GST where applicable. A GST tax invoice is emailed to you once your payment is confirmed. We accept secure online payments only (UPI, cards, net banking and wallets through our payment partner). We do not offer cash on delivery, and we never see or store your full card details.',
                 '## Delivery',
@@ -58,6 +89,8 @@ class StorePagesSeeder extends Seeder
                 'We take care to describe our products accurately and to make them safely. To the extent permitted by law, we are not responsible for loss or damage caused by using a product in a way that goes against the care and safety guidance above. Nothing in these terms limits any rights you have under Indian consumer law.',
                 '## Governing law',
                 "These terms are governed by the laws of India. Any dispute will be handled by the courts that have jurisdiction where {$store} is registered.",
+                '## Complaints and grievances',
+                "If you are unhappy with anything about your order or our service, please write to our Grievance Officer at {$email} with your order number. We acknowledge every complaint within 48 hours and aim to resolve it within one month, in line with the Consumer Protection (E-Commerce) Rules, 2020.",
                 '## Changes to these terms',
                 'We may update these terms from time to time. The version shown on this page when you place your order is the one that applies to that order.',
                 '## Contact',
@@ -67,6 +100,7 @@ class StorePagesSeeder extends Seeder
             'faq' => ['Frequently asked questions', "Answers to common questions about {$store} dessert candles, Jesmonite pieces, orders and delivery.", implode("\n\n", [
                 "## How long will my order take?\nEvery piece is made by hand after your order is confirmed. Once it is ready, we pack it carefully and send it by courier. The delivery estimate for your address is shown at checkout, and you will receive tracking details by email when your order is dispatched.",
                 "## Can I return or exchange my order?\nWe are sorry, but we are not able to accept returns or exchanges or offer refunds. Each {$store} piece is made specially for you once your order is confirmed. We don't sell from ready-made stock, and a handmade candle or Jesmonite piece cannot be resold once it has left our studio. We hope you understand, and we are always happy to help you choose the right piece before you order. Just write to us at {$email}.",
+                "## What if my order arrives damaged?\nWe pack every piece with great care, but if your order arrives damaged, or you receive a different item, please email {$email} within 24 hours of delivery with your order number and photos of the item and its packaging (an unboxing video helps too). We will look into it straight away and arrange a replacement piece for you.",
                 "## Can I change my order after placing it?\nPlease write to {$email} as soon as possible with your order number. Because we start making your piece soon after your order is confirmed, we can only make changes before work on it begins.",
                 "## Will my candle look exactly like the photo?\nYour piece is made to the same design, by hand. Small differences in colour, glaze drips, swirls and texture are part of what makes handmade pieces special, so no two are exactly alike.",
                 "## Are the dessert candles edible?\nNo. They are made to look like desserts, but they are candles. Please never eat or taste them, and keep them away from children and pets.",
