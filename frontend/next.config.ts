@@ -36,6 +36,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Self-contained server bundle (.next/standalone) so the store can run on Hostinger's Node runtime.
+  output: "standalone",
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
