@@ -479,6 +479,33 @@
   transform: none;
 }
 
+/* Top navigation progress bar (components/navigation-progress.tsx). Eases towards 90%
+   while the next page loads, then fills and fades. */
+@keyframes nav-progress {
+  0% { transform: scaleX(0.05); }
+  20% { transform: scaleX(0.4); }
+  100% { transform: scaleX(0.9); }
+}
+.nav-progress-run {
+  transform-origin: left center;
+  animation: nav-progress 8s cubic-bezier(0.1, 0.7, 0.2, 1) forwards;
+}
+.nav-progress-done {
+  transform-origin: left center;
+  transform: scaleX(1);
+  opacity: 0;
+  transition: transform 0.2s ease-out, opacity 0.3s ease-out 0.15s;
+}
+
+/* Link-level pending hint (useLinkStatus): appears only if a click takes over 120 ms. */
+@keyframes pending-in {
+  to { opacity: 1; }
+}
+.link-pending {
+  opacity: 0;
+  animation: pending-in 0.15s ease-out 0.12s forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -56,6 +56,9 @@ const nextConfig: NextConfig = {
     remotePatterns: apiUrl ? [{ protocol: apiUrl.protocol.replace(":", "") as "http" | "https", hostname: apiUrl.hostname, port: apiUrl.port, pathname: "/storage/**" }] : [],
     // Local development serves images from localhost, which the optimizer blocks by default.
     dangerouslyAllowLocalIP: isDev || apiUrl?.hostname === "localhost",
+    // Optimised images are keyed by URL and uploads get new file names, so they can be
+    // cached for 30 days by browsers and the CDN (default is 4 hours).
+    minimumCacheTTL: 60 * 60 * 24 * 30,
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { preconnect } from "react-dom";
 import { env } from "@/lib/env";
 import { t } from "@/lib/i18n";
 import { getSiteContent, siteText } from "@/features/catalog/site-content";
@@ -51,6 +52,10 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
+  // Open the TLS connection to the API while the page loads; the cart and account calls
+  // then skip a full round trip (the server is far from most shoppers).
+  preconnect(new URL(env.apiUrl).origin, { crossOrigin: "use-credentials" });
+
   return (
     <html lang="en" className={`${sans.variable} ${display.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">

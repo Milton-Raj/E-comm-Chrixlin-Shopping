@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { LinkPending } from "@/components/link-pending";
 import { env } from "@/lib/env";
 import { t, type MessageKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -14,6 +15,9 @@ const label = (key: string) => (key.includes(".") ? t(key as MessageKey) : key);
 export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode }) {
   const pathname = usePathname();
   const nav = visibleAdminNav(me.permissions);
+  // Highlight the clicked item straight away, before its page has arrived.
+  const [clicked, setClicked] = useState<{ href: string; from: string } | null>(null);
+  const target = clicked && clicked.from === pathname ? clicked.href : null;
 
   return (
     <div data-admin className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
@@ -24,7 +28,8 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
         <nav data-admin-nav aria-label={t("admin.title")} className="overflow-x-auto px-2 pb-2 lg:pb-6">
           <ul className="flex gap-1 lg:flex-col">
             {nav.map((item) => {
-              const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+              const here = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+              const active = target ? target === item.href : here;
               const className = cn(
                 "flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-all duration-300",
                 active ? "bg-background font-semibold shadow-sm" : "text-muted-foreground",
@@ -33,7 +38,10 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
               return (
                 <li key={item.href}>
                   {item.available ? (
-                    <Link href={item.href} aria-current={active ? "page" : undefined} className={className}><span>{label(item.label)}</span></Link>
+                    <Link href={item.href} aria-current={here ? "page" : undefined} className={cn(className, "justify-between gap-2")} onClick={() => setClicked({ href: item.href, from: pathname })}>
+                      <span>{label(item.label)}</span>
+                      <LinkPending className="text-muted-foreground" />
+                    </Link>
                   ) : (
                     <span aria-disabled="true" className={className}>{label(item.label)}</span>
                   )}
