@@ -17,7 +17,10 @@ class GatewayManager
     {
         $list = [];
         if ($this->razorpayConfigured()) {
-            $list[] = ['key' => 'razorpay', 'name' => 'Razorpay', 'description' => 'UPI, cards, net banking and wallets'];
+            // Test keys (rzp_test_…) let the store run end to end before going live; shoppers are told plainly.
+            $list[] = $this->razorpayTestMode()
+                ? ['key' => 'razorpay', 'name' => 'Razorpay (test mode)', 'description' => 'Test payments only, no real money is charged']
+                : ['key' => 'razorpay', 'name' => 'Razorpay', 'description' => 'UPI, cards, net banking and wallets'];
         }
         if ($this->testEnabled()) {
             $list[] = ['key' => 'test', 'name' => 'Test payment', 'description' => 'Development only — no real money moves'];
@@ -38,6 +41,11 @@ class GatewayManager
     public function testEnabled(): bool
     {
         return ! app()->isProduction() && (bool) config('payments.test.enabled');
+    }
+
+    public function razorpayTestMode(): bool
+    {
+        return str_starts_with((string) config('payments.razorpay.key_id'), 'rzp_test_');
     }
 
     private function razorpayConfigured(): bool
