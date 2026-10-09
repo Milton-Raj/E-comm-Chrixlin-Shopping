@@ -49,6 +49,7 @@ class SettingsController extends Controller
                     'configured' => app(ShiprocketClient::class)->configured(),
                     'webhook_configured' => filled(config('shipping.shiprocket.webhook_token')),
                     'pickup_location' => config('shipping.shiprocket.pickup_location'),
+                    'test_mode' => (bool) config('shipping.shiprocket.test_mode'),
                     'webhook_url' => route('webhooks.courier'),
                 ],
             ],

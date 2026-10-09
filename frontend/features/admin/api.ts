@@ -96,7 +96,7 @@ export type AdminOrderDetail = import("@/features/orders/types").OrderDetail & {
 
 export type CourierShipment = {
   uuid: string; provider: string | null; carrier: string | null; tracking_number: string | null; tracking_url: string | null;
-  status: "booking" | "pickup_scheduled" | "failed" | "in_transit" | "delivered" | "exception" | null;
+  status: "booking" | "pickup_scheduled" | "test_created" | "failed" | "in_transit" | "delivered" | "exception" | null;
   courier_status: string | null; pickup_scheduled_at: string | null; last_error: string | null; last_event_at: string | null;
   shipped_at: string | null; delivered_at: string | null;
 };
@@ -137,7 +137,7 @@ export type StoreSettings = {
   integrations: {
     razorpay: { configured: boolean; webhook_configured: boolean; test_mode: boolean; webhook_url: string };
     test_gateway: boolean;
-    shiprocket: { configured: boolean; webhook_configured: boolean; pickup_location: string; webhook_url: string };
+    shiprocket: { configured: boolean; webhook_configured: boolean; pickup_location: string; test_mode: boolean; webhook_url: string };
   };
 };
 export type AuditEntry = { uuid: string; action: string; actor: string; subject: string | null; before: Record<string, unknown> | null; after: Record<string, unknown> | null; ip_address: string | null; created_at: string };

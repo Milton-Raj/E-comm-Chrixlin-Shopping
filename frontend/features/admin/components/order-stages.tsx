@@ -46,6 +46,7 @@ export function StageTracker({ order, pending, onMove }: { order: AdminOrderDeta
   let hint: string | null = null;
   if (current < 0) hint = `This order is ${order.status.replaceAll("_", " ")}, so its delivery stages are closed.`;
   else if (next === "packed" && order.courier_enabled) hint = "Marking it packed books the Shiprocket pickup automatically.";
+  else if (next === "shipped" && order.courier_shipments.some((s) => s.status === "test_created")) hint = "Shiprocket test mode: the order was created in Shiprocket only. No courier will collect it, so add tracking yourself below or cancel the test order in Shiprocket.";
   else if (next === "shipped" && order.courier_enabled && courierBooked) hint = "Waiting for the courier to collect it. Shiprocket moves it to Shipped, Out for delivery and Delivered on its own.";
   else if (next === "shipped") hint = order.courier_enabled ? "Book the Shiprocket pickup below, or add tracking details yourself." : "Add the courier and tracking number below to mark it shipped.";
   else if (next && physical && order.courier_enabled) hint = "Shiprocket updates this automatically. Use the buttons only if you need to correct it.";
@@ -94,7 +95,7 @@ export function StageTracker({ order, pending, onMove }: { order: AdminOrderDeta
 }
 
 const COURIER_STATE: Record<NonNullable<CourierShipment["status"]>, string> = {
-  booking: "Booking…", pickup_scheduled: "Pickup booked", failed: "Booking failed", in_transit: "In transit", delivered: "Delivered", exception: "Needs attention",
+  booking: "Booking…", pickup_scheduled: "Pickup booked", test_created: "Test order created (no courier)", failed: "Booking failed", in_transit: "In transit", delivered: "Delivered", exception: "Needs attention",
 };
 
 /** Shiprocket booking and live tracking for one order. */
@@ -114,7 +115,7 @@ export function CourierPanel({ order, onSaved, onError }: { order: AdminOrderDet
         <div key={s.uuid} className="grid gap-2 text-sm">
           <div className="flex flex-wrap items-center gap-2">
             <span className={cn("inline-flex rounded-sm px-2 py-0.5 text-xs font-medium",
-              s.status === "failed" || s.status === "exception" ? "bg-red-100 text-red-900" : s.status === "delivered" ? "bg-emerald-100 text-emerald-900" : "bg-sky-100 text-sky-900")}>
+              s.status === "failed" || s.status === "exception" ? "bg-red-100 text-red-900" : s.status === "delivered" ? "bg-emerald-100 text-emerald-900" : s.status === "test_created" ? "bg-amber-100 text-amber-900" : "bg-sky-100 text-sky-900")}>
               {s.status ? COURIER_STATE[s.status] : "—"}
             </span>
             {s.courier_status ? <StatusBadge value={s.courier_status.toLowerCase()} /> : null}

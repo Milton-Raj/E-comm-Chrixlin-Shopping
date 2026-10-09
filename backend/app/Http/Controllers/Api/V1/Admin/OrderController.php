@@ -67,9 +67,11 @@ class OrderController extends Controller
         $message = 'Order updated.';
         if ($model->status === OrderStatus::Packed && $model->requiresShipping() && $courier->enabled()) {
             $shipment = $courier->handle($model, $request->user());
-            $message = $shipment->status === 'failed'
-                ? 'Marked packed, but the Shiprocket booking failed: '.$shipment->last_error
-                : "Marked packed. Shiprocket pickup booked with {$shipment->carrier} (AWB {$shipment->tracking_number}).";
+            $message = match ($shipment->status) {
+                'failed' => 'Marked packed, but the Shiprocket booking failed: '.$shipment->last_error,
+                'test_created' => "Marked packed. Shiprocket test mode: order {$shipment->provider_order_id} created in Shiprocket, no courier booked.",
+                default => "Marked packed. Shiprocket pickup booked with {$shipment->carrier} (AWB {$shipment->tracking_number}).",
+            };
         }
 
         return ApiResponse::success((new OrderResource($this->find($order)))->forAdmin(), $message);

@@ -15,6 +15,9 @@ return [
         'webhook_token' => env('SHIPROCKET_WEBHOOK_TOKEN'),
         // Nickname of the pickup address saved in Shiprocket → Settings → Pickup Addresses.
         'pickup_location' => env('SHIPROCKET_PICKUP_LOCATION', 'Primary'),
+        // Shiprocket has no sandbox. In test mode only the (free) Shiprocket order is created:
+        // no courier/AWB is assigned (which charges the wallet) and no pickup is requested.
+        'test_mode' => (bool) env('SHIPROCKET_TEST_MODE', false),
         'base_url' => rtrim((string) env('SHIPROCKET_BASE_URL', 'https://apiv2.shiprocket.in/v1/external'), '/'),
         'tracking_url' => 'https://shiprocket.co/tracking/{awb}',
         // Parcel used when products have no weight; dimensions are per order.

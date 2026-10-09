@@ -188,6 +188,11 @@ function ShiprocketPanel({ shiprocket }: { shiprocket: StoreSettings["integratio
       <p className="text-sm text-muted-foreground">When you mark an order <strong>Packed</strong>, it is sent to Shiprocket, a courier is assigned and the pickup is booked. Shiprocket then updates the order to Shipped, Out for delivery and Delivered by itself.</p>
       <ul className="grid gap-2">
         <StatusLine ok={shiprocket.configured}>{shiprocket.configured ? <>Connected with pickup address <strong>{shiprocket.pickup_location}</strong>.</> : <>Not connected. Add <code>SHIPROCKET_EMAIL</code>, <code>SHIPROCKET_PASSWORD</code> (a Shiprocket API user) and <code>SHIPROCKET_PICKUP_LOCATION</code> to the server environment.</>}</StatusLine>
+        {shiprocket.configured && shiprocket.test_mode ? (
+          <p className="border-l-4 border-amber-500 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            <strong>Test mode is on.</strong> Marking an order packed only creates it in Shiprocket: no courier is assigned, nothing is charged to your Shiprocket wallet and no pickup is booked. Set <code>SHIPROCKET_TEST_MODE=false</code> on the server to ship for real.
+          </p>
+        ) : null}
         <StatusLine ok={shiprocket.webhook_configured}>{shiprocket.webhook_configured ? "Tracking updates token is set." : <>Tracking updates are off. Add <code>SHIPROCKET_WEBHOOK_TOKEN</code> so status changes in Shiprocket reach this store.</>}</StatusLine>
       </ul>
       <CopyField label="Shiprocket webhook URL" value={shiprocket.webhook_url} />

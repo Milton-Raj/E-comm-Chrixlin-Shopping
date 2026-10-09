@@ -80,6 +80,29 @@ it('books the Shiprocket pickup automatically when an order is packed', function
     $this->assertDatabaseHas('audit_logs', ['action' => 'order.courier_booked']);
 });
 
+it('only creates the Shiprocket order in test mode: no courier, no pickup', function () {
+    enableShiprocket();
+    config(['shipping.shiprocket.test_mode' => true]);
+    fakeShiprocket();
+    $order = paidOrder($this, makeProduct(price: 150_000));
+    $this->actingAs($this->admin);
+
+    $this->postJson("/api/v1/admin/orders/{$order->order_number}/status", ['to' => 'packed'])
+        ->assertOk()
+        ->assertJsonPath('message', 'Marked packed. Shiprocket test mode: order 9001 created in Shiprocket, no courier booked.')
+        ->assertJsonPath('data.status', 'packed')
+        ->assertJsonPath('data.courier_shipments.0.status', 'test_created')
+        ->assertJsonPath('data.courier_shipments.0.tracking_number', null);
+
+    Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/orders/create/adhoc'));
+    Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/courier/'));
+    $this->assertDatabaseHas('audit_logs', ['action' => 'order.courier_test_created']);
+
+    // A retry in test mode never books a courier either.
+    $this->postJson("/api/v1/admin/orders/{$order->order_number}/courier-booking")->assertOk();
+    Http::assertNotSent(fn (Request $r) => str_contains($r->url(), '/courier/'));
+});
+
 it('keeps the order packed when booking fails, and resumes on retry without duplicating the Shiprocket order', function () {
     enableShiprocket();
     fakeShiprocket([

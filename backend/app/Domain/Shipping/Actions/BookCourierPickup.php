@@ -42,6 +42,10 @@ class BookCourierPickup
         if ($shipment->status === 'pickup_scheduled' || $shipment->shipped_at !== null) {
             return $shipment;
         }
+        $testMode = (bool) config('shipping.shiprocket.test_mode');
+        if ($testMode && $shipment->status === 'test_created') {
+            return $shipment;
+        }
 
         try {
             if (! $shipment->provider_shipment_id) {
@@ -51,6 +55,15 @@ class BookCourierPickup
                     throw new ApiException('Shiprocket: '.(string) data_get($created, 'message', 'the order was not created.'), 502, 'courier_error');
                 }
                 $shipment->forceFill(['provider_order_id' => (string) data_get($created, 'order_id'), 'provider_shipment_id' => $shipmentId])->save();
+            }
+
+            if ($testMode) {
+                // Stop before anything that costs money or sends a courier.
+                $shipment->forceFill(['status' => 'test_created', 'courier_status' => 'TEST ORDER CREATED', 'last_error' => null, 'last_event_at' => now()])->save();
+                Audit::record('order.courier_test_created', $order, null, ['provider' => self::PROVIDER, 'shiprocket_order_id' => $shipment->provider_order_id], $actor);
+                Log::channel('shipping')->info('Shiprocket test mode: order created, no courier booked.', ['order' => $order->order_number, 'shiprocket_order_id' => $shipment->provider_order_id]);
+
+                return $shipment;
             }
 
             if (! $shipment->tracking_number) {
