@@ -33,6 +33,7 @@ describe("t", () => {
 describe("visibleAdminNav", () => {
   it("filters items by permission", () => {
     const labels = visibleAdminNav(["content.manage"]).map((i) => i.label);
-    expect(labels).toEqual(["admin.content"]);
+    expect(labels).toEqual(["admin.content", "My account"]);
+    expect(visibleAdminNav(["users.manage"]).map((i) => i.href)).toEqual(["/admin/staff", "/admin/account"]);
   });
 });

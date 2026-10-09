@@ -35,7 +35,7 @@ class EnsureAdminAccess
         /** @var User|null $user */
         $user = $request->user();
 
-        if (! $user || ! $user->isStaff()) {
+        if (! $user || ! $user->is_active || ! $user->isStaff()) {
             Log::channel('admin')->warning('Non-staff user attempted admin access.', ['path' => $request->path()]);
             abort(403);
         }

@@ -16,6 +16,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin/coupons", label: "Coupons", permission: "coupons.manage", available: true },
   { href: "/admin/reports", label: "admin.reports", permission: "reports.view", available: true },
   { href: "/admin/content", label: "admin.content", permission: "content.manage", available: true },
+  { href: "/admin/staff", label: "Staff", permission: "users.manage", available: true },
   { href: "/admin/settings", label: "admin.settings", permission: "settings.manage", available: true },
   { href: "/admin/audit", label: "Audit log", permission: "audit.view", available: true },
   { href: "/admin/account", label: "My account", permission: null, available: true },

@@ -221,7 +221,7 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 | Media library | `GET/POST /admin/media`, `PATCH/DELETE /admin/media/{uuid}`, `POST /admin/media/{uuid}/replace` | `media.manage` | 7 |
 | Marketing | `GET /admin/subscribers`, export | `subscribers.manage` | 8 |
 | Reports | `GET /admin/reports/{sales|products|customers|inventory|finance}` | `reports.view` (`reports.finance` for finance) | 7 |
-| Staff & roles | `GET/POST/PATCH /admin/staff`, `POST /admin/staff/{uuid}/reset-2fa`, `GET/POST/PATCH /admin/roles` (assign permissions) | `users.manage`, `roles.manage` | 7 |
+| Staff & roles | **Built:** `GET /admin/staff`, `GET /admin/staff/roles` (roles + what each allows, `assignable`), `POST /admin/staff` (`name,email,role,password`; invites by email, or promotes an existing customer; 201), `PATCH /admin/staff/{uuid}` (`role?`, `is_active?`, `password`), `POST /admin/staff/{uuid}/two-factor-reset` (`password`), `POST /admin/staff/{uuid}/invitation` (resend). Errors: 409 `already_staff`/`account_closed`, 403 `cannot_manage_self`/`super_admin_only`, 404 `not_staff`. Planned: `GET/POST/PATCH /admin/roles` | `users.manage`, `roles.manage` | 7 |
 | Settings | `GET/PATCH /admin/settings/{group}` (store, checkout, payments (non-secret), tax, shipping, notifications), CRUD tax classes/rates/rules, shipping zones/methods/rates, carriers | `settings.manage` | 5/7 |
 | Audit | `GET /admin/audit-logs` | `audit.view` | 7 |
 | POST | `/admin/orders/{order}/status` | `orders.edit` | `to` ∈ processing, packed, out_for_delivery, delivered; walks intermediate stages; cannot pass "shipped" (409 `shipment_required`). Reaching packed books Shiprocket when configured |

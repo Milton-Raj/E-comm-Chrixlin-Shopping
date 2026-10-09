@@ -45,7 +45,7 @@ export function StatusBadge({ value }: { value: string }) {
     captured: "bg-emerald-100 text-emerald-900", available: "bg-emerald-100 text-emerald-900", processing: "bg-amber-100 text-amber-900",
     paid: "bg-amber-100 text-amber-900", shipped: "bg-sky-100 text-sky-900", out_for_delivery: "bg-sky-100 text-sky-900", packed: "bg-sky-100 text-sky-900",
     pending: "bg-muted text-foreground", draft: "bg-muted text-foreground", initiated: "bg-muted text-foreground", downloaded: "bg-sky-100 text-sky-900",
-    cancelled: "bg-stone-200 text-stone-800", archived: "bg-stone-200 text-stone-800", failed: "bg-red-100 text-red-900", revoked: "bg-red-100 text-red-900",
+    cancelled: "bg-stone-200 text-stone-800", archived: "bg-stone-200 text-stone-800", failed: "bg-red-100 text-red-900", revoked: "bg-red-100 text-red-900", deactivated: "bg-red-100 text-red-900", blocked: "bg-red-100 text-red-900",
     refunded: "bg-red-100 text-red-900", partially_refunded: "bg-red-100 text-red-900", refund_requested: "bg-red-100 text-red-900",
   };
   return <span key={changes} className={cn("inline-flex items-center rounded-sm px-2 py-0.5 text-xs font-medium whitespace-nowrap capitalize transition-colors duration-300", tone[value] ?? "bg-muted text-foreground", changes > 0 && "animate-pop")}>{value.replaceAll("_", " ")}</span>;

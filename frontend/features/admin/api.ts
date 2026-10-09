@@ -163,3 +163,15 @@ export const miscAdminApi = {
   saveSecurity: (body: { admin_require_2fa: boolean; password: string }) => api.put<{ admin_requires_2fa: boolean }>("/admin/settings/security", body),
   audit: (page: number) => api.getPaged<AuditEntry>(`/admin/audit-logs?page=${page}`),
 };
+
+export type StaffMember = { uuid: string; name: string; email: string; role: string | null; is_active: boolean; two_factor_enabled: boolean; is_you: boolean; last_login_at: string | null; created_at: string | null };
+export type StaffRole = { name: string; assignable: boolean; everything: boolean; permissions: string[] };
+
+export const staffApi = {
+  list: () => api.get<StaffMember[]>("/admin/staff"),
+  roles: () => api.get<StaffRole[]>("/admin/staff/roles"),
+  invite: (body: { name: string; email: string; role: string; password: string }) => api.post<StaffMember>("/admin/staff", body),
+  update: (uuid: string, body: { role?: string; is_active?: boolean; password: string }) => api.patch<StaffMember>(`/admin/staff/${uuid}`, body),
+  resetTwoFactor: (uuid: string, password: string) => api.post<StaffMember>(`/admin/staff/${uuid}/two-factor-reset`, { password }),
+  resendInvite: (uuid: string) => api.post(`/admin/staff/${uuid}/invitation`),
+};

@@ -183,6 +183,13 @@ Route::prefix('admin')->name('admin.')
         Route::put('pages/{page}', [Admin\ContentController::class, 'save'])->middleware('can:content.manage')->name('pages.update');
         Route::delete('pages/{page}', [Admin\ContentController::class, 'destroy'])->middleware('can:content.manage')->name('pages.destroy');
 
+        Route::get('staff', [Admin\StaffController::class, 'index'])->middleware('can:users.manage')->name('staff.index');
+        Route::get('staff/roles', [Admin\StaffController::class, 'roles'])->middleware('can:users.manage')->name('staff.roles');
+        Route::post('staff', [Admin\StaffController::class, 'store'])->middleware(['can:users.manage', 'throttle:20,10'])->name('staff.store');
+        Route::patch('staff/{staff}', [Admin\StaffController::class, 'update'])->middleware('can:users.manage')->name('staff.update');
+        Route::post('staff/{staff}/two-factor-reset', [Admin\StaffController::class, 'resetTwoFactor'])->middleware('can:users.manage')->name('staff.two-factor-reset');
+        Route::post('staff/{staff}/invitation', [Admin\StaffController::class, 'resendInvite'])->middleware(['can:users.manage', 'throttle:6,10'])->name('staff.invitation');
+
         Route::get('settings', [Admin\SettingsController::class, 'show'])->middleware('can:settings.manage')->name('settings.show');
         Route::put('settings', [Admin\SettingsController::class, 'update'])->middleware('can:settings.manage')->name('settings.update');
         Route::get('exports/{type}', Admin\ExportController::class)->middleware(['can:exports.run', 'throttle:20,1'])->name('exports');
