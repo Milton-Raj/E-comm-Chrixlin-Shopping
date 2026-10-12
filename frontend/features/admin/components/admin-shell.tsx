@@ -8,13 +8,13 @@ import { env } from "@/lib/env";
 import { t, type MessageKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { AdminMe } from "@/types/api";
-import { visibleAdminNav } from "../navigation";
+import { groupAdminNav, visibleAdminNav } from "../navigation";
 
 const label = (key: string) => (key.includes(".") ? t(key as MessageKey) : key);
 
 export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode }) {
   const pathname = usePathname();
-  const nav = visibleAdminNav(me.permissions);
+  const nav = groupAdminNav(visibleAdminNav(me.permissions));
   // Highlight the clicked item straight away, before its page has arrived.
   const [clicked, setClicked] = useState<{ href: string; from: string } | null>(null);
   const target = clicked && clicked.from === pathname ? clicked.href : null;
@@ -26,28 +26,35 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
           <Link href="/admin">{env.storeName} · {t("admin.title")}</Link>
         </div>
         <nav data-admin-nav aria-label={t("admin.title")} className="overflow-x-auto px-2 pb-2 lg:pb-6">
-          <ul className="flex gap-1 lg:flex-col">
-            {nav.map((item) => {
-              const here = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
-              const active = target ? target === item.href : here;
-              const className = cn(
-                "flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-all duration-300",
-                active ? "bg-background font-semibold shadow-sm" : "text-muted-foreground",
-                item.available ? "hover:bg-background hover:text-foreground" : "cursor-not-allowed opacity-50",
-              );
-              return (
-                <li key={item.href}>
-                  {item.available ? (
-                    <Link href={item.href} aria-current={here ? "page" : undefined} className={cn(className, "justify-between gap-2")} onClick={() => setClicked({ href: item.href, from: pathname })}>
-                      <span>{label(item.label)}</span>
-                      <LinkPending className="text-muted-foreground" />
-                    </Link>
-                  ) : (
-                    <span aria-disabled="true" className={className}>{label(item.label)}</span>
-                  )}
-                </li>
-              );
-            })}
+          <ul className="flex gap-1 lg:flex-col lg:gap-4">
+            {nav.map((section) => (
+              <li key={section.group ?? "main"}>
+                {section.group ? <p className="hidden px-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase lg:block">{section.group}</p> : null}
+                <ul className="flex gap-1 lg:flex-col">
+                  {section.items.map((item) => {
+                    const here = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+                    const active = target ? target === item.href : here;
+                    const className = cn(
+                      "flex min-h-11 items-center whitespace-nowrap rounded-lg px-3 text-sm transition-all duration-300",
+                      active ? "bg-background font-semibold shadow-sm" : "text-muted-foreground",
+                      item.available ? "hover:bg-background hover:text-foreground" : "cursor-not-allowed opacity-50",
+                    );
+                    return (
+                      <li key={item.href}>
+                        {item.available ? (
+                          <Link href={item.href} aria-current={here ? "page" : undefined} className={cn(className, "justify-between gap-2")} onClick={() => setClicked({ href: item.href, from: pathname })}>
+                            <span>{label(item.label)}</span>
+                            <LinkPending className="text-muted-foreground" />
+                          </Link>
+                        ) : (
+                          <span aria-disabled="true" className={className}>{label(item.label)}</span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </li>
+            ))}
           </ul>
         </nav>
       </aside>

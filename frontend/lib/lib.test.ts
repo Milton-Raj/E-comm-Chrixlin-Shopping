@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { visibleAdminNav } from "@/features/admin/navigation";
+import { adminNav, groupAdminNav, visibleAdminNav } from "@/features/admin/navigation";
 import { t } from "./i18n";
 import { formatMoney } from "./money";
 import { safeRedirectPath } from "./safe-redirect";
@@ -35,5 +35,11 @@ describe("visibleAdminNav", () => {
     const labels = visibleAdminNav(["content.manage"]).map((i) => i.label);
     expect(labels).toEqual(["admin.content", "My account"]);
     expect(visibleAdminNav(["users.manage"]).map((i) => i.href)).toEqual(["/admin/staff", "/admin/account"]);
+  });
+
+  it("puts daily work first and groups the rest", () => {
+    const sections = groupAdminNav(adminNav);
+    expect(sections.map((s) => s.group)).toEqual([null, "Grow sales", "Catalogue & site", "Store setup"]);
+    expect(sections[0]?.items.slice(0, 3).map((i) => i.href)).toEqual(["/admin", "/admin/orders", "/admin/products"]);
   });
 });
