@@ -45,6 +45,14 @@ echo "→ Uploading release $SHA"
 (cd "$S" && COPYFILE_DISABLE=1 tar --no-xattrs -czf - .) | ssh_run "set -e
   R=\$HOME/apps/ecom-web/releases/$SHA; rm -rf \$R; mkdir -p \$R \$HOME/apps/ecom-web/shared; tar -xzf - -C \$R 2>/dev/null
   ln -sfn \$HOME/apps/ecom-web/shared/runtime.env \$R/runtime.env
+  # Carry over the previous release's script/style files (14 days): pages cached by the CDN or an
+  # open tab still name them, and without them the page loads blank.
+  P=\$(readlink \$HOME/apps/ecom-web/current || true)
+  if [ -n \"\$P\" ] && [ -d \"\$P/.next/static\" ] && [ \"\$P\" != \"\$R\" ]; then
+    find \"\$P/.next/static\" -type f -mtime -14 | while read -r f; do
+      t=\"\$R/.next/static/\${f#\$P/.next/static/}\"; [ -e \"\$t\" ] || { mkdir -p \"\$(dirname \"\$t\")\"; cp -p \"\$f\" \"\$t\"; }
+    done
+  fi
   ln -sfn \$R \$HOME/apps/ecom-web/current
   mkdir -p \$R/tmp && touch \$R/tmp/restart.txt
   ls -1dt \$HOME/apps/ecom-web/releases/* | tail -n +4 | xargs -r rm -rf   # keep the last 3 releases

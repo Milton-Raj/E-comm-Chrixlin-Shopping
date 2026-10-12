@@ -26,10 +26,10 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
           <Link href="/admin">{env.storeName} · {t("admin.title")}</Link>
         </div>
         <nav data-admin-nav aria-label={t("admin.title")} className="overflow-x-auto px-2 pb-2 lg:pb-6">
-          <ul className="flex gap-1 lg:flex-col lg:gap-4">
+          <ul className="flex gap-1 lg:flex-col lg:gap-3">
             {nav.map((section) => (
-              <li key={section.group ?? "main"}>
-                {section.group ? <p className="hidden px-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase lg:block">{section.group}</p> : null}
+              <li key={section.group ?? "main"} className={cn(section.group && "flex border-l border-border pl-1 lg:block lg:border-t lg:border-l-0 lg:pt-3 lg:pl-0")}>
+                {section.group ? <p className="hidden px-3 pb-2 text-xs font-semibold tracking-wider text-foreground uppercase lg:block">{section.group}</p> : null}
                 <ul className="flex gap-1 lg:flex-col">
                   {section.items.map((item) => {
                     const here = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
