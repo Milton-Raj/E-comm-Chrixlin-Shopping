@@ -1,6 +1,7 @@
-import { HandHeart, MessageCircle, Package, Share2, ShieldCheck } from "lucide-react";
+import { HandHeart, MessageCircle, Package, Share2, ShieldCheck, Truck } from "lucide-react";
 import { env } from "@/lib/env";
 import { t } from "@/lib/i18n";
+import { formatMoney } from "@/lib/money";
 import { productHref } from "../catalog";
 import { siteText, type SiteContent } from "../site-content";
 import type { ProductDetail } from "../types";
@@ -11,7 +12,20 @@ export function ProductAssurance({ product, content }: { product: ProductDetail;
   const url = `${env.siteUrl}${productHref(product)}`;
   const share = `https://wa.me/?text=${encodeURIComponent(t("catalog.whatsappShareText", { name: product.name, url }))}`;
   const ask = content.whatsapp_number ? `https://wa.me/${content.whatsapp_number}?text=${encodeURIComponent(t("catalog.whatsappAskText", { name: product.name, url }))}` : null;
+  // With a single delivery method there is nothing to choose at checkout, so it is shown here instead.
+  const only = physical && content.delivery_options?.length === 1 ? content.delivery_options[0] : null;
+  const delivery = only
+    ? [{
+        icon: Truck,
+        text: t("catalog.deliveryLine", {
+          name: only.name,
+          price: only.amount.amount === 0 ? t("catalog.deliveryFree") : formatMoney(only.amount),
+          days: only.days_min === only.days_max ? String(only.days_max) : `${only.days_min}–${only.days_max}`,
+        }) + (only.free_over && only.amount.amount > 0 ? ` · ${t("catalog.deliveryFreeOver", { amount: formatMoney(only.free_over) })}` : ""),
+      }]
+    : [];
   const points = [
+    ...delivery,
     ...(physical ? [{ icon: HandHeart, text: siteText(content, "catalog.trustHandmade") }] : []),
     { icon: ShieldCheck, text: siteText(content, "catalog.trustSecure") },
     ...(physical ? [{ icon: Package, text: siteText(content, "catalog.trustPacked") }] : []),

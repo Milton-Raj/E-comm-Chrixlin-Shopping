@@ -53,7 +53,13 @@ export function CheckoutPage() {
   };
 
   const cart = checkout.data?.cart;
-  const steps: Step[] = useMemo(() => (cart?.requires_shipping === false ? ["contact", "payment"] : ["contact", "address", "shipping", "payment"]), [cart?.requires_shipping]);
+  // A single delivery method is shown on product pages and applied automatically, so there is no choice to make here.
+  const chooseDelivery = (c: Cart | undefined) => (c?.shipping_options.length ?? 0) > 1;
+  const multiple = chooseDelivery(cart);
+  const steps: Step[] = useMemo(
+    () => (cart?.requires_shipping === false ? ["contact", "payment"] : multiple ? ["contact", "address", "shipping", "payment"] : ["contact", "address", "payment"]),
+    [cart?.requires_shipping, multiple],
+  );
 
   if (checkout.isPending) return <LoadingState lines={8} />;
   if (checkout.isError) return <ErrorState onRetry={() => void checkout.refetch()} />;
@@ -86,11 +92,13 @@ export function CheckoutPage() {
         {cart.requires_shipping ? (
           <>
             <StepCard n={2} title="Delivery address" active={step === "address"} done={done("address")} summary={cart.shipping_address ? `${cart.shipping_address.name}, ${cart.shipping_address.city} ${cart.shipping_address.postal_code}` : undefined} onEdit={() => setStep("address")}>
-              <AddressStep cart={cart} saved={checkout.data.saved_address} defaultName={user?.name ?? ""} onSaved={(c) => { store(c); next("address"); }} />
+              <AddressStep cart={cart} saved={checkout.data.saved_address} defaultName={user?.name ?? ""} onSaved={(c) => { store(c); setStep(chooseDelivery(c) ? "shipping" : "payment"); }} />
             </StepCard>
-            <StepCard n={3} title="Delivery method" active={step === "shipping"} done={done("shipping")} summary={cart.shipping_method?.name} onEdit={() => setStep("shipping")}>
-              <ShippingStep cart={cart} onSaved={(c) => { store(c); next("shipping"); }} />
-            </StepCard>
+            {multiple ? (
+              <StepCard n={3} title="Delivery method" active={step === "shipping"} done={done("shipping")} summary={cart.shipping_method?.name} onEdit={() => setStep("shipping")}>
+                <ShippingStep cart={cart} onSaved={(c) => { store(c); next("shipping"); }} />
+              </StepCard>
+            ) : null}
           </>
         ) : null}
         <StepCard n={steps.length} title="Payment" active={step === "payment"} done={false}>

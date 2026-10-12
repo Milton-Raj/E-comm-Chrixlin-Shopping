@@ -150,7 +150,8 @@ class SettingsController extends Controller
         foreach ($data['marketing'] ?? [] as $key => $value) {
             $settings->set("marketing.{$key}", $key === 'whatsapp_number' && $value !== null ? preg_replace('/\D+/', '', (string) $value) : $value, $request->user()->getKey());
         }
-        if (isset($data['marketing'])) {
+        // Marketing switches and delivery methods both show on product pages.
+        if (isset($data['marketing']) || isset($data['shipping_methods'])) {
             StorefrontCache::invalidate(['catalog', 'site-content']);
         }
         foreach ($data['tax_classes'] ?? [] as $row) {

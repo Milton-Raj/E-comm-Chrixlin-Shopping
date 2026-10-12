@@ -2,12 +2,13 @@ import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { env } from "@/lib/env";
 import { t, type MessageKey } from "@/lib/i18n";
-import type { ApiEnvelope } from "@/types/api";
+import type { ApiEnvelope, Money } from "@/types/api";
 
 /** Owner-edited storefront text (Admin → Content → Site text) and the homepage story photo. */
-export type SiteContent = { texts: Partial<Record<MessageKey, string>>; editorial_image: string | null; whatsapp_number: string | null };
+export type DeliveryOption = { name: string; amount: Money; free_over: Money | null; days_min: number; days_max: number };
+export type SiteContent = { texts: Partial<Record<MessageKey, string>>; editorial_image: string | null; whatsapp_number: string | null; delivery_options: DeliveryOption[] };
 
-const EMPTY: SiteContent = { texts: {}, editorial_image: null, whatsapp_number: null };
+const EMPTY: SiteContent = { texts: {}, editorial_image: null, whatsapp_number: null, delivery_options: [] };
 
 export async function getSiteContent(): Promise<SiteContent> {
   "use cache";

@@ -8,6 +8,7 @@ use App\Domain\Checkout\PlaceOrder;
 use App\Domain\Checkout\SavedAddress;
 use App\Domain\Marketing\MarketingSettings;
 use App\Domain\Payments\GatewayManager;
+use App\Domain\Shipping\ShippingCalculator;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CartResource;
@@ -23,7 +24,7 @@ use Illuminate\Validation\Rule;
  */
 class CheckoutController extends Controller
 {
-    public function __construct(private readonly CartService $carts, private readonly CartPricer $pricer, private readonly GatewayManager $gateways) {}
+    public function __construct(private readonly CartService $carts, private readonly CartPricer $pricer, private readonly GatewayManager $gateways, private readonly ShippingCalculator $shipping) {}
 
     public function show(Request $request, SavedAddress $saved): JsonResponse
     {
@@ -67,7 +68,11 @@ class CheckoutController extends Controller
         }
 
         $cart = $this->carts->currentOrCreate($request);
-        $cart->forceFill(['shipping_address' => $data, 'shipping_method_code' => $cart->shipping_method_code ?? 'standard'])->save();
+        // Keep the chosen method if it delivers to this address; otherwise use the first one offered
+        // (with a single method this is the only choice, so checkout skips the delivery step).
+        $offered = $this->shipping->optionsFor($data['country_code'], 0)->pluck('code');
+        $code = $offered->contains($cart->shipping_method_code) ? $cart->shipping_method_code : $offered->first();
+        $cart->forceFill(['shipping_address' => $data, 'shipping_method_code' => $code])->save();
 
         return $this->respond($request, $cart);
     }
@@ -91,8 +96,10 @@ class CheckoutController extends Controller
 
     public function shippingMethod(Request $request): JsonResponse
     {
-        $data = $request->validate(['code' => ['required', 'string', Rule::in(['standard', 'express'])]]);
         $cart = $this->carts->currentOrCreate($request);
+        $country = is_array($cart->shipping_address) ? ($cart->shipping_address['country_code'] ?? null) : null;
+        $offered = $this->shipping->optionsFor($country ?? (string) config('commerce.store.country'), 0)->pluck('code')->all();
+        $data = $request->validate(['code' => ['required', 'string', Rule::in($offered)]]);
         $cart->forceFill(['shipping_method_code' => $data['code']])->save();
 
         return $this->respond($request, $cart);
