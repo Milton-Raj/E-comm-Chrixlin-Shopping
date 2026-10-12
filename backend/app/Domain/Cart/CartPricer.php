@@ -89,12 +89,17 @@ class CartPricer
 
         // Shipping
         $country = $cart->shipping_address['country_code'] ?? null;
+        // Before an address is given, delivery is priced for the store's own country so the summary shows it up front.
+        $shippingCountry = $country ?? (string) config('commerce.store.country');
         // Delivery is free only when every item that ships is marked "Free delivery" on its product.
         $deliveryFree = $requiresShipping && ! array_filter($sellable, fn (PricedLine $l) => $l->requiresShipping && ! $l->freeShipping);
-        $shippingOptions = $requiresShipping && $country ? $this->shipping->optionsFor($country, $subtotal - $discount, $deliveryFree)->all() : [];
+        $shippingOptions = $requiresShipping ? $this->shipping->optionsFor($shippingCountry, $subtotal - $discount, $deliveryFree)->all() : [];
         $selected = null;
         if ($requiresShipping && $shippingOptions) {
-            $selected = collect($shippingOptions)->firstWhere('code', $cart->shipping_method_code) ?? null;
+            // No method chosen yet: estimate with the first (default) option. A chosen method that is no longer offered stays unselected.
+            $selected = $cart->shipping_method_code === null
+                ? $shippingOptions[0]
+                : collect($shippingOptions)->firstWhere('code', $cart->shipping_method_code);
         }
         $shippingTotal = $selected['amount'] ?? 0;
         if ($coupon && $this->coupons->freeShipping($coupon)) {

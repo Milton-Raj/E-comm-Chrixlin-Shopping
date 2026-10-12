@@ -12,7 +12,8 @@ it('creates a guest cart behind an httpOnly cookie and prices it on the server',
         ->assertCreated()
         ->assertJsonPath('data.item_count', 2)
         ->assertJsonPath('data.totals.subtotal.amount', 500_000)
-        ->assertJsonPath('data.totals.total.amount', 500_000);
+        ->assertJsonPath('data.totals.shipping.amount', 25_000) // standard delivery, estimated before an address
+        ->assertJsonPath('data.totals.total.amount', 525_000);
 
     $cookie = collect($response->headers->getCookies())->firstWhere(fn ($c) => $c->getName() === CartService::COOKIE);
     expect($cookie)->not->toBeNull()->and($cookie->isHttpOnly())->toBeTrue();
@@ -53,7 +54,7 @@ it('applies valid coupons and rejects invalid, expired and below-minimum ones', 
     $this->postJson('/api/v1/cart/coupon', ['code' => 'ten'])->assertOk()
         ->assertJsonPath('data.coupon.code', 'TEN')
         ->assertJsonPath('data.totals.discount.amount', 30_000)
-        ->assertJsonPath('data.totals.total.amount', 270_000);
+        ->assertJsonPath('data.totals.total.amount', 295_000); // 3,000 − 300 off + 250 delivery
 });
 
 it('merges the guest cart into the customer cart on login', function () {

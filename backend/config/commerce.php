@@ -12,6 +12,8 @@ return [
     'store' => [
         'name' => env('STORE_NAME', env('APP_NAME', 'Chrixlin')),
         'currency' => env('STORE_CURRENCY', 'INR'),
+        // Where the store ships from; delivery is estimated for this country until the shopper gives an address.
+        'country' => env('STORE_COUNTRY', 'IN'),
         'locale' => env('STORE_LOCALE', 'en-IN'),
         // Wall-clock zone for documents people read (exports); the app itself stores UTC.
         'timezone' => env('STORE_TIMEZONE', 'Asia/Kolkata'),

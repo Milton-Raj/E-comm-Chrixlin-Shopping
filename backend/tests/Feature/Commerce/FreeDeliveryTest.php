@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Str;
 
 function deliveryAddress($test): void
 {
@@ -31,6 +32,30 @@ it('charges the normal delivery once when the bag mixes free and paid items', fu
 
     expect($cart['totals']['shipping']['amount'])->toBe(25_000)
         ->and($cart['totals']['total']['amount'])->toBe(275_000);
+});
+
+it('shows the delivery charge in the bag before any address is entered', function () {
+    $paid = makeProduct(price: 100_000);
+    $cart = $this->postJson('/api/v1/cart/items', ['variant_uuid' => variantOf($paid)->uuid, 'quantity' => 1])->assertCreated()->json('data');
+
+    expect($cart['shipping_method']['code'])->toBe('standard')
+        ->and($cart['totals']['shipping']['amount'])->toBe(25_000)
+        ->and($cart['totals']['total']['amount'])->toBe(125_000);
+
+    $free = makeProduct(['free_shipping' => true], price: 150_000);
+    $this->deleteJson('/api/v1/cart/items/'.$cart['items'][0]['uuid'])->assertOk();
+    $cart = $this->postJson('/api/v1/cart/items', ['variant_uuid' => variantOf($free)->uuid, 'quantity' => 1])->assertCreated()->json('data');
+
+    expect($cart['totals']['shipping']['amount'])->toBe(0)
+        ->and($cart['totals']['total']['amount'])->toBe(150_000);
+});
+
+it('still asks for an address before an order can be placed', function () {
+    $this->postJson('/api/v1/cart/items', ['variant_uuid' => variantOf(makeProduct())->uuid, 'quantity' => 1])->assertCreated();
+    $this->putJson('/api/v1/checkout/contact', ['email' => 'guest@example.test'])->assertOk();
+
+    $this->postJson('/api/v1/checkout/place-order', ['gateway' => 'test'], ['Idempotency-Key' => (string) Str::uuid()])
+        ->assertStatus(422)->assertJsonValidationErrors(['address']);
 });
 
 it('saves the free delivery choice from the product editor', function () {

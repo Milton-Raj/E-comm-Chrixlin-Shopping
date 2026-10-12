@@ -248,4 +248,6 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 - Each endpoint has a Pest API test asserting envelope shape, status codes, authorization (owner vs other user vs guest vs staff without permission), and validation errors (TESTING.md).
 - Frontend DTO types are kept in sync manually per phase; a later phase may add OpenAPI generation (`dedoc/scramble`) if drift becomes a problem.
 
+> Delivery estimate: every priced cart includes delivery. Until an address and method are given, `shipping_method` is the first active method for the store's country (`STORE_COUNTRY`, default `IN`) and its charge is in `totals.shipping`/`totals.total`. Placing an order still requires a delivery address.
+
 > Checkout: `GET /checkout` also returns `saved_address` — the signed-in customer's delivery address from their latest placed order (null for guests). The storefront asks the customer to confirm it every time; it is never applied silently.
