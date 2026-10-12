@@ -70,44 +70,47 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
   return (
     <AdminPage title="Settings" description="Store details, GST rates, delivery charges and security. Payment keys stay in the server environment." actions={<Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save settings"}</Button>}>
       <RequiredNote />
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        <Panel title="Store">
-          <Field label="Store name" htmlFor="s-name" required error={err("store.name")}><input id="s-name" className={inputClass} value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} required /></Field>
-          <Field label="Business state (for GST)" htmlFor="s-state" required hint="Same-state deliveries charge CGST + SGST; other states IGST.">
-            <select id="s-state" className={inputClass} value={store.state_code} onChange={(e) => setStore({ ...store, state_code: e.target.value })}>{indianStates.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}</select>
-          </Field>
-          <Field label="Support email" htmlFor="s-email" error={err("store.support_email")}><input id="s-email" type="email" className={inputClass} value={store.support_email} onChange={(e) => setStore({ ...store, support_email: e.target.value })} /></Field>
-          <p className="text-sm text-muted-foreground">Currency: {settings.store.currency} · all prices include GST.</p>
-        </Panel>
-
-        <Panel title="Tax invoice details">
-          <p className="text-sm text-muted-foreground">Printed as the seller on every GST invoice. A PDF invoice is emailed to the customer automatically as soon as payment is confirmed.</p>
-          <Field label="Registered business name" htmlFor="s-legal" hint="As on your GST registration. Leave empty to use the store name." error={err("store.legal_name")}>
-            <input id="s-legal" className={inputClass} placeholder={store.name} value={store.legal_name} onChange={(e) => setStore({ ...store, legal_name: e.target.value })} />
-          </Field>
-          <Field label="GSTIN" htmlFor="s-gstin" hint="15 characters, starting with your state's GST code." error={err("store.gstin")}>
-            <input id="s-gstin" className={cn(inputClass, "font-mono uppercase")} maxLength={15} placeholder="33ABCDE1234F1Z5" value={store.gstin} onChange={(e) => setStore({ ...store, gstin: e.target.value.toUpperCase() })} />
-          </Field>
-          <Field label="Registered address" htmlFor="s-address" hint="Printed on invoices exactly as typed." error={err("store.address")}>
-            <textarea id="s-address" className={textareaClass} value={store.address} onChange={(e) => setStore({ ...store, address: e.target.value })} />
-          </Field>
-        </Panel>
-
-        <Panel title="GST rates">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {taxes.map((t, i) => (
-              <Field key={t.uuid} label={t.name + (t.is_default ? " (default)" : "")} htmlFor={`tax-${i}`} required error={err(`tax_classes.${i}.rate_bps`)}>
-                <div className="relative">
-                  <input id={`tax-${i}`} inputMode="decimal" className={cn(inputClass, "pr-8")} value={t.rate} onChange={(e) => setTaxes(taxes.map((x, j) => (j === i ? { ...x, rate: e.target.value } : x)))} required />
-                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">%</span>
-                </div>
+      {/* Two independent columns so a short panel never leaves a gap beside a tall one. */}
+      <div className="grid gap-4">
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="grid gap-4">
+            <Panel title="Store">
+              <Field label="Store name" htmlFor="s-name" required error={err("store.name")}><input id="s-name" className={inputClass} value={store.name} onChange={(e) => setStore({ ...store, name: e.target.value })} required /></Field>
+              <Field label="Business state (for GST)" htmlFor="s-state" required hint="Same-state deliveries charge CGST + SGST; other states IGST.">
+                <select id="s-state" className={inputClass} value={store.state_code} onChange={(e) => setStore({ ...store, state_code: e.target.value })}>{indianStates.map((s) => <option key={s.code} value={s.code}>{s.name}</option>)}</select>
               </Field>
-            ))}
+              <Field label="Support email" htmlFor="s-email" error={err("store.support_email")}><input id="s-email" type="email" className={inputClass} value={store.support_email} onChange={(e) => setStore({ ...store, support_email: e.target.value })} /></Field>
+              <p className="text-sm text-muted-foreground">Currency: {settings.store.currency} · all prices include GST.</p>
+            </Panel>
+            <Panel title="GST rates">
+              <div className="grid gap-3 sm:grid-cols-2">
+                {taxes.map((t, i) => (
+                  <Field key={t.uuid} label={t.name + (t.is_default ? " (default)" : "")} htmlFor={`tax-${i}`} required error={err(`tax_classes.${i}.rate_bps`)}>
+                    <div className="relative">
+                      <input id={`tax-${i}`} inputMode="decimal" className={cn(inputClass, "pr-8")} value={t.rate} onChange={(e) => setTaxes(taxes.map((x, j) => (j === i ? { ...x, rate: e.target.value } : x)))} required />
+                      <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground">%</span>
+                    </div>
+                  </Field>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">Confirm rates with your accountant before launch.</p>
+            </Panel>
           </div>
-          <p className="text-xs text-muted-foreground">Confirm rates with your accountant before launch.</p>
-        </Panel>
+          <Panel title="Tax invoice details">
+            <p className="text-sm text-muted-foreground">Printed as the seller on every GST invoice. A PDF invoice is emailed to the customer automatically as soon as payment is confirmed.</p>
+            <Field label="Registered business name" htmlFor="s-legal" hint="As on your GST registration. Leave empty to use the store name." error={err("store.legal_name")}>
+              <input id="s-legal" className={inputClass} placeholder={store.name} value={store.legal_name} onChange={(e) => setStore({ ...store, legal_name: e.target.value })} />
+            </Field>
+            <Field label="GSTIN" htmlFor="s-gstin" hint="15 characters, starting with your state's GST code." error={err("store.gstin")}>
+              <input id="s-gstin" className={cn(inputClass, "font-mono uppercase")} maxLength={15} placeholder="33ABCDE1234F1Z5" value={store.gstin} onChange={(e) => setStore({ ...store, gstin: e.target.value.toUpperCase() })} />
+            </Field>
+            <Field label="Registered address" htmlFor="s-address" hint="Printed on invoices exactly as typed." error={err("store.address")}>
+              <textarea id="s-address" className={textareaClass} value={store.address} onChange={(e) => setStore({ ...store, address: e.target.value })} />
+            </Field>
+          </Panel>
+        </div>
 
-        <Panel title="Delivery charges & times" className="lg:col-span-2">
+        <Panel title="Delivery charges & times">
           <p className="text-sm text-muted-foreground">Set the charge, the free-delivery threshold and the delivery window (in working days) for each method. With a “Free over” amount, the bag and checkout show shoppers “Add ₹X more for free delivery”. The window is shown to customers at checkout.</p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
@@ -143,7 +146,7 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
           </div>
         </Panel>
 
-        <Panel title="Marketing" className="lg:col-span-2">
+        <Panel title="Marketing">
           <p className="text-sm text-muted-foreground">Ways to lift sales without discounting. Changes reach the store within a few minutes.</p>
           <div className="grid gap-x-6 gap-y-4 md:grid-cols-2">
             <fieldset className="grid content-start gap-3">
@@ -177,10 +180,13 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
           </div>
         </Panel>
 
-        <PaymentsPanel integrations={settings.integrations} />
-        <ShiprocketPanel shiprocket={settings.integrations.shiprocket} />
-
-        <SecurityPanel security={settings.security} />
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="grid gap-4">
+            <PaymentsPanel integrations={settings.integrations} />
+            <ShiprocketPanel shiprocket={settings.integrations.shiprocket} />
+          </div>
+          <SecurityPanel security={settings.security} />
+        </div>
       </div>
     </AdminPage>
   );
