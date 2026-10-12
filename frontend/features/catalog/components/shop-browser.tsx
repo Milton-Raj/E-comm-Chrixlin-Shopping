@@ -52,41 +52,50 @@ export function ShopBrowser({ fixedCategory }: { fixedCategory?: string }) {
       active ? "border-foreground bg-foreground text-background" : "border-border hover:border-foreground",
     );
 
+  const tab = (active: boolean) =>
+    cn(
+      "eyebrow relative inline-flex min-h-11 shrink-0 items-center whitespace-nowrap transition-colors",
+      "after:absolute after:inset-x-0 after:bottom-0 after:h-px after:transition-colors",
+      active ? "text-foreground after:bg-foreground" : "text-muted-foreground after:bg-transparent hover:text-foreground",
+    );
+
   const total = products.data?.pagination.total ?? 0;
   const lastPage = products.data?.pagination.last_page ?? 1;
 
   return (
     <div className="grid min-w-0 grid-cols-1 gap-8">
-      <div className="flex min-w-0 flex-col gap-4 border-y border-border py-4 lg:flex-row lg:items-center lg:justify-between">
-        {/* min-w-0 keeps the chip row scrolling inside itself instead of widening the page on phones. */}
-        <div className="-mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 lg:mx-0 lg:flex-wrap lg:px-0">
-          {!fixedCategory ? (
-            <>
-              <button type="button" className={chip(!category)} aria-pressed={!category} onClick={() => update("category", null)}>
-                {t("catalog.allCategories")}
-              </button>
-              {(categories.data ?? []).map((c) => (
-                <button key={c.slug} type="button" className={chip(category === c.slug)} aria-pressed={category === c.slug} onClick={() => update("category", c.slug)}>
-                  {c.name}
+      <div className="grid min-w-0 gap-1">
+        {/* One line of tabs: centred when they fit, scrolling sideways when they don't. min-w-0 keeps it from widening the page. */}
+        <div className="-mx-4 min-w-0 overflow-x-auto scrollbar-none border-y border-border px-4 md:mx-0 md:px-0">
+          <div className="mx-auto flex w-max gap-7 md:gap-9">
+            {!fixedCategory ? (
+              <>
+                <button type="button" className={tab(!category)} aria-pressed={!category} onClick={() => update("category", null)}>
+                  {t("catalog.allCategories")}
                 </button>
-              ))}
-            </>
-          ) : (
-            (["physical", "digital"] as const).map((value) => (
-              <button key={value} type="button" className={chip(type === value)} aria-pressed={type === value} onClick={() => update("type", type === value ? null : value)}>
-                {t(value === "digital" ? "catalog.digital" : "catalog.physical")}
-              </button>
-            ))
-          )}
+                {(categories.data ?? []).map((c) => (
+                  <button key={c.slug} type="button" className={tab(category === c.slug)} aria-pressed={category === c.slug} onClick={() => update("category", c.slug)}>
+                    {c.name}
+                  </button>
+                ))}
+              </>
+            ) : (
+              (["physical", "digital"] as const).map((value) => (
+                <button key={value} type="button" className={tab(type === value)} aria-pressed={type === value} onClick={() => update("type", type === value ? null : value)}>
+                  {t(value === "digital" ? "catalog.digital" : "catalog.physical")}
+                </button>
+              ))
+            )}
+          </div>
         </div>
-        <div className="flex items-center justify-between gap-4 lg:justify-end">
-          <p className="text-sm text-muted-foreground" aria-live="polite">{products.isSuccess ? t("catalog.results", { count: total }) : " "}</p>
-          <label className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-6">
+          <p className="text-sm whitespace-nowrap text-muted-foreground" aria-live="polite">{products.isSuccess ? t("catalog.results", { count: total }) : " "}</p>
+          <label className="flex items-center gap-2 whitespace-nowrap">
             <span className="eyebrow text-muted-foreground">{t("catalog.sortBy")}</span>
             <select
               value={sort}
               onChange={(e) => update("sort", e.target.value === "featured" ? null : e.target.value)}
-              className="min-h-11 border border-border bg-background px-3 text-sm"
+              className="min-h-11 cursor-pointer bg-transparent pr-1 text-sm font-medium text-foreground focus-visible:outline-2 focus-visible:outline-offset-2"
             >
               {sortOptions.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>

@@ -153,6 +153,14 @@
   text-transform: uppercase;
 }
 
+/* Horizontal rows that scroll by swipe or trackpad without showing a scrollbar. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Display headings: high-contrast serif. */
 @utility font-display-tight {
   font-family: var(--font-display);

@@ -4,6 +4,9 @@ import { LoadingState } from "@/components/states/loading-state";
 import { AdminGate } from "@/features/admin/components/admin-gate";
 import { t } from "@/lib/i18n";
 
+/** Admin renders only after the client-side staff check, so there is nothing for instant-navigation validation to see. */
+export const instant = false;
+
 export const metadata: Metadata = { title: { default: t("admin.title"), template: `%s · ${t("admin.title")}` }, robots: { index: false, follow: false } };
 
 /** Staff-only area. The gate is UX; the API enforces staff, 2FA and permissions. */
