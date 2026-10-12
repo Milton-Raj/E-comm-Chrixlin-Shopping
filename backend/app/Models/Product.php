@@ -138,10 +138,12 @@ class Product extends Model
     public function refreshPriceRange(): void
     {
         $variants = $this->variants()->where('is_active', true)->get(['price', 'compare_at_price']);
+        $minPrice = (int) ($variants->min('price') ?? 0);
+        // The "was" price must belong to the cheapest variant, so "from ₹X, save ₹Y" is never overstated.
         $this->forceFill([
-            'min_price' => (int) ($variants->min('price') ?? 0),
+            'min_price' => $minPrice,
             'max_price' => (int) ($variants->max('price') ?? 0),
-            'compare_at_price' => $variants->max('compare_at_price'),
+            'compare_at_price' => $variants->where('price', $minPrice)->max('compare_at_price'),
         ])->save();
     }
 }

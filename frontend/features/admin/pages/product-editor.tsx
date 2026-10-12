@@ -10,12 +10,12 @@ import { toast } from "sonner";
 import { ErrorState } from "@/components/states/error-state";
 import { LoadingState } from "@/components/states/loading-state";
 import { Button } from "@/components/ui/button";
-import { fromMinorUnits, toMinorUnits } from "@/lib/money-input";
+import { applyPercentOff, fromMinorUnits, percentOff, percentToBasisPoints, toMinorUnits } from "@/lib/money-input";
 import { ApiError } from "@/services/api-client";
 import { adminApi, type AdminProductDetail, type AdminVariant } from "../api";
 import { AdminPage, Field, inputClass, Panel, RequiredNote, StatusBadge, checkboxLabelClass, textareaClass } from "../components/kit/admin-page";
 
-type VariantRow = { uuid?: string; sku: string; name: string; options: Record<string, string>; price: string; compare: string; cost: string; stock: string; is_active: boolean; on_hand?: number | null; reserved?: number | null };
+type VariantRow = { uuid?: string; sku: string; name: string; options: Record<string, string>; mrp: string; discount: string; price: string; cost: string; stock: string; is_active: boolean; on_hand?: number | null; reserved?: number | null };
 
 type FormState = {
   name: string; slug: string; product_type: "physical" | "digital"; status: "draft" | "active" | "archived";
@@ -26,9 +26,18 @@ type FormState = {
 };
 
 const toRow = (v: AdminVariant): VariantRow => ({
-  uuid: v.uuid, sku: v.sku, name: v.name ?? "", options: v.options, price: fromMinorUnits(v.price), compare: fromMinorUnits(v.compare_at_price),
+  uuid: v.uuid, sku: v.sku, name: v.name ?? "", options: v.options,
+  mrp: fromMinorUnits(v.compare_at_price ?? v.price), discount: percentOff(v.price, v.compare_at_price), price: fromMinorUnits(v.price),
   cost: fromMinorUnits(v.cost_price), stock: "", is_active: v.is_active, on_hand: v.on_hand, reserved: v.reserved,
 });
+
+/** The admin types MRP and discount %; the selling price is always derived from them. */
+function withPricing(row: VariantRow, patch: Pick<Partial<VariantRow>, "mrp" | "discount">): VariantRow {
+  const next = { ...row, ...patch };
+  const mrp = toMinorUnits(next.mrp);
+  const bp = percentToBasisPoints(next.discount);
+  return { ...next, price: mrp !== null && bp !== null ? fromMinorUnits(applyPercentOff(mrp, bp)) : "" };
+}
 
 function initial(p?: AdminProductDetail): FormState {
   return {
@@ -38,7 +47,7 @@ function initial(p?: AdminProductDetail): FormState {
     seo_title: p?.seo_title ?? "", seo_description: p?.seo_description ?? "",
     options: (p?.options ?? []).map((o) => ({ name: o.name, values: o.values.join(", ") })),
     specifications: p?.specifications ?? [],
-    variants: p?.variants.length ? p.variants.map(toRow) : [{ sku: "", name: "", options: {}, price: "", compare: "", cost: "", stock: "0", is_active: true }],
+    variants: p?.variants.length ? p.variants.map(toRow) : [{ sku: "", name: "", options: {}, mrp: "", discount: "", price: "", cost: "", stock: "0", is_active: true }],
     download_limit: String(p?.digital?.download_limit ?? 5), access_days: p?.digital?.access_days ? String(p.digital.access_days) : "", format: p?.digital?.format ?? "",
   };
 }
@@ -66,7 +75,7 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
       const options = form.options.filter((o) => o.name.trim()).map((o) => ({ name: o.name.trim(), values: o.values.split(",").map((v) => v.trim()).filter(Boolean) }));
       const variants = form.variants.map((v) => ({
         uuid: v.uuid, sku: v.sku.trim(), name: v.name.trim() || null, options: Object.keys(v.options).length ? v.options : null,
-        price: toMinorUnits(v.price) ?? -1, compare_at_price: toMinorUnits(v.compare), cost_price: toMinorUnits(v.cost),
+        ...submittedPrices(v), cost_price: toMinorUnits(v.cost),
         is_active: v.is_active, opening_stock: v.uuid ? undefined : Number(v.stock || 0),
       }));
       return adminApi.saveProduct(product?.uuid ?? null, {
@@ -102,7 +111,7 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
     set("variants", combos.map((combo) => {
       const existing = form.variants.find((v) => JSON.stringify(v.options) === JSON.stringify(combo));
       const label = Object.values(combo).join(" / ");
-      return existing ?? { sku: `${prefix}-${Object.values(combo).map((v) => v.slice(0, 4).toUpperCase()).join("-")}`, name: label, options: combo, price: base?.price ?? "", compare: base?.compare ?? "", cost: base?.cost ?? "", stock: "0", is_active: true };
+      return existing ?? { sku: `${prefix}-${Object.values(combo).map((v) => v.slice(0, 4).toUpperCase()).join("-")}`, name: label, options: combo, mrp: base?.mrp ?? "", discount: base?.discount ?? "", price: base?.price ?? "", cost: base?.cost ?? "", stock: "0", is_active: true };
     }));
   };
 
@@ -132,7 +141,7 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
           </Panel>
 
           <Panel title="Options & variants" actions={<Button type="button" variant="outline" size="sm" onClick={generateVariants}>Generate variants</Button>}>
-            <p className="text-sm text-muted-foreground">Add options like Size or Colour (comma-separated values), then generate one variant per combination. Prices are in rupees.</p>
+            <p className="text-sm text-muted-foreground">Add options like Size or Colour (comma-separated values), then generate one variant per combination. Enter the MRP and a discount %; the selling price is worked out for you. Prices are in rupees.</p>
             {form.options.map((o, i) => (
               <div key={i} className="grid grid-cols-5 items-center gap-2">
                 <input aria-label="Option name" className={cn(inputClass, "col-span-2")} placeholder="Size" value={o.name} onChange={(e) => set("options", form.options.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))} />
@@ -143,17 +152,24 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
             {form.options.length < 3 ? <div><Button type="button" variant="ghost" size="sm" onClick={() => set("options", [...form.options, { name: "", values: "" }])}>+ Add option</Button></div> : null}
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
+              <table className="w-full min-w-[760px] text-sm">
                 <thead className="text-left text-xs text-muted-foreground uppercase">
-                  <tr><th className="p-2">Variant</th><th className="p-2">SKU<Req /></th><th className="p-2">Price ₹<Req /></th><th className="p-2">Compare ₹</th><th className="p-2">Cost ₹</th>{physical ? <th className="p-2">Stock</th> : null}<th className="p-2">Active</th></tr>
+                  <tr><th className="p-2">Variant</th><th className="p-2">SKU<Req /></th><th className="p-2">MRP ₹<Req /></th><th className="p-2">Discount %</th><th className="p-2">Selling price ₹</th><th className="p-2">Cost ₹</th>{physical ? <th className="p-2">Stock</th> : null}<th className="p-2">Active</th></tr>
                 </thead>
                 <tbody>
                   {form.variants.map((v, i) => (
                     <tr key={v.uuid ?? `new-${i}`} className="border-t border-border align-middle">
                       <td className="p-2 whitespace-nowrap">{v.name || "Default"}</td>
                       <td className="p-2"><input aria-label="SKU" className={inputClass} value={v.sku} onChange={(e) => updateVariant(i, { sku: e.target.value })} /><Err msg={err(`variants.${i}.sku`)} /></td>
-                      <td className="p-2"><input aria-label="Price" inputMode="decimal" className={inputClass} value={v.price} onChange={(e) => updateVariant(i, { price: e.target.value })} /><Err msg={err(`variants.${i}.price`)} /></td>
-                      <td className="p-2"><input aria-label="Compare-at price" inputMode="decimal" className={inputClass} value={v.compare} onChange={(e) => updateVariant(i, { compare: e.target.value })} /><Err msg={err(`variants.${i}.compare_at_price`)} /></td>
+                      <td className="p-2"><input aria-label="MRP" inputMode="decimal" className={inputClass} value={v.mrp} onChange={(e) => set("variants", form.variants.map((x, j) => (j === i ? withPricing(x, { mrp: e.target.value }) : x)))} /><Err msg={err(`variants.${i}.compare_at_price`)} /></td>
+                      <td className="p-2">
+                        <input aria-label="Discount percent" inputMode="decimal" placeholder="0" className={inputClass} value={v.discount} onChange={(e) => set("variants", form.variants.map((x, j) => (j === i ? withPricing(x, { discount: e.target.value }) : x)))} />
+                        <Err msg={percentToBasisPoints(v.discount) === null ? "Use 0–99.99" : undefined} />
+                      </td>
+                      <td className="p-2 whitespace-nowrap tabular-nums">
+                        <output>{v.price || "—"}</output>
+                        <Err msg={err(`variants.${i}.price`)} />
+                      </td>
                       <td className="p-2"><input aria-label="Cost price" inputMode="decimal" className={inputClass} value={v.cost} onChange={(e) => updateVariant(i, { cost: e.target.value })} /></td>
                       {physical ? (
                         <td className="p-2">
@@ -230,6 +246,13 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
       </form>
     </AdminPage>
   );
+}
+
+/** Price is what the shopper pays; the MRP is kept as the struck-through compare-at price only when there is a discount. */
+function submittedPrices(v: VariantRow): { price: number; compare_at_price: number | null } {
+  const price = toMinorUnits(v.price) ?? -1;
+  const mrp = toMinorUnits(v.mrp);
+  return { price, compare_at_price: mrp !== null && mrp > price ? mrp : null };
 }
 
 function Req() {

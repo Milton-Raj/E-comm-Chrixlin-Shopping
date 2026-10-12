@@ -8,7 +8,7 @@ import { useCartMutations } from "@/features/cart/cart-context";
 import { t } from "@/lib/i18n";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { findVariant } from "../catalog";
+import { findVariant, savings } from "../catalog";
 import type { ProductDetail } from "../types";
 import { WishlistButton } from "./wishlist-button";
 
@@ -24,6 +24,7 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
   const isDigital = product.product_type === "digital";
   const variant = findVariant(product.variants, product.options, selected);
   const purchasable = Boolean(variant?.available);
+  const variantSaving = variant ? savings(variant) : null;
 
   const isValueAvailable = (optionName: string, value: string) =>
     product.variants.some((v) => v.available && v.options[optionName] === value && product.options.every((o) => o.name === optionName || v.options[o.name] === selected[o.name]));
@@ -41,7 +42,12 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
       {variant && product.variants.length > 1 ? (
         <p className="text-sm text-muted-foreground" aria-live="polite">
           {formatMoney(variant.price)}
-          {variant.compare_at_price ? <span className="ml-2 line-through">{formatMoney(variant.compare_at_price)}</span> : null}
+          {variantSaving && variant.compare_at_price ? (
+            <>
+              <span className="ml-2 line-through"><span className="sr-only">{t("catalog.wasPrice", { price: "" })}</span>{formatMoney(variant.compare_at_price)}</span>
+              <span className="ml-2 font-medium text-primary">{t("catalog.youSave", { amount: formatMoney(variantSaving) })}</span>
+            </>
+          ) : null}
         </p>
       ) : null}
 

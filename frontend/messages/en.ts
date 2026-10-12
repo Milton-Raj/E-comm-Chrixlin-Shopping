@@ -62,6 +62,7 @@ export const en = {
   "catalog.ratingLabel": "Rated {rating} out of 5",
   "catalog.wasPrice": "Was {price}",
   "catalog.off": "{percent}% off",
+  "catalog.youSave": "You save {amount}",
   "catalog.addToBag": "Add to bag",
   "catalog.buyNow": "Buy now",
   "catalog.addToWishlist": "Add {name} to wishlist",

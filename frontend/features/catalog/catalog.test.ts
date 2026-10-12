@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchProduct, fetchProducts } from "./api";
-import { discountPercent, findVariant, productHref } from "./catalog";
+import { discountPercent, findVariant, productHref, savings } from "./catalog";
 import type { ProductVariant } from "./types";
 
 const money = (amount: number) => ({ amount, currency: "INR" });
@@ -15,6 +15,12 @@ describe("catalog helpers", () => {
     expect(discountPercent({ price: money(38500), compare_at_price: money(44000) })).toBe(13);
     expect(discountPercent({ price: money(100), compare_at_price: null })).toBeNull();
     expect(discountPercent({ price: money(100), compare_at_price: money(90) })).toBeNull();
+  });
+
+  it("computes the amount saved against the compare-at price", () => {
+    expect(savings({ price: money(80000), compare_at_price: money(100000) })).toEqual(money(20000));
+    expect(savings({ price: money(100), compare_at_price: null })).toBeNull();
+    expect(savings({ price: money(100), compare_at_price: money(100) })).toBeNull();
   });
 
   it("finds the variant matching all selected options", () => {

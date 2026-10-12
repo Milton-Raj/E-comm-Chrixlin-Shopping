@@ -1,3 +1,4 @@
+import type { Money } from "@/types/api";
 import type { Product, ProductOption, ProductSort, ProductVariant } from "./types";
 
 /** Pure catalog helpers shared by server and client components. */
@@ -19,6 +20,13 @@ export function productHref(product: Pick<Product, "slug" | "product_type">): st
 export function discountPercent(product: Pick<Product, "price" | "compare_at_price">): number | null {
   if (!product.compare_at_price || product.compare_at_price.amount <= product.price.amount) return null;
   return Math.round((1 - product.price.amount / product.compare_at_price.amount) * 100);
+}
+
+/** How much the shopper saves against the compare-at (MRP) price, or null when not on sale. */
+export function savings(product: Pick<Product, "price" | "compare_at_price">): Money | null {
+  const { price, compare_at_price: compareAt } = product;
+  if (!compareAt || compareAt.currency !== price.currency || compareAt.amount <= price.amount) return null;
+  return { amount: compareAt.amount - price.amount, currency: price.currency };
 }
 
 /** The variant matching every selected option value (or the only variant). */

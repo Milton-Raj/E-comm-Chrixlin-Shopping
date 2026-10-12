@@ -21,3 +21,24 @@ export function fromMinorUnits(amount: number | null | undefined, exponent = 2):
   const fraction = String(abs % 10 ** exponent).padStart(exponent, "0");
   return `${negative ? "-" : ""}${whole}${exponent ? `.${fraction}` : ""}`;
 }
+
+/** Parses a discount typed as a percentage ("20", "12.5") into basis points (0–9999), or null if invalid. */
+export function percentToBasisPoints(input: string): number | null {
+  const cleaned = input.replace(/[\s%]/g, "");
+  if (cleaned === "") return 0;
+  const match = /^(\d{1,2})(?:\.(\d{0,2}))?$/.exec(cleaned);
+  if (!match) return null;
+  return Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+}
+
+/** Selling price after taking `basisPoints` off the MRP, rounded to the nearest minor unit. */
+export function applyPercentOff(mrp: number, basisPoints: number): number {
+  return mrp - Math.round((mrp * basisPoints) / 10_000);
+}
+
+/** The discount (as an input string, e.g. "12.5") that turns `mrp` into `price`; "" when there is none. */
+export function percentOff(price: number, mrp: number | null | undefined): string {
+  if (!mrp || mrp <= price) return "";
+  const bp = Math.round(((mrp - price) * 10_000) / mrp);
+  return String(bp / 100);
+}

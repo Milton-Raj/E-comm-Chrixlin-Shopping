@@ -36,6 +36,27 @@ it('creates a product with variants and opening stock, audited', function () {
     $this->getJson("/api/v1/products/{$product->slug}")->assertOk(); // visible on the storefront
 });
 
+it('takes the storefront "was" price from the cheapest variant so savings are never overstated', function () {
+    $create = fn (string $name, array $variants) => $this->actingAs($this->admin)->postJson('/api/v1/admin/products', [
+        'name' => $name, 'product_type' => 'physical', 'status' => 'active',
+        'options' => [['name' => 'Size', 'values' => ['S', 'M']]], 'variants' => $variants,
+    ])->assertCreated();
+
+    $create('Plain Tee', [
+        ['sku' => 'PT-S', 'name' => 'S', 'options' => ['Size' => 'S'], 'price' => 450_000],
+        ['sku' => 'PT-M', 'name' => 'M', 'options' => ['Size' => 'M'], 'price' => 480_000, 'compare_at_price' => 520_000],
+    ]);
+    $this->getJson('/api/v1/products/plain-tee')->assertOk()->assertJsonPath('data.compare_at_price', null);
+
+    $create('Sale Tee', [
+        ['sku' => 'ST-S', 'name' => 'S', 'options' => ['Size' => 'S'], 'price' => 80_000, 'compare_at_price' => 100_000],
+        ['sku' => 'ST-M', 'name' => 'M', 'options' => ['Size' => 'M'], 'price' => 90_000, 'compare_at_price' => 150_000],
+    ]);
+    $this->getJson('/api/v1/products/sale-tee')->assertOk()
+        ->assertJsonPath('data.price.amount', 80_000)
+        ->assertJsonPath('data.compare_at_price.amount', 100_000);
+});
+
 it('validates prices, SKUs and product types', function () {
     makeProduct()->variants()->first()->update(['sku' => 'TAKEN']);
 
