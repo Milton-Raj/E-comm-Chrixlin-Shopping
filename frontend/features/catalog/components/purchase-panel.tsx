@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
 import { findVariant, savings } from "../catalog";
 import type { ProductDetail } from "../types";
+import { NotifyMe } from "./notify-me";
 import { WishlistButton } from "./wishlist-button";
 
 /** Variant selection, quantity and purchase CTAs (PRD §58). Prices shown come from the API. */
@@ -94,6 +95,8 @@ export function PurchasePanel({ product }: { product: ProductDetail }) {
           </div>
         </div>
       ) : null}
+
+      {variant && !purchasable ? <NotifyMe key={variant.uuid} slug={product.slug} variantUuid={variant.uuid} /> : null}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Button size="lg" className="h-14 text-sm" disabled={!purchasable || add.isPending} onClick={() => submit(false)}>

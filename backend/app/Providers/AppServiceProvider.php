@@ -75,6 +75,12 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('downloads', fn (Request $request) => Limit::perMinute(30)->by('downloads:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         RateLimiter::for('webhooks', fn (Request $request) => Limit::perMinute(600)->by('webhooks:'.$request->route('provider')));
 
+        // Public forms (back-in-stock, enquiries, reviews): a few per minute and a daily cap per visitor.
+        RateLimiter::for('forms', fn (Request $request) => [
+            Limit::perMinute(5)->by('forms:'.($request->user()?->getAuthIdentifier() ?? $request->ip())),
+            Limit::perDay(40)->by('forms-day:'.$request->ip()),
+        ]);
+
         RateLimiter::for('admin', fn (Request $request) => Limit::perMinute(300)->by('admin:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }
 

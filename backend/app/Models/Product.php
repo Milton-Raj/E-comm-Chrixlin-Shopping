@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -130,6 +131,19 @@ class Product extends Model
     public function files(): HasMany
     {
         return $this->hasMany(DigitalFile::class);
+    }
+
+    /**
+     * Hand-picked "Pairs well with" products, in the owner's order.
+     *
+     * @return BelongsToMany<Product, $this>
+     */
+    public function pairsWith(): BelongsToMany
+    {
+        return $this->belongsToMany(self::class, 'related_products', 'product_id', 'related_product_id')
+            ->wherePivot('type', 'cross_sell')
+            ->withPivot('sort_order')
+            ->orderByPivot('sort_order');
     }
 
     /**

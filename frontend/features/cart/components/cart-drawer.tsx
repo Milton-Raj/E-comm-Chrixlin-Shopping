@@ -5,6 +5,7 @@ import { ButtonLink } from "@/components/button-link";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useCart, useCartDrawer } from "../cart-context";
 import { CartLines } from "./cart-lines";
+import { CartSuggestions } from "./cart-suggestions";
 import { CartTotals } from "./cart-totals";
 
 /** Opens after "Add to bag" (PRD §60). */
@@ -24,9 +25,10 @@ export function CartDrawer() {
           <>
             <div className="flex-1 overflow-y-auto px-6">
               <CartLines cart={cart} compact />
+              <CartSuggestions cart={cart} onNavigate={close} />
             </div>
             <div className="grid gap-4 border-t border-border p-6">
-              <CartTotals cart={cart} showShipping={false} />
+              <CartTotals cart={cart} />
               <div className="grid grid-cols-2 gap-3">
                 <ButtonLink href="/cart" variant="outline" onClick={close}>View bag</ButtonLink>
                 <ButtonLink href="/checkout" onClick={close}>Checkout</ButtonLink>

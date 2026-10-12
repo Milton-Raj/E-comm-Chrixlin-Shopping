@@ -34,5 +34,14 @@ return [
 
         ['key' => 'catalog.delivery', 'group' => 'Product page', 'label' => 'Delivery box heading', 'max' => 50],
         ['key' => 'catalog.deliveryPhysical', 'group' => 'Product page', 'label' => 'Delivery box text', 'max' => 300, 'multiline' => true],
+        ['key' => 'catalog.trustHandmade', 'group' => 'Product page', 'label' => 'Reassurance line 1 (under the buy buttons)', 'max' => 80],
+        ['key' => 'catalog.trustSecure', 'group' => 'Product page', 'label' => 'Reassurance line 2', 'max' => 80],
+        ['key' => 'catalog.trustPacked', 'group' => 'Product page', 'label' => 'Reassurance line 3', 'max' => 80],
+
+        ['key' => 'gifting.title', 'group' => 'Corporate gifting page', 'label' => 'Heading', 'max' => 80],
+        ['key' => 'gifting.intro', 'group' => 'Corporate gifting page', 'label' => 'Introduction', 'max' => 300, 'multiline' => true],
+        ['key' => 'gifting.point1', 'group' => 'Corporate gifting page', 'label' => 'Point 1', 'max' => 100],
+        ['key' => 'gifting.point2', 'group' => 'Corporate gifting page', 'label' => 'Point 2', 'max' => 100],
+        ['key' => 'gifting.point3', 'group' => 'Corporate gifting page', 'label' => 'Point 3', 'max' => 100],
     ],
 ];

@@ -5,9 +5,9 @@ import { t, type MessageKey } from "@/lib/i18n";
 import type { ApiEnvelope } from "@/types/api";
 
 /** Owner-edited storefront text (Admin → Content → Site text) and the homepage story photo. */
-export type SiteContent = { texts: Partial<Record<MessageKey, string>>; editorial_image: string | null };
+export type SiteContent = { texts: Partial<Record<MessageKey, string>>; editorial_image: string | null; whatsapp_number: string | null };
 
-const EMPTY: SiteContent = { texts: {}, editorial_image: null };
+const EMPTY: SiteContent = { texts: {}, editorial_image: null, whatsapp_number: null };
 
 export async function getSiteContent(): Promise<SiteContent> {
   "use cache";

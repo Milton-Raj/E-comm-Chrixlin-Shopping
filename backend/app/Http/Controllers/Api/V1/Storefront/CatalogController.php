@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Storefront;
 
 use App\Domain\Catalog\Enums\ProductType;
+use App\Domain\Catalog\Recommendations;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductResource;
@@ -95,5 +96,13 @@ class CatalogController extends Controller
             ->with(['brand', 'category', 'media', 'variants.inventory', 'digital', 'files'])->firstOrFail();
 
         return ApiResponse::success((new ProductResource($product))->detailed());
+    }
+
+    /** "Pairs well with" for a product page (API.md §3.3). */
+    public function related(string $slug, Recommendations $recommendations): JsonResponse
+    {
+        $product = Product::query()->visible()->where('slug', $slug)->firstOrFail();
+
+        return ApiResponse::success(ProductResource::collection($recommendations->forProduct($product)));
     }
 }

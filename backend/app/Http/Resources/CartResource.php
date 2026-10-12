@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Domain\Cart\PricedCart;
 use App\Domain\Cart\PricedLine;
+use App\Domain\Marketing\MarketingSettings;
 use App\Support\Money\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -54,6 +55,7 @@ class CartResource extends JsonResource
                 'subtotal' => $money($priced->subtotal),
                 'discount' => $money($priced->discountTotal),
                 'shipping' => $money($priced->shippingTotal),
+                'gift_wrap' => $money($priced->giftWrapTotal),
                 'tax' => $money($priced->taxTotal),
                 'total' => $money($priced->grandTotal),
             ],
@@ -65,6 +67,18 @@ class CartResource extends JsonResource
             'shipping_address' => $cart->shipping_address,
             'shipping_method' => $priced->shippingMethod ? [...$priced->shippingMethod, 'amount' => $money($priced->shippingMethod['amount'])] : null,
             'shipping_options' => array_map(fn (array $o) => [...$o, 'amount' => $money($o['amount'])], $priced->shippingOptions),
+            'gift' => [
+                // Offered only for bags that ship; the price is the owner's current setting.
+                'available' => $priced->requiresShipping && app(MarketingSettings::class)->giftWrapEnabled(),
+                'price' => $money(app(MarketingSettings::class)->giftWrapPrice()),
+                'wrap' => $priced->giftWrapped,
+                'message' => $priced->giftWrapped ? $cart->gift_message : null,
+            ],
+            'free_delivery' => $priced->freeDelivery ? [
+                'threshold' => $money($priced->freeDelivery['threshold']),
+                'remaining' => $money($priced->freeDelivery['remaining']),
+                'qualified' => $priced->freeDelivery['remaining'] === 0,
+            ] : null,
             'warnings' => $priced->warnings,
         ];
     }

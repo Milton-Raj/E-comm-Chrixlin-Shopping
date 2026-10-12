@@ -4,6 +4,8 @@ import { getSiteContent, siteText } from "../site-content";
 import { discountPercent } from "../catalog";
 import type { Product, ProductDetail as ProductDetailType } from "../types";
 import { Price } from "./price";
+import { ProductAssurance } from "./product-assurance";
+import { ProductReviews } from "@/features/reviews/components/product-reviews";
 import { ProductGrid } from "./product-card";
 import { ProductGallery } from "./product-gallery";
 import { PurchasePanel } from "./purchase-panel";
@@ -15,7 +17,7 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
   const content = await getSiteContent();
   const discount = discountPercent(product);
   const stockLabel =
-    product.stock_status === "low_stock" ? t("catalog.lowStock") : product.stock_status === "out_of_stock" ? t("catalog.outOfStock") : t("catalog.inStock");
+    product.stock_status === "low_stock" ? (product.low_stock_count ? t("catalog.onlyLeft", { count: product.low_stock_count }) : t("catalog.lowStock")) : product.stock_status === "out_of_stock" ? t("catalog.outOfStock") : t("catalog.inStock");
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
@@ -47,6 +49,7 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
 
           <div className="mt-8 border-t border-border pt-8">
             <PurchasePanel product={product} />
+            <ProductAssurance product={product} content={content} />
           </div>
 
           <div className="mt-8 grid gap-2 border-t border-border pt-6 text-sm">
@@ -84,6 +87,8 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
           </dl>
         </section>
       </div>
+
+      <ProductReviews slug={product.slug} productName={product.name} />
 
       {related.length ? (
         <section className="mt-20 md:mt-28">

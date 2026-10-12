@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -20,6 +21,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array<string, string|null>|null $shipping_address
  * @property string|null $shipping_method_code
  * @property string|null $coupon_code
+ * @property bool $gift_wrap
+ * @property string|null $gift_message
+ * @property Carbon|null $last_activity_at
+ * @property Carbon|null $reminder_sent_at
  * @property-read Collection<int, CartItem> $items
  * @property-read User|null $user
  */
@@ -27,11 +32,11 @@ class Cart extends Model
 {
     use HasPublicUuid;
 
-    protected $fillable = ['token', 'user_id', 'status', 'currency', 'email', 'phone', 'shipping_address', 'shipping_method_code', 'coupon_code', 'last_activity_at'];
+    protected $fillable = ['token', 'user_id', 'status', 'currency', 'email', 'phone', 'shipping_address', 'shipping_method_code', 'coupon_code', 'gift_wrap', 'gift_message', 'last_activity_at', 'reminder_sent_at'];
 
     protected function casts(): array
     {
-        return ['shipping_address' => 'array', 'last_activity_at' => 'datetime'];
+        return ['shipping_address' => 'array', 'last_activity_at' => 'datetime', 'reminder_sent_at' => 'datetime', 'gift_wrap' => 'boolean'];
     }
 
     /** @return HasMany<CartItem, $this> */

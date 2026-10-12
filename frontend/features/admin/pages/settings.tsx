@@ -32,6 +32,11 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
   });
   const [taxes, setTaxes] = useState(settings.tax_classes.map((t) => ({ ...t, rate: String(t.rate_bps / 100) })));
   const [shipping, setShipping] = useState(settings.shipping_methods.map((m) => ({ ...m, amountText: fromMinorUnits(m.amount), freeText: fromMinorUnits(m.free_over), minText: String(m.days_min), maxText: String(m.days_max) })));
+  const [marketing, setMarketing] = useState({
+    low_stock_count: String(settings.marketing.low_stock_count), whatsapp_number: settings.marketing.whatsapp_number ?? "",
+    gift_wrap_enabled: settings.marketing.gift_wrap_enabled, gift_wrap_price: fromMinorUnits(settings.marketing.gift_wrap_price),
+    abandoned_cart_enabled: settings.marketing.abandoned_cart_enabled, abandoned_cart_delay_hours: String(settings.marketing.abandoned_cart_delay_hours),
+  });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const update = (i: number, patch: Partial<(typeof shipping)[number]>) => setShipping(shipping.map((x, j) => (j === i ? { ...x, ...patch } : x)));
 
@@ -40,6 +45,11 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
       store: {
         name: store.name, state_code: store.state_code, support_email: store.support_email || null,
         legal_name: store.legal_name.trim() || null, gstin: store.gstin.trim().toUpperCase() || null, address: store.address.trim() || null,
+      },
+      marketing: {
+        low_stock_count: Number(marketing.low_stock_count || 0), whatsapp_number: marketing.whatsapp_number.trim() || null,
+        gift_wrap_enabled: marketing.gift_wrap_enabled, gift_wrap_price: toMinorUnits(marketing.gift_wrap_price) ?? -1,
+        abandoned_cart_enabled: marketing.abandoned_cart_enabled, abandoned_cart_delay_hours: Number(marketing.abandoned_cart_delay_hours || 0),
       },
       tax_classes: taxes.map((t) => ({ uuid: t.uuid, rate_bps: Math.round(Number(t.rate) * 100) })),
       shipping_methods: shipping.map((m) => ({
@@ -96,7 +106,7 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
         </Panel>
 
         <Panel title="Delivery charges & times" className="lg:col-span-2">
-          <p className="text-sm text-muted-foreground">Set the charge, the free-delivery threshold and the delivery window (in working days) for each method. The window is shown to customers at checkout.</p>
+          <p className="text-sm text-muted-foreground">Set the charge, the free-delivery threshold and the delivery window (in working days) for each method. With a “Free over” amount, the bag and checkout show shoppers “Add ₹X more for free delivery”. The window is shown to customers at checkout.</p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] text-sm">
               <thead className="text-left text-xs font-semibold text-muted-foreground uppercase">
@@ -128,6 +138,32 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        </Panel>
+
+        <Panel title="Marketing" className="lg:col-span-2">
+          <p className="text-sm text-muted-foreground">Ways to lift sales without discounting. Changes reach the store within a few minutes.</p>
+          <div className="grid gap-x-6 gap-y-4 md:grid-cols-2">
+            <fieldset className="grid content-start gap-3">
+              <legend className="mb-1 text-sm font-medium">Gift wrapping</legend>
+              <label className={checkboxLabelClass}><input type="checkbox" className="size-4 accent-primary" checked={marketing.gift_wrap_enabled} onChange={(e) => setMarketing({ ...marketing, gift_wrap_enabled: e.target.checked })} />Offer gift wrapping with a gift message at checkout</label>
+              <Field label="Gift wrapping charge (₹ per order)" htmlFor="m-wrap" error={err("marketing.gift_wrap_price")} hint="Includes GST. Enter 0 to wrap for free.">
+                <input id="m-wrap" inputMode="decimal" className={inputClass} value={marketing.gift_wrap_price} onChange={(e) => setMarketing({ ...marketing, gift_wrap_price: e.target.value })} />
+              </Field>
+            </fieldset>
+            <fieldset className="grid content-start gap-3">
+              <legend className="mb-1 text-sm font-medium">Abandoned bag reminder</legend>
+              <label className={checkboxLabelClass}><input type="checkbox" className="size-4 accent-primary" checked={marketing.abandoned_cart_enabled} onChange={(e) => setMarketing({ ...marketing, abandoned_cart_enabled: e.target.checked })} />Email one reminder when a shopper leaves items in their bag</label>
+              <Field label="Send after (hours without activity)" htmlFor="m-delay" error={err("marketing.abandoned_cart_delay_hours")} hint="1–72 hours. Only shoppers who gave their email (signed in or at checkout) are reminded, once per bag.">
+                <input id="m-delay" inputMode="numeric" className={inputClass} value={marketing.abandoned_cart_delay_hours} onChange={(e) => setMarketing({ ...marketing, abandoned_cart_delay_hours: e.target.value.replace(/\D/g, "") })} />
+              </Field>
+            </fieldset>
+            <Field label="Show “Only N left” at or below" htmlFor="m-low" error={err("marketing.low_stock_count")} hint="Units in stock (0–50). Enter 0 to never show stock counts.">
+              <input id="m-low" inputMode="numeric" className={inputClass} value={marketing.low_stock_count} onChange={(e) => setMarketing({ ...marketing, low_stock_count: e.target.value.replace(/\D/g, "") })} />
+            </Field>
+            <Field label="WhatsApp number" htmlFor="m-wa" error={err("marketing.whatsapp_number")} hint="With country code, e.g. +91 98765 43210. Adds “Ask us on WhatsApp” to product pages. Leave empty to hide it.">
+              <input id="m-wa" type="tel" inputMode="tel" className={inputClass} placeholder="+91 98765 43210" value={marketing.whatsapp_number} onChange={(e) => setMarketing({ ...marketing, whatsapp_number: e.target.value })} />
+            </Field>
           </div>
         </Panel>
 

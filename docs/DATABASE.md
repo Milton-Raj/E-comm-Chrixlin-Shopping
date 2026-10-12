@@ -215,13 +215,18 @@ Indexes: `(user_id, placed_at)` Q-O1 account order list; `(status, placed_at)` Q
 
 ### 3.11 Reviews
 **reviews** ☐SD — `id, uuid, product_id FK, user_id FK, order_item_id NULL FK (set ⇒ Verified Purchase), rating TINYINT (1–5, CHECK), title, body, status (pending|approved|rejected), moderated_by NULL, timestamps, deleted_at`. Unique `(product_id, user_id)`; index `(product_id, status, created_at)` Q-R1.
-**review_media** — `id, review_id FK CASCADE, media_asset_id FK, type (image|video), sort_order`.
+**review_photos** (built 2026-10-12; replaces the planned `review_media`) — `id, uuid, review_id FK CASCADE, disk, path, sort_order, timestamps`. Customer photos are re-encoded to WebP (EXIF/GPS stripped, ≤1600px) and stored on the public disk under `reviews/{review uuid}/{random}.webp`; only approved reviews are listed by the API. `products.rating_avg/rating_count` are recomputed from approved reviews.
 
 ### 3.12 Support
 **support_tickets** — `id, uuid, ticket_number UNIQUE (TKT-2026-000001), customer_id NULL FK users, email, order_id NULL FK, subject, category (order|payment|shipping|download|product|account|other), priority (low|normal|high|urgent), status (open|pending|in_progress|resolved|closed), assigned_to NULL FK users, last_activity_at, timestamps`. Index `(status, priority, last_activity_at)` Q-SU1; `(customer_id, created_at)`.
 **support_messages** — `id, uuid, ticket_id FK, author_id NULL FK users, author_type (customer|staff|system), body, is_internal_note, attachments JSON (media asset uuids, private disk), created_at`.
 
 ### 3.13 Notifications & marketing
+**related_products** (built) — `product_id FK CASCADE, related_product_id FK products CASCADE, type (cross_sell), sort_order`; PK `(product_id, related_product_id, type)`. Hand-picked "Pairs well with" (max 8 per product).
+**stock_alerts** — `id, uuid, product_id FK, variant_id FK, user_id NULL FK, email, notified_at NULL, timestamps`. Unique `(variant_id, email)`; index `(notified_at, variant_id)`. One email when the variant is available again (scheduler, every 5 min); a new request resets `notified_at`.
+**enquiries** — `id, uuid, type (corporate_gifting), name, company, email, phone, quantity, budget, occasion, needed_by DATE, message, status (new|contacted|quoted|won|lost), notes, updated_by NULL FK users, ip_address, timestamps`. Index `(status, created_at)`.
+**carts** additions — `reminder_sent_at` (one abandoned-bag email per cart), `gift_wrap` bool, `gift_message` (≤300).
+**orders** additions — `gift_wrap_total` (GST-inclusive, minor units, included in `grand_total`), `gift_wrap_tax` (part of `tax_total`, taxed at the default class rate), `gift_message`.
 **notifications** — Laravel standard (`id UUID PK, type, notifiable_type, notifiable_id, data JSON, read_at, created_at`). Index `(notifiable_type, notifiable_id, read_at)`.
 **subscribers** — `id, uuid, email UNIQUE, status (pending|subscribed|unsubscribed|bounced), source (footer|checkout|account|import), consent_text, consent_ip, consented_at, unsubscribed_at, timestamps` (§80).
 

@@ -19,6 +19,16 @@ return [
         'timezone' => env('STORE_TIMEZONE', 'Asia/Kolkata'),
     ],
 
+    // Defaults for Admin → Settings → Marketing (stored values override these).
+    'marketing' => [
+        'low_stock_count' => 5,
+        'whatsapp_number' => null,
+        'gift_wrap_enabled' => false,
+        'gift_wrap_price' => 9_900,
+        'abandoned_cart_enabled' => false,
+        'abandoned_cart_delay_hours' => 3,
+    ],
+
     // ISO-4217 code => minor-unit exponent. Never assume 2 decimals.
     'currencies' => [
         'INR' => 2,

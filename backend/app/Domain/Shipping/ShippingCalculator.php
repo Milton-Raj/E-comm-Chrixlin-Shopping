@@ -18,7 +18,7 @@ class ShippingCalculator
     /**
      * $freeDelivery: every shipped item in the cart is marked "Free delivery" on its product.
      *
-     * @return Collection<int, array{code: string, name: string, description: string|null, amount: int, days_min: int, days_max: int}>
+     * @return Collection<int, array{code: string, name: string, description: string|null, amount: int, free_over: int|null, days_min: int, days_max: int}>
      */
     public function optionsFor(?string $countryCode, int $merchandiseTotal, bool $freeDelivery = false): Collection
     {
@@ -32,6 +32,7 @@ class ShippingCalculator
                 'name' => $m->name,
                 'description' => $m->description,
                 'amount' => $freeDelivery || ($m->free_over !== null && $merchandiseTotal >= $m->free_over) ? 0 : $m->amount,
+                'free_over' => $m->free_over,
                 'days_min' => $m->days_min,
                 'days_max' => $m->days_max,
             ])

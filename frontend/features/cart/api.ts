@@ -1,4 +1,5 @@
 import { api } from "@/services/api-client";
+import type { Product } from "@/features/catalog/types";
 import type { Address, Cart, Gateway, PlacedOrder } from "./types";
 
 export const cartApi = {
@@ -8,6 +9,8 @@ export const cartApi = {
   remove: (itemUuid: string) => api.delete<Cart>(`/cart/items/${itemUuid}`),
   applyCoupon: (code: string) => api.post<Cart>("/cart/coupon", { code }),
   removeCoupon: () => api.delete<Cart>("/cart/coupon"),
+  suggestions: () => api.get<Product[]>("/cart/suggestions"),
+  gift: (giftWrap: boolean, message: string | null) => api.put<Cart>("/checkout/gift", { gift_wrap: giftWrap, gift_message: message }),
 };
 
 export const checkoutApi = {

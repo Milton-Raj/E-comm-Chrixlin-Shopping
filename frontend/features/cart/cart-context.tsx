@@ -60,6 +60,7 @@ export function useCartMutations() {
     remove: useMutation({ mutationFn: (item: string) => cartApi.remove(item), onSuccess: store, onError }),
     // A rejected code may mean the bag changed elsewhere (another tab), so reload it rather than show stale lines.
     applyCoupon: useMutation({ mutationFn: (code: string) => cartApi.applyCoupon(code), onSuccess: store, onError: () => { void queryClient.invalidateQueries({ queryKey: cartKey }); void queryClient.invalidateQueries({ queryKey: checkoutKey }); } }),
+    gift: useMutation({ mutationFn: ({ wrap, message }: { wrap: boolean; message: string | null }) => cartApi.gift(wrap, message), onSuccess: store, onError }),
     removeCoupon: useMutation({ mutationFn: () => cartApi.removeCoupon(), onSuccess: store, onError }),
   };
 }

@@ -23,6 +23,7 @@ type FormState = {
   is_featured: boolean; is_new: boolean; is_best_seller: boolean; free_shipping: boolean; seo_title: string; seo_description: string;
   options: { name: string; values: string }[]; specifications: { label: string; value: string }[];
   variants: VariantRow[]; download_limit: string; access_days: string; format: string;
+  pairs_with: { uuid: string; name: string }[];
 };
 
 const toRow = (v: AdminVariant): VariantRow => ({
@@ -48,6 +49,7 @@ function initial(p?: AdminProductDetail): FormState {
     options: (p?.options ?? []).map((o) => ({ name: o.name, values: o.values.join(", ") })),
     specifications: p?.specifications ?? [],
     variants: p?.variants.length ? p.variants.map(toRow) : [{ sku: "", name: "", options: {}, mrp: "", discount: "", price: "", cost: "", stock: "0", is_active: true }],
+    pairs_with: p?.pairs_with ?? [],
     download_limit: String(p?.digital?.download_limit ?? 5), access_days: p?.digital?.access_days ? String(p.digital.access_days) : "", format: p?.digital?.format ?? "",
   };
 }
@@ -84,7 +86,7 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
         brand: form.brand || null, category: form.category || null, tax_class: form.tax_class || null,
         is_featured: form.is_featured, is_new: form.is_new, is_best_seller: form.is_best_seller, free_shipping: form.free_shipping,
         seo_title: form.seo_title || null, seo_description: form.seo_description || null,
-        options, specifications: form.specifications.filter((s) => s.label && s.value), variants,
+        options, specifications: form.specifications.filter((s) => s.label && s.value), variants, pairs_with: form.pairs_with.map((p) => p.uuid),
         digital: form.product_type === "digital" ? { download_limit: Number(form.download_limit) || null, access_days: Number(form.access_days) || null, format: form.format || null } : null,
       });
     },
@@ -196,6 +198,8 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
             ))}
             <div><Button type="button" variant="ghost" size="sm" onClick={() => set("specifications", [...form.specifications, { label: "", value: "" }])}>+ Add specification</Button></div>
           </Panel>
+
+          <PairsWithPanel selfUuid={product?.uuid ?? null} value={form.pairs_with} onChange={(v) => set("pairs_with", v)} error={err("pairs_with")} />
 
           {product ? <MediaPanel product={product} /> : <Panel title="Images"><p className="text-sm text-muted-foreground">Save the product first, then upload images.</p></Panel>}
           {product && product.product_type === "digital" ? <FilesPanel product={product} /> : null}
@@ -328,5 +332,53 @@ function UploadButton({ label, accept, busy, onFile }: { label: string; accept: 
       <Upload className="size-4" aria-hidden /> {busy ? "Uploading…" : label}
       <input type="file" accept={accept} className="sr-only" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
     </label>
+  );
+}
+
+/** Hand-picked "Pairs well with" products, shown first on the product page and in the bag. */
+function PairsWithPanel({ selfUuid, value, onChange, error }: { selfUuid: string | null; value: { uuid: string; name: string }[]; onChange: (v: { uuid: string; name: string }[]) => void; error?: string }) {
+  const [search, setSearch] = useState("");
+  const term = search.trim();
+  const results = useQuery({
+    queryKey: ["admin", "products", "pairs", term],
+    queryFn: () => adminApi.products(`?q=${encodeURIComponent(term)}&status=active`),
+    enabled: term.length >= 2,
+    staleTime: 30_000,
+  });
+  const options = (results.data?.items ?? []).filter((p) => p.uuid !== selfUuid && !value.some((v) => v.uuid === p.uuid)).slice(0, 6);
+  const full = value.length >= 8;
+
+  return (
+    <Panel title="Pairs well with">
+      <p className="text-sm text-muted-foreground">Pick up to 8 products to suggest on this product page and in the bag. When fewer are picked, products from the same category fill the gaps. Sold-out picks are skipped automatically.</p>
+      {value.length ? (
+        <ol className="grid gap-2">
+          {value.map((p, i) => (
+            <li key={p.uuid} className="flex items-center justify-between gap-2 border border-border px-3 py-1 text-sm">
+              <span><span className="mr-2 text-muted-foreground">{i + 1}.</span>{p.name}</span>
+              <Button type="button" variant="ghost" size="sm" onClick={() => onChange(value.filter((x) => x.uuid !== p.uuid))} aria-label={`Remove ${p.name}`}>Remove</Button>
+            </li>
+          ))}
+        </ol>
+      ) : <p className="text-sm text-muted-foreground">None picked yet.</p>}
+      <Field label="Add a product" htmlFor="p-pairs" hint={full ? "Maximum reached — remove one to add another." : "Type at least 2 letters of a product name."} error={error}>
+        <input id="p-pairs" className={inputClass} value={search} disabled={full} onChange={(e) => setSearch(e.target.value)} placeholder="Search active products" autoComplete="off" />
+      </Field>
+      {term.length >= 2 && !full ? (
+        results.isPending ? <p className="text-sm text-muted-foreground">Searching…</p>
+          : results.isError ? <p className="text-sm text-destructive">Could not search products.</p>
+          : options.length ? (
+            <ul className="grid gap-1">
+              {options.map((p) => (
+                <li key={p.uuid}>
+                  <button type="button" className="flex min-h-11 w-full items-center justify-between gap-2 border border-border px-3 text-left text-sm hover:bg-muted" onClick={() => { onChange([...value, { uuid: p.uuid, name: p.name }]); setSearch(""); }}>
+                    <span>{p.name}</span><span className="text-xs text-muted-foreground">Add</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : <p className="text-sm text-muted-foreground">No matching products.</p>
+      ) : null}
+    </Panel>
   );
 }

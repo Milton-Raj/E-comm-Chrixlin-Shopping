@@ -26,7 +26,7 @@ export type OrderSummary = {
   placed_at: string | null;
   paid_at: string | null;
   currency: string;
-  totals: { subtotal: Money; discount: Money; shipping: Money; tax: Money; total: Money; refunded: Money };
+  totals: { subtotal: Money; discount: Money; shipping: Money; gift_wrap: Money; tax: Money; total: Money; refunded: Money };
   item_count: number | null;
 };
 
@@ -34,6 +34,7 @@ export type OrderDetail = OrderSummary & {
   phone: string | null;
   tax_breakdown: { code: string; amount: Money }[];
   coupon_code: string | null;
+  gift: { wrap: boolean; message: string | null } | null;
   shipping_method: { name: string; days_min: number; days_max: number } | null;
   shipping_address: { name: string; line1: string; line2: string | null; city: string; state_code: string; postal_code: string; country_code: string } | null;
   items: { uuid: string; name: string; variant_name: string | null; sku: string; product_type: string; product_slug: string | null; image: string | null; unit_price: Money; quantity: number; line_total: Money }[];

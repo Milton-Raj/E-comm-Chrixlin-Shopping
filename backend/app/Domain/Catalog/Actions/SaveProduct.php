@@ -63,6 +63,8 @@ class SaveProduct
             'variants.*.cost_price' => ['nullable', 'integer', 'min:0'],
             'variants.*.is_active' => ['boolean'],
             'variants.*.opening_stock' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'pairs_with' => ['sometimes', 'array', 'max:8'],
+            'pairs_with.*' => ['uuid', 'distinct', Rule::exists('products', 'uuid')],
             'digital' => ['nullable', 'array'],
             'digital.download_limit' => ['nullable', 'integer', 'min:1', 'max:1000'],
             'digital.access_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
@@ -99,6 +101,18 @@ class SaveProduct
             $product->save();
 
             $this->syncVariants($product, $data['variants'], $type, $actor);
+
+            if (array_key_exists('pairs_with', $data)) {
+                $uuids = array_values(array_unique(array_map('strval', (array) $data['pairs_with'])));
+                $ids = Product::query()->whereIn('uuid', $uuids)->where('id', '!=', $product->id)->pluck('id', 'uuid');
+                $sync = [];
+                foreach ($uuids as $position => $uuid) {
+                    if (isset($ids[$uuid])) {
+                        $sync[(int) $ids[$uuid]] = ['type' => 'cross_sell', 'sort_order' => $position];
+                    }
+                }
+                $product->pairsWith()->sync($sync);
+            }
 
             if ($type === ProductType::Digital) {
                 $product->digital()->updateOrCreate([], [

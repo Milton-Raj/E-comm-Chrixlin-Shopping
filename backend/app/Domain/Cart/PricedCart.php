@@ -10,9 +10,10 @@ final class PricedCart
     /**
      * @param  list<PricedLine>  $lines
      * @param  array<string, int>  $taxBreakdown
-     * @param  list<array{code: string, name: string, description: string|null, amount: int, days_min: int, days_max: int}>  $shippingOptions
-     * @param  array{code: string, name: string, description: string|null, amount: int, days_min: int, days_max: int}|null  $shippingMethod
+     * @param  list<array{code: string, name: string, description: string|null, amount: int, free_over: int|null, days_min: int, days_max: int}>  $shippingOptions
+     * @param  array{code: string, name: string, description: string|null, amount: int, free_over: int|null, days_min: int, days_max: int}|null  $shippingMethod
      * @param  list<array{code: string, item: string, message: string}>  $warnings
+     * @param  array{threshold: int, remaining: int}|null  $freeDelivery  progress towards the selected method's free-delivery amount
      */
     public function __construct(
         public readonly Cart $cart,
@@ -31,6 +32,10 @@ final class PricedCart
         public readonly array $shippingOptions,
         public readonly ?array $shippingMethod,
         public readonly array $warnings,
+        public readonly ?array $freeDelivery = null,
+        public readonly bool $giftWrapped = false,
+        public readonly int $giftWrapTotal = 0,
+        public readonly int $giftWrapTax = 0,
     ) {}
 
     /** @return list<PricedLine> */

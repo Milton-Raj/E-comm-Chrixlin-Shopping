@@ -11,11 +11,11 @@
 | 1 | Foundation | ✅ Built & tested locally — hosting verification (DEPLOYMENT **VERIFY** items) pending Hostinger/Vercel access |
 | 2 | Design system | ✅ Palette, type and core components (owner palette, D15); component gallery pending |
 | 3 | Catalog | ✅ Built (DB-backed catalog, variants, stock ledger, search, admin CRUD) |
-| 4 | Customer experience | ✅ Built (home, shop, PDP, bag + drawer, wishlist, account, orders, downloads); reviews pending |
+| 4 | Customer experience | ✅ Built (home, shop, PDP, bag + drawer, wishlist, account, orders, downloads, reviews with photos) |
 | 5 | Checkout, payments, orders | ✅ Built with test gateway; Razorpay coded, needs keys to verify live |
 | 6 | Digital products | ✅ Built (private files, single-use links, limits, expiry, revocation, logs) |
 | 7 | Admin | ✅ Built (dashboard, products, categories/brands, inventory, orders, customers, digital, coupons, reports, content, settings, audit); staff management (Admin → Staff); CSV import/export, support tickets pending |
-| 8 | Marketing | — |
+| 8 | Marketing | 🟡 Owner-selected set built 2026-10-12: free-delivery progress, gift wrapping + message, abandoned-bag reminder, Pairs well with, reviews with photos + moderation, back-in-stock alerts, WhatsApp share/ask, honest low-stock count + reassurance, corporate gifting enquiries (Admin → Marketing / Reviews / Enquiries, Settings → Marketing). Promotions engine, subscribers, price-drop alerts pending |
 | 9 | Security audit | — |
 | 10 | Performance | — |
 | 11 | Testing hardening | — |

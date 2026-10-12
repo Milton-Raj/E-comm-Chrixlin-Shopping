@@ -29,6 +29,9 @@ use Illuminate\Support\Carbon;
  * @property int $subtotal
  * @property int $discount_total
  * @property int $shipping_total
+ * @property int $gift_wrap_total
+ * @property int $gift_wrap_tax
+ * @property string|null $gift_message
  * @property int $tax_total
  * @property int $grand_total
  * @property int $refunded_total
@@ -67,6 +70,8 @@ class Order extends Model
             'subtotal' => 'integer',
             'discount_total' => 'integer',
             'shipping_total' => 'integer',
+            'gift_wrap_total' => 'integer',
+            'gift_wrap_tax' => 'integer',
             'tax_total' => 'integer',
             'grand_total' => 'integer',
             'refunded_total' => 'integer',

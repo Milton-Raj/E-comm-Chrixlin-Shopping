@@ -16,10 +16,13 @@ use App\Http\Controllers\Api\V1\Storefront\CartController;
 use App\Http\Controllers\Api\V1\Storefront\CatalogController;
 use App\Http\Controllers\Api\V1\Storefront\CheckoutController;
 use App\Http\Controllers\Api\V1\Storefront\DownloadController;
+use App\Http\Controllers\Api\V1\Storefront\EnquiryController;
 use App\Http\Controllers\Api\V1\Storefront\HeroSlideController;
 use App\Http\Controllers\Api\V1\Storefront\OrderController;
 use App\Http\Controllers\Api\V1\Storefront\PageController;
+use App\Http\Controllers\Api\V1\Storefront\ReviewController;
 use App\Http\Controllers\Api\V1\Storefront\SiteContentController;
+use App\Http\Controllers\Api\V1\Storefront\StockAlertController;
 use App\Http\Controllers\Api\V1\Storefront\WishlistController;
 use App\Http\Controllers\Api\V1\System\HealthController;
 use App\Http\Controllers\Api\V1\System\PublicSettingsController;
@@ -42,14 +45,25 @@ Route::middleware('throttle:public')->group(function () {
     Route::get('categories/{slug}', [CatalogController::class, 'category'])->name('categories.show');
     Route::get('products', [CatalogController::class, 'products'])->name('products.index');
     Route::get('products/{slug}', [CatalogController::class, 'product'])->name('products.show');
+    Route::get('products/{slug}/related', [CatalogController::class, 'related'])->name('products.related');
+    Route::get('products/{slug}/reviews', [ReviewController::class, 'index'])->name('products.reviews.index');
     Route::get('pages/{slug}', [PageController::class, 'show'])->name('pages.show');
     Route::get('hero-slides', [HeroSlideController::class, 'index'])->name('hero-slides.index');
     Route::get('site-content', SiteContentController::class)->name('site-content');
 });
 
+// Public forms
+Route::middleware('throttle:forms')->group(function () {
+    Route::post('products/{slug}/stock-alerts', [StockAlertController::class, 'store'])->name('stock-alerts.store');
+    Route::post('enquiries', [EnquiryController::class, 'store'])->name('enquiries.store');
+    Route::post('products/{slug}/reviews', [ReviewController::class, 'store'])->middleware('auth:sanctum')->name('products.reviews.store');
+});
+
 // Cart (guest cookie or signed-in user)
 Route::prefix('cart')->name('cart.')->middleware('throttle:cart')->group(function () {
     Route::get('/', [CartController::class, 'show'])->name('show');
+    Route::get('suggestions', [CartController::class, 'suggestions'])->name('suggestions');
+    Route::get('restore/{cart}', [CartController::class, 'restore'])->middleware('signed')->name('restore');
     Route::post('items', [CartController::class, 'addItem'])->name('items.store');
     Route::patch('items/{item}', [CartController::class, 'updateItem'])->name('items.update');
     Route::delete('items/{item}', [CartController::class, 'removeItem'])->name('items.destroy');
@@ -63,6 +77,7 @@ Route::prefix('checkout')->name('checkout.')->middleware('throttle:checkout')->g
     Route::put('contact', [CheckoutController::class, 'contact'])->name('contact');
     Route::put('address', [CheckoutController::class, 'address'])->name('address');
     Route::put('shipping-method', [CheckoutController::class, 'shippingMethod'])->name('shipping-method');
+    Route::put('gift', [CheckoutController::class, 'gift'])->name('gift');
     Route::post('place-order', [CheckoutController::class, 'placeOrder'])->middleware('idempotent')->name('place-order');
 });
 
@@ -174,6 +189,13 @@ Route::prefix('admin')->name('admin.')
         Route::post('coupons', [Admin\CouponController::class, 'save'])->middleware('can:coupons.manage')->name('coupons.store');
         Route::put('coupons/{coupon}', [Admin\CouponController::class, 'save'])->middleware('can:coupons.manage')->name('coupons.update');
         Route::delete('coupons/{coupon}', [Admin\CouponController::class, 'destroy'])->middleware('can:coupons.manage')->name('coupons.destroy');
+
+        Route::get('reviews', [Admin\ReviewController::class, 'index'])->middleware('can:reviews.moderate')->name('reviews.index');
+        Route::post('reviews/{review}/moderate', [Admin\ReviewController::class, 'moderate'])->middleware('can:reviews.moderate')->name('reviews.moderate');
+        Route::get('enquiries', [Admin\EnquiryController::class, 'index'])->middleware('can:support.view')->name('enquiries.index');
+        Route::patch('enquiries/{enquiry}', [Admin\EnquiryController::class, 'update'])->middleware('can:support.reply')->name('enquiries.update');
+        Route::get('marketing/abandoned-carts', [Admin\MarketingController::class, 'abandonedCarts'])->middleware('can:promotions.manage')->name('marketing.abandoned-carts');
+        Route::get('marketing/stock-alerts', [Admin\MarketingController::class, 'stockAlerts'])->middleware('can:promotions.manage')->name('marketing.stock-alerts');
 
         Route::get('digital/entitlements', [Admin\DigitalController::class, 'entitlements'])->middleware('can:downloads.view')->name('digital.entitlements');
         Route::patch('digital/entitlements/{entitlement}', [Admin\DigitalController::class, 'update'])->middleware('can:entitlements.revoke')->name('digital.entitlements.update');

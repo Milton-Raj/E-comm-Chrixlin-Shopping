@@ -47,6 +47,10 @@ export type Product = {
   compare_at_price: Money | null;
   rating: { average: number; count: number };
   stock_status: StockStatus;
+  /** Exact units left, only when at or below the owner's low-stock threshold. */
+  low_stock_count: number | null;
+  /** Variant to add straight from a suggestion, when the product has exactly one. */
+  quick_add_variant: string | null;
   is_new: boolean;
   is_best_seller: boolean;
   free_shipping: boolean;

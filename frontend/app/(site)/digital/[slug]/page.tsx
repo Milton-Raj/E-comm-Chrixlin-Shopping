@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { LoadingState } from "@/components/states/loading-state";
 import { productHref } from "@/features/catalog/catalog";
 import { ProductDetail } from "@/features/catalog/components/product-detail";
-import { getProduct, getProducts } from "@/features/catalog/server";
+import { getProduct, getRelated } from "@/features/catalog/server";
 
 /** digital products live at /digital/{slug} (PRD §50); the other path redirects to the canonical URL. */
 export async function generateMetadata({ params }: PageProps<"/digital/[slug]">): Promise<Metadata> {
@@ -31,7 +31,7 @@ async function ProductContent({ slug }: { slug: string }) {
   if (!product) notFound();
   if (product.product_type !== "digital") permanentRedirect(productHref(product));
 
-  const related = (await getProducts({ category: product.category?.slug, exclude: product.slug, per_page: 4 })).items;
+  const related = await getRelated(product.slug);
 
   return <ProductDetail product={product} related={related} />;
 }

@@ -72,6 +72,7 @@ Machine-readable codes go in `errors.code` (e.g. `out_of_stock`, `coupon_expired
 | `account` | 60/min per user |
 | `admin` | 300/min per user |
 | `webhooks` | 600/min per provider (not IP-limited for provider ranges) |
+| `forms` (back-in-stock, gifting enquiry, review submit) | 5/min per user or IP, 40/day per IP |
 
 ## 2. Authentication flow (Sanctum SPA)
 1. `GET /sanctum/csrf-cookie` (outside `/api/v1`) → sets `XSRF-TOKEN`.
@@ -182,7 +183,10 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 ### 3.8 Reviews & support
 | Method | Path | Auth | Ph |
 |---|---|---|---|
-| POST | `/products/{slug}/reviews` (multipart media) | user | 7 |
+| GET | `/products/{slug}/reviews?page=` | public | 8 — `{summary: {average, count, histogram}, reviews: [{uuid, author ("First L."), rating, title, body, verified, photos[{url}], created_at}]}`; approved only |
+| POST | `/products/{slug}/reviews` (multipart: `rating` 1–5, `title?`, `body` 10–3000, `photos[]` ≤3 jpg/png/webp ≤6 MB) | user | 8 — held as `pending`; 409 `review_exists` on a second review |
+| POST | `/products/{slug}/stock-alerts` `{variant_uuid, email}` | public (`forms`) | 8 — sold-out variants only (409 `in_stock`) |
+| POST | `/enquiries` `{name, company?, email, phone?, quantity?, budget?, occasion?, needed_by?, message, website (honeypot, must be empty)}` | public (`forms`) | 8 — emails the store support address and the sender |
 | PATCH/DELETE | `/reviews/{uuid}` | owner | 7 |
 | GET/POST | `/support/tickets` | user | 7 |
 | GET | `/support/tickets/{ticket_number}` | owner | 7 |
@@ -247,6 +251,8 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 ## 5. Contract testing
 - Each endpoint has a Pest API test asserting envelope shape, status codes, authorization (owner vs other user vs guest vs staff without permission), and validation errors (TESTING.md).
 - Frontend DTO types are kept in sync manually per phase; a later phase may add OpenAPI generation (`dedoc/scramble`) if drift becomes a problem.
+
+> Marketing (Phase 8): `GET /products/{slug}/related` (hand-picked "Pairs well with", then same category, then best sellers; in-stock only); `GET /cart/suggestions` (same, for everything in the bag, excluding bag items); `GET /cart/restore/{cart}` (signed link from the abandoned-bag email; reattaches a guest bag's cookie, redirects to `/cart`); `PUT /checkout/gift {gift_wrap, gift_message?}` (409 `gift_wrap_unavailable` when switched off). Cart adds `totals.gift_wrap`, `gift {available, price, wrap, message}` and `free_delivery {threshold, remaining, qualified}|null`; products add `low_stock_count` (exact units only at or below the owner's threshold) and `quick_add_variant`; orders add `totals.gift_wrap` and `gift {wrap, message}|null`. `GET /site-content` adds `whatsapp_number`. Admin: `GET /admin/reviews?status=`, `POST /admin/reviews/{uuid}/moderate {status: approved|rejected}` (`reviews.moderate`); `GET /admin/enquiries`, `PATCH /admin/enquiries/{uuid} {status, notes}` (`support.view` / `support.reply`); `GET /admin/marketing/abandoned-carts`, `GET /admin/marketing/stock-alerts` (`promotions.manage`); `settings` gains a `marketing` group (low_stock_count, whatsapp_number, gift_wrap_enabled, gift_wrap_price, abandoned_cart_enabled, abandoned_cart_delay_hours).
 
 > Delivery estimate: every priced cart includes delivery. Until an address and method are given, `shipping_method` is the first active method for the store's country (`STORE_COUNTRY`, default `IN`) and its charge is in `totals.shipping`/`totals.total`. Placing an order still requires a delivery address.
 

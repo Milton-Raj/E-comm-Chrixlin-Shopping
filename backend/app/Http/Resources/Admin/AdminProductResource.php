@@ -71,6 +71,7 @@ class AdminProductResource extends JsonResource
                     'price' => $v->price, 'compare_at_price' => $v->compare_at_price, 'cost_price' => $v->cost_price, 'is_active' => $v->is_active,
                     'on_hand' => $v->inventory?->on_hand, 'reserved' => $v->inventory?->reserved,
                 ])->values(),
+                'pairs_with' => $this->pairsWith()->get(['products.uuid', 'products.name'])->map(fn (Product $p) => ['uuid' => $p->uuid, 'name' => $p->name])->values(),
                 'digital' => $this->digital ? $this->digital->only(['download_limit', 'access_days', 'format']) : null,
                 'files' => $this->files->map(fn (DigitalFile $f) => ['uuid' => $f->uuid, 'name' => $f->original_name, 'size_bytes' => $f->size_bytes, 'mime_type' => $f->mime_type, 'created_at' => $f->created_at?->toIso8601String()])->values(),
             ];

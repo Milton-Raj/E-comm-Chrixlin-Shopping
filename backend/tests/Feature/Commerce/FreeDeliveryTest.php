@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ShippingMethod;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -48,6 +49,26 @@ it('shows the delivery charge in the bag before any address is entered', functio
 
     expect($cart['totals']['shipping']['amount'])->toBe(0)
         ->and($cart['totals']['total']['amount'])->toBe(150_000);
+});
+
+it('tells the shopper how much more to add for free delivery', function () {
+    $variant = variantOf(makeProduct(price: 100_000));
+    ShippingMethod::query()->where('code', 'standard')->where('zone', 'domestic')->update(['free_over' => 150_000]);
+
+    $cart = $this->postJson('/api/v1/cart/items', ['variant_uuid' => $variant->uuid, 'quantity' => 1])->assertCreated()->json('data');
+    expect($cart['free_delivery']['remaining']['amount'])->toBe(50_000)
+        ->and($cart['free_delivery']['qualified'])->toBeFalse()
+        ->and($cart['totals']['shipping']['amount'])->toBe(25_000);
+
+    $cart = $this->patchJson('/api/v1/cart/items/'.$cart['items'][0]['uuid'], ['quantity' => 2])->assertOk()->json('data');
+    expect($cart['free_delivery']['remaining']['amount'])->toBe(0)
+        ->and($cart['free_delivery']['qualified'])->toBeTrue()
+        ->and($cart['totals']['shipping']['amount'])->toBe(0);
+});
+
+it('shows no free-delivery progress when the method has no free-over amount', function () {
+    $cart = $this->postJson('/api/v1/cart/items', ['variant_uuid' => variantOf(makeProduct())->uuid, 'quantity' => 1])->assertCreated()->json('data');
+    expect($cart['free_delivery'])->toBeNull();
 });
 
 it('still asks for an address before an order can be placed', function () {

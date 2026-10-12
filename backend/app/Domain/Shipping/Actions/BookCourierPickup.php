@@ -138,6 +138,7 @@ class BookCourierPickup
             // Online payments only: the courier never collects cash.
             'payment_method' => 'Prepaid',
             'shipping_charges' => $major($order->shipping_total),
+            'giftwrap_charges' => $major($order->gift_wrap_total),
             'total_discount' => 0,
             'sub_total' => $major((int) $items->sum('line_total')),
             'length' => $package['length_cm'],

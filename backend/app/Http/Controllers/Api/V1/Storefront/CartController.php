@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Api\V1\Storefront;
 
 use App\Domain\Cart\CartPricer;
 use App\Domain\Cart\CartService;
+use App\Domain\Catalog\Recommendations;
 use App\Domain\Promotions\CouponService;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\CartResource;
+use App\Http\Resources\ProductResource;
+use App\Models\Cart;
 use App\Support\Http\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class CartController extends Controller
@@ -75,5 +79,27 @@ class CartController extends Controller
         $cart->forceFill(['coupon_code' => null])->save();
 
         return ApiResponse::success(new CartResource($this->pricer->price($cart)));
+    }
+
+    /** "Pairs well with" for the bag: suggestions based on what is in it, excluding those items. */
+    public function suggestions(Request $request, Recommendations $recommendations): JsonResponse
+    {
+        $cart = $this->carts->current($request);
+        $products = $cart ? $cart->items()->with('variant.product')->get()->map(fn ($item) => $item->variant->product)->filter()->unique('id')->values() : collect();
+
+        return ApiResponse::success(ProductResource::collection($recommendations->forProducts($products)));
+    }
+
+    /**
+     * Signed link from the abandoned-bag email: reattaches a guest bag to this browser,
+     * then sends the shopper to it. Signed-in bags are never handed to a cookie.
+     */
+    public function restore(Cart $cart): RedirectResponse
+    {
+        if ($cart->status === 'active' && $cart->user_id === null) {
+            $this->carts->queueCookie($cart);
+        }
+
+        return redirect()->away(rtrim((string) config('commerce.frontend_url'), '/').'/cart');
     }
 }

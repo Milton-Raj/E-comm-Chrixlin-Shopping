@@ -30,7 +30,9 @@ export type Cart = {
   currency: string;
   requires_shipping: boolean;
   items: CartItem[];
-  totals: { subtotal: Money; discount: Money; shipping: Money; tax: Money; total: Money };
+  totals: { subtotal: Money; discount: Money; shipping: Money; gift_wrap: Money; tax: Money; total: Money };
+  /** Gift wrapping offer and the shopper's choice. */
+  gift: { available: boolean; price: Money; wrap: boolean; message: string | null };
   tax_breakdown: { code: string; amount: Money }[];
   tax_inclusive: boolean;
   coupon: { code: string; description: string | null } | null;
@@ -39,6 +41,8 @@ export type Cart = {
   shipping_address: Address | null;
   shipping_method: ShippingOption | null;
   shipping_options: ShippingOption[];
+  /** Progress towards the delivery method's free-over amount; null when there is none. */
+  free_delivery: { threshold: Money; remaining: Money; qualified: boolean } | null;
   warnings: { code: string; item: string; message: string }[];
 };
 

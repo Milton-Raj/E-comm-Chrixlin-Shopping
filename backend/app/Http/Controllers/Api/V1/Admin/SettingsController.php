@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Domain\Identity\PermissionCatalog;
+use App\Domain\Marketing\MarketingSettings;
 use App\Domain\Payments\GatewayManager;
 use App\Domain\Shipping\Courier\ShiprocketClient;
 use App\Exceptions\ApiException;
@@ -15,6 +16,7 @@ use App\Notifications\SecuritySettingChangedNotification;
 use App\Support\Audit\Audit;
 use App\Support\Http\ApiResponse;
 use App\Support\Settings\Settings;
+use App\Support\Storefront\StorefrontCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
@@ -34,6 +36,7 @@ class SettingsController extends Controller
                 'gstin' => $settings->get('store.gstin'),
                 'address' => $settings->get('store.address'),
             ],
+            'marketing' => app(MarketingSettings::class)->toArray(),
             'tax_classes' => TaxClass::query()->orderBy('rate_bps')->get(['uuid', 'name', 'rate_bps', 'is_default']),
             'shipping_methods' => ShippingMethod::query()->orderBy('zone')->orderBy('sort_order')->get(['uuid', 'code', 'zone', 'name', 'amount', 'free_over', 'days_min', 'days_max', 'is_active']),
             'payments' => app(GatewayManager::class)->available(),
@@ -120,6 +123,13 @@ class SettingsController extends Controller
                         $fail("A GSTIN registered in this business state starts with {$code}.");
                     }
                 }],
+            'marketing' => ['sometimes', 'array'],
+            'marketing.low_stock_count' => ['required_with:marketing', 'integer', 'min:0', 'max:50'],
+            'marketing.whatsapp_number' => ['nullable', 'string', 'regex:/^\+?[0-9][0-9 ]{9,17}$/'],
+            'marketing.gift_wrap_enabled' => ['required_with:marketing', 'boolean'],
+            'marketing.gift_wrap_price' => ['required_with:marketing', 'integer', 'min:0', 'max:10000000'],
+            'marketing.abandoned_cart_enabled' => ['required_with:marketing', 'boolean'],
+            'marketing.abandoned_cart_delay_hours' => ['required_with:marketing', 'integer', 'min:1', 'max:72'],
             'tax_classes' => ['array'],
             'tax_classes.*.uuid' => ['required', 'uuid'],
             'tax_classes.*.rate_bps' => ['required', 'integer', 'min:0', 'max:5000'],
@@ -134,6 +144,12 @@ class SettingsController extends Controller
 
         foreach ($data['store'] as $key => $value) {
             $settings->set("store.{$key}", in_array($key, ['state_code', 'gstin'], true) && $value !== null ? strtoupper((string) $value) : $value, $request->user()->getKey());
+        }
+        foreach ($data['marketing'] ?? [] as $key => $value) {
+            $settings->set("marketing.{$key}", $key === 'whatsapp_number' && $value !== null ? preg_replace('/\D+/', '', (string) $value) : $value, $request->user()->getKey());
+        }
+        if (isset($data['marketing'])) {
+            StorefrontCache::invalidate(['catalog', 'site-content']);
         }
         foreach ($data['tax_classes'] ?? [] as $row) {
             TaxClass::query()->where('uuid', $row['uuid'])->update(['rate_bps' => $row['rate_bps']]);

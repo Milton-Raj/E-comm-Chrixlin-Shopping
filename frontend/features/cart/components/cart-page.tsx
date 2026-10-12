@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/states/error-state";
 import { LoadingState } from "@/components/states/loading-state";
 import { useCart } from "../cart-context";
 import { CartLines } from "./cart-lines";
+import { CartSuggestions } from "./cart-suggestions";
 import { CartTotals } from "./cart-totals";
 import { CouponForm } from "./coupon-form";
 
@@ -37,6 +38,7 @@ export function CartPage() {
         <div className="border-t border-border">
           <CartLines cart={cart} />
         </div>
+        <CartSuggestions cart={cart} />
       </div>
       <aside className="grid content-start gap-6 border border-border bg-card p-6 lg:sticky lg:top-36">
         <h2 className="text-xl font-semibold">Order summary</h2>

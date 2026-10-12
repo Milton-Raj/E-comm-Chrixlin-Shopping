@@ -19,6 +19,7 @@ import { checkoutApi } from "@/features/cart/api";
 import { cartKey, checkoutKey, useCartMutations } from "@/features/cart/cart-context";
 import { CartTotals } from "@/features/cart/components/cart-totals";
 import { CouponForm } from "@/features/cart/components/coupon-form";
+import { GiftOption } from "@/features/cart/components/gift-option";
 import type { Address, Cart, Gateway, PlacedOrder } from "@/features/cart/types";
 import { formatMoney } from "@/lib/money";
 import { countries, indianStates } from "@/lib/regions";
@@ -125,6 +126,7 @@ export function CheckoutPage() {
             </li>
           ))}
         </ul>
+        {!placed ? <GiftOption cart={cart} /> : null}
         {!placed ? <CouponForm cart={cart} /> : null}
         <CartTotals cart={cart} />
         <p className="flex items-center gap-2 text-xs text-muted-foreground"><Lock className="size-3.5" aria-hidden /> Payments are verified securely on our servers.</p>

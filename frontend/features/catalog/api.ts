@@ -34,6 +34,11 @@ export async function fetchProducts(params: ProductQuery = {}): Promise<Paginate
   return { items: result?.data ?? [], pagination };
 }
 
+/** "Pairs well with": hand-picked first, then same category, then best sellers. */
+export async function fetchRelated(slug: string): Promise<Product[]> {
+  return (await get<Product[]>(`/products/${encodeURIComponent(slug)}/related`))?.data ?? [];
+}
+
 export async function fetchProduct(slug: string): Promise<ProductDetail | null> {
   return (await get<ProductDetail>(`/products/${encodeURIComponent(slug)}`))?.data ?? null;
 }

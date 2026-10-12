@@ -2,6 +2,7 @@
 
 namespace App\Domain\Cart;
 
+use App\Domain\Marketing\MarketingSettings;
 use App\Domain\Promotions\CouponService;
 use App\Domain\Shipping\ShippingCalculator;
 use App\Domain\Tax\TaxCalculator;
@@ -23,6 +24,7 @@ class CartPricer
         private readonly ShippingCalculator $shipping,
         private readonly CouponService $coupons,
         private readonly Settings $settings,
+        private readonly MarketingSettings $marketing,
     ) {}
 
     public function price(Cart $cart, bool $strictCoupon = false): PricedCart
@@ -102,6 +104,12 @@ class CartPricer
                 : collect($shippingOptions)->firstWhere('code', $cart->shipping_method_code);
         }
         $shippingTotal = $selected['amount'] ?? 0;
+        // "Add ₹X more for free delivery": only when delivery is charged for and the method has a free-over amount.
+        $freeDelivery = null;
+        $threshold = $selected['free_over'] ?? null;
+        if ($threshold !== null && ! $deliveryFree && ! ($coupon && $this->coupons->freeShipping($coupon))) {
+            $freeDelivery = ['threshold' => (int) $threshold, 'remaining' => max(0, (int) $threshold - ($subtotal - $discount))];
+        }
         if ($coupon && $this->coupons->freeShipping($coupon)) {
             $discount += $shippingTotal;
             $shippingTotal = 0;
@@ -122,8 +130,19 @@ class CartPricer
             }
         }
 
+        // Gift wrapping: a flat, GST-inclusive charge per order for shipped items, taxed at the default rate. Coupons never discount it.
+        $giftWrapped = $requiresShipping && $cart->gift_wrap && $this->marketing->giftWrapEnabled();
+        $giftWrap = $giftWrapped ? $this->marketing->giftWrapPrice() : 0;
+        $giftWrapTax = $giftWrap > 0 ? $this->tax->inclusiveTax($giftWrap, $defaultRate) : 0;
+        if ($giftWrapTax > 0) {
+            $taxTotal += $giftWrapTax;
+            foreach ($this->tax->split($giftWrapTax, $intraState) as $code => $amount) {
+                $breakdown[$code] = ($breakdown[$code] ?? 0) + $amount;
+            }
+        }
+
         $merchDiscount = array_sum(array_map(fn (PricedLine $l) => $l->discount, $sellable));
-        $grandTotal = $subtotal - $merchDiscount + $shippingTotal;
+        $grandTotal = $subtotal - $merchDiscount + $shippingTotal + $giftWrap;
 
         return new PricedCart(
             cart: $cart,
@@ -142,6 +161,10 @@ class CartPricer
             shippingOptions: $shippingOptions,
             shippingMethod: $selected,
             warnings: $warnings,
+            freeDelivery: $freeDelivery,
+            giftWrapped: $giftWrapped,
+            giftWrapTotal: $giftWrap,
+            giftWrapTax: $giftWrapTax,
         );
     }
 

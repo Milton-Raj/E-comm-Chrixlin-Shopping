@@ -55,7 +55,12 @@ class InvoiceDocument
                 $item->quantity, $item->unit_price, $taxable, $item->tax_total, $item->line_total, $item->tax_rate_bps, $interState, $fmt);
         }
 
-        $deliveryTax = max(0, $order->tax_total - $lineTax);
+        if ($order->gift_wrap_total > 0) {
+            $rows[] = $this->row(count($rows) + 1, 'Gift wrapping', '', 1,
+                $order->gift_wrap_total, $order->gift_wrap_total - $order->gift_wrap_tax, $order->gift_wrap_tax, $order->gift_wrap_total, null, $interState, $fmt);
+        }
+
+        $deliveryTax = max(0, $order->tax_total - $lineTax - $order->gift_wrap_tax);
         if ($order->shipping_total > 0) {
             $rows[] = $this->row(count($rows) + 1, 'Delivery charges', (string) data_get($order->shipping_method, 'name', ''), 1,
                 $order->shipping_total, $order->shipping_total - $deliveryTax, $deliveryTax, $order->shipping_total, null, $interState, $fmt);

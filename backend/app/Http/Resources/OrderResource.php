@@ -48,6 +48,7 @@ class OrderResource extends JsonResource
                 'subtotal' => $money($this->subtotal),
                 'discount' => $money($this->discount_total),
                 'shipping' => $money($this->shipping_total),
+                'gift_wrap' => $money($this->gift_wrap_total),
                 'tax' => $money($this->tax_total),
                 'total' => $money($this->grand_total),
                 'refunded' => $money($this->refunded_total),
@@ -63,6 +64,8 @@ class OrderResource extends JsonResource
             'phone' => $this->phone,
             'tax_breakdown' => collect($this->tax_breakdown ?? [])->map(fn (int $amount, string $code) => ['code' => $code, 'amount' => $money($amount)])->values(),
             'coupon_code' => $this->coupon_code,
+            // Shown to the customer and to staff packing the order.
+            'gift' => $this->gift_wrap_total > 0 || $this->gift_message !== null ? ['wrap' => true, 'message' => $this->gift_message] : null,
             'shipping_method' => $this->shipping_method,
             'shipping_address' => $address?->only(['name', 'phone', 'line1', 'line2', 'city', 'state_code', 'postal_code', 'country_code']),
             'items' => $this->items->map(fn (OrderItem $item) => [

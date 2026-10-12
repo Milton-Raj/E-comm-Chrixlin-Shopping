@@ -22,6 +22,7 @@ export type AdminProductDetail = AdminProduct & {
   options: { name: string; values: string[] }[]; specifications: { label: string; value: string }[];
   is_featured: boolean; is_new: boolean; is_best_seller: boolean; free_shipping: boolean; seo_title: string | null; seo_description: string | null;
   published_at: string | null; media: { uuid: string; url: string; alt_text: string | null }[]; variants: AdminVariant[];
+  pairs_with: { uuid: string; name: string }[];
   digital: { download_limit: number | null; access_days: number | null; format: string | null } | null;
   files: { uuid: string; name: string; size_bytes: number; mime_type: string; created_at: string | null }[];
 };
@@ -131,6 +132,7 @@ export type SalesReport = {
 export type StoreSettings = {
   store: { name: string; currency: string; state_code: string; support_email: string | null; legal_name: string | null; gstin: string | null; address: string | null };
   tax_classes: { uuid: string; name: string; rate_bps: number; is_default: boolean }[];
+  marketing: { low_stock_count: number; whatsapp_number: string | null; gift_wrap_enabled: boolean; gift_wrap_price: number; abandoned_cart_enabled: boolean; abandoned_cart_delay_hours: number };
   shipping_methods: { uuid: string; code: string; zone: string; name: string; amount: number; free_over: number | null; days_min: number; days_max: number; is_active: boolean }[];
   payments: { key: string; name: string; description: string }[];
   security: { admin_requires_2fa: boolean; locked: boolean; you_have_2fa: boolean };
@@ -142,7 +144,32 @@ export type StoreSettings = {
 };
 export type AuditEntry = { uuid: string; action: string; actor: string; subject: string | null; before: Record<string, unknown> | null; after: Record<string, unknown> | null; ip_address: string | null; created_at: string };
 
+export type AdminEnquiry = {
+  uuid: string; name: string; company: string | null; email: string; phone: string | null; quantity: number | null; budget: string | null;
+  occasion: string | null; needed_by: string | null; message: string; status: EnquiryStatus; notes: string | null; created_at: string | null;
+};
+export type AdminReview = {
+  uuid: string; author: string; rating: number; title: string | null; body: string; verified: boolean; photos: { url: string }[]; created_at: string | null;
+  status: "pending" | "approved" | "rejected"; customer: { name: string | null; email: string | null };
+  product: { uuid: string; name: string; slug: string; product_type: "physical" | "digital" } | null;
+};
+export type AbandonedCarts = {
+  enabled: boolean; delay_hours: number; reminders_sent_30d: number; recovered_30d: number;
+  carts: { uuid: string; email: string | null; customer: string | null; items: number; value: Money; last_activity_at: string | null; reminder_sent_at: string | null }[];
+};
+export type StockAlertDemand = {
+  notified_last_30_days: number;
+  waiting: { product: { uuid: string; name: string } | null; variant: { sku: string; name: string | null } | null; waiting: number; available: number | null; last_requested_at: string | null }[];
+};
+export type EnquiryStatus = "new" | "contacted" | "quoted" | "won" | "lost";
+
 export const miscAdminApi = {
+  abandonedCarts: () => api.get<AbandonedCarts>("/admin/marketing/abandoned-carts"),
+  stockAlerts: () => api.get<StockAlertDemand>("/admin/marketing/stock-alerts"),
+  reviews: (query: string) => api.getPaged<AdminReview>(`/admin/reviews${query}`),
+  moderateReview: (uuid: string, status: "approved" | "rejected") => api.post(`/admin/reviews/${uuid}/moderate`, { status }),
+  enquiries: (query: string) => api.getPaged<AdminEnquiry>(`/admin/enquiries${query}`),
+  updateEnquiry: (uuid: string, body: { status: EnquiryStatus; notes: string | null }) => api.patch<AdminEnquiry>(`/admin/enquiries/${uuid}`, body),
   customers: (query: string) => api.getPaged<AdminCustomer>(`/admin/customers${query}`),
   customer: (uuid: string) => api.get<AdminCustomerDetail>(`/admin/customers/${uuid}`),
   setCustomerActive: (uuid: string, is_active: boolean) => api.patch(`/admin/customers/${uuid}`, { is_active }),

@@ -13,7 +13,7 @@ const product: AdminProductDetail = {
   variant_count: 1, stock_on_hand: 5, stock_available: 5, units_sold: 0, updated_at: null,
   short_description: null, description: null, tax_class: null, options: [], specifications: [],
   is_featured: false, is_new: false, is_best_seller: false, free_shipping: true, seo_title: null, seo_description: null, published_at: null,
-  media: [], digital: null, files: [],
+  media: [], digital: null, files: [], pairs_with: [],
   variants: [{ uuid: "v-1", sku: "MAC-1", name: null, options: {}, price: 89900, compare_at_price: null, cost_price: null, is_active: true, on_hand: 5, reserved: 0 }],
 };
 

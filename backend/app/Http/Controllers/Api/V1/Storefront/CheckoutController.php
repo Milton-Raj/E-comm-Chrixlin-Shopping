@@ -6,6 +6,7 @@ use App\Domain\Cart\CartPricer;
 use App\Domain\Cart\CartService;
 use App\Domain\Checkout\PlaceOrder;
 use App\Domain\Checkout\SavedAddress;
+use App\Domain\Marketing\MarketingSettings;
 use App\Domain\Payments\GatewayManager;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
@@ -69,6 +70,23 @@ class CheckoutController extends Controller
         $cart->forceFill(['shipping_address' => $data, 'shipping_method_code' => $cart->shipping_method_code ?? 'standard'])->save();
 
         return $this->respond($request, $cart);
+    }
+
+    /** Gift wrapping and a gift message (only when the owner offers it and the bag ships). */
+    public function gift(Request $request, MarketingSettings $marketing): JsonResponse
+    {
+        $data = $request->validate([
+            'gift_wrap' => ['required', 'boolean'],
+            'gift_message' => ['nullable', 'string', 'max:300'],
+        ]);
+        if ($data['gift_wrap'] && ! $marketing->giftWrapEnabled()) {
+            throw new ApiException('Gift wrapping is not available right now.', 409, 'gift_wrap_unavailable');
+        }
+        $cart = $this->carts->currentOrCreate($request);
+        $message = $data['gift_wrap'] ? (trim((string) ($data['gift_message'] ?? '')) ?: null) : null;
+        $cart->forceFill(['gift_wrap' => (bool) $data['gift_wrap'], 'gift_message' => $message])->save();
+
+        return ApiResponse::success(new CartResource($this->pricer->price($cart->fresh() ?? $cart)));
     }
 
     public function shippingMethod(Request $request): JsonResponse

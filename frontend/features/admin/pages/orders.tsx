@@ -140,6 +140,7 @@ export function OrderDetailPage({ orderNumber }: { orderNumber: string }) {
               <Row label="Subtotal" value={formatMoney(o.totals.subtotal)} />
               {o.totals.discount.amount ? <Row label={`Discount ${o.coupon_code ?? ""}`} value={`− ${formatMoney(o.totals.discount)}`} /> : null}
               <Row label="Shipping" value={formatMoney(o.totals.shipping)} />
+              {o.gift ? <Row label="Gift wrapping" value={formatMoney(o.totals.gift_wrap)} /> : null}
               <Row label={`GST (incl.) ${o.tax_breakdown.map((t) => t.code).join("+")}`} value={formatMoney(o.totals.tax)} />
               <Row label="Total" value={formatMoney(o.totals.total)} strong />
               {o.totals.refunded.amount ? <Row label="Refunded" value={`− ${formatMoney(o.totals.refunded)}`} /> : null}
@@ -161,6 +162,12 @@ export function OrderDetailPage({ orderNumber }: { orderNumber: string }) {
 
         <div className="grid content-start gap-4">
           {o.can_cancel ? <CancelPanel order={o} onSaved={store} onError={onError} /> : null}
+          {o.gift ? (
+            <Panel title="Gift wrap this order">
+              <p className="text-sm">Wrap the items as a gift before packing.</p>
+              {o.gift.message ? <blockquote className="border-l-2 border-primary pl-3 text-sm whitespace-pre-line">{o.gift.message}</blockquote> : <p className="text-sm text-muted-foreground">No gift message.</p>}
+            </Panel>
+          ) : null}
           <Panel title="Customer">
             <p className="text-sm">{o.customer ? <Link className="underline underline-offset-4" href={`/admin/customers/${o.customer.uuid}`}>{o.customer.name}</Link> : "Guest checkout"}</p>
             <p className="text-sm text-muted-foreground">{o.email}{o.phone ? ` · ${o.phone}` : ""}</p>
