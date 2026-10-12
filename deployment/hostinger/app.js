@@ -31,4 +31,26 @@ http.ServerResponse.prototype.writeHead = function (...args) {
   return writeHead.apply(this, args);
 };
 
+// A page cached by the CDN before a release names script files that no longer exist. Instead of
+// a 404 (which leaves the page blank), answer with a one-line script that reloads the page at a
+// fresh address the CDN has not cached. ?__fresh stops it looping; the app removes it afterwards.
+const staticDir = path.join(__dirname, ".next", "static");
+const reloadScript = '(function(){try{var u=new URL(location.href);if(u.searchParams.has("__fresh"))return;u.searchParams.set("__fresh",Date.now());location.replace(u.toString())}catch(e){}})();';
+const createServer = http.createServer;
+http.createServer = function (...args) {
+  const i = args.findIndex((a) => typeof a === "function");
+  if (i !== -1) {
+    const handler = args[i];
+    args[i] = function (req, res) {
+      const m = req.method === "GET" && req.url && req.url.match(/^\/_next\/static\/chunks\/([A-Za-z0-9_~.-]+\.js)$/);
+      if (m && !m[1].startsWith(".") && !fs.existsSync(path.join(staticDir, "chunks", m[1]))) {
+        res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store", "CDN-Cache-Control": "no-store" });
+        return res.end(reloadScript);
+      }
+      return handler.call(this, req, res);
+    };
+  }
+  return createServer.apply(this, args);
+};
+
 require("./server.js");

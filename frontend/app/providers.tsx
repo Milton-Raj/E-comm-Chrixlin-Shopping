@@ -1,7 +1,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Suspense, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/features/cart/cart-context";
@@ -22,6 +22,14 @@ export function Providers({ children }: { children: ReactNode }) {
         },
       }),
   );
+
+  // A page served stale by the CDN reloads itself with ?__fresh (deployment/hostinger/app.js); tidy the address afterwards.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("__fresh")) return;
+    url.searchParams.delete("__fresh");
+    window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
