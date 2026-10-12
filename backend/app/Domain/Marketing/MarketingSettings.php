@@ -48,6 +48,18 @@ class MarketingSettings
         return min(72, max(1, (int) $this->settings->get('marketing.abandoned_cart_delay_hours', 3)));
     }
 
+    /** Email customers a few days after delivery asking them to review what they bought. */
+    public function reviewRequestEnabled(): bool
+    {
+        return (bool) $this->settings->get('marketing.review_request_enabled', true);
+    }
+
+    /** Days after delivery before the single review request email is sent. */
+    public function reviewRequestDelayDays(): int
+    {
+        return min(30, max(1, (int) $this->settings->get('marketing.review_request_delay_days', 4)));
+    }
+
     /** @return array<string, mixed> */
     public function toArray(): array
     {
@@ -58,6 +70,8 @@ class MarketingSettings
             'gift_wrap_price' => $this->giftWrapPrice(),
             'abandoned_cart_enabled' => $this->abandonedCartEnabled(),
             'abandoned_cart_delay_hours' => $this->abandonedCartDelayHours(),
+            'review_request_enabled' => $this->reviewRequestEnabled(),
+            'review_request_delay_days' => $this->reviewRequestDelayDays(),
         ];
     }
 }

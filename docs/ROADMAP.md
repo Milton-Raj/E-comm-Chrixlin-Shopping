@@ -15,7 +15,7 @@
 | 5 | Checkout, payments, orders | ✅ Built with test gateway; Razorpay coded, needs keys to verify live |
 | 6 | Digital products | ✅ Built (private files, single-use links, limits, expiry, revocation, logs) |
 | 7 | Admin | ✅ Built (dashboard, products, categories/brands, inventory, orders, customers, digital, coupons, reports, content, settings, audit); staff management (Admin → Staff); CSV import/export, support tickets pending |
-| 8 | Marketing | 🟡 Owner-selected set built 2026-10-12: free-delivery progress, gift wrapping + message, abandoned-bag reminder, Pairs well with, reviews with photos + moderation, back-in-stock alerts, WhatsApp share/ask, honest low-stock count + reassurance, corporate gifting enquiries (Admin → Marketing / Reviews / Enquiries, Settings → Marketing). Promotions engine, subscribers, price-drop alerts pending |
+| 8 | Marketing | 🟡 Owner-selected set built 2026-10-12: free-delivery progress, gift wrapping + message, abandoned-bag reminder, Pairs well with, reviews with photos + moderation + review request email after delivery and "Write a review" on delivered orders, back-in-stock alerts, WhatsApp share/ask, honest low-stock count + reassurance, corporate gifting enquiries (Admin → Marketing / Reviews / Enquiries, Settings → Marketing). Promotions engine, subscribers, price-drop alerts pending |
 | 9 | Security audit | — |
 | 10 | Performance | — |
 | 11 | Testing hardening | — |

@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { BadgeCheck, Star } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { ErrorState } from "@/components/states/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,21 @@ import { reviewsApi, type PublicReview } from "../api";
 import { ReviewForm } from "./review-form";
 
 /** Approved customer reviews with photos, a rating summary and "Write a review" (PRD §37). */
+const WRITE_HASH = "#write-review";
+const subscribeHash = (onChange: () => void) => {
+  window.addEventListener("hashchange", onChange);
+  return () => window.removeEventListener("hashchange", onChange);
+};
+
 export function ProductReviews({ slug, productName }: { slug: string; productName: string }) {
-  const [writing, setWriting] = useState(false);
+  // Links from the review request email and My account → Orders end in #write-review and open the form.
+  const linkedToForm = useSyncExternalStore(subscribeHash, () => window.location.hash === WRITE_HASH, () => false);
+  const [chosen, setChosen] = useState<boolean | null>(null);
+  const writing = chosen ?? linkedToForm;
+  const setWriting = (open: boolean) => {
+    setChosen(open);
+    if (!open && window.location.hash === WRITE_HASH) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+  };
   const reviews = useInfiniteQuery({
     queryKey: ["reviews", slug],
     queryFn: ({ pageParam }) => reviewsApi.list(slug, pageParam),
@@ -25,7 +38,7 @@ export function ProductReviews({ slug, productName }: { slug: string; productNam
   const items = reviews.data?.pages.flatMap((p) => p.reviews) ?? [];
 
   return (
-    <section aria-labelledby="reviews-heading" className="mt-16 border-t border-border pt-12">
+    <section id="write-review" aria-labelledby="reviews-heading" className="mt-16 scroll-mt-24 border-t border-border pt-12">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 id="reviews-heading" className="font-display-tight text-3xl">{t("reviews.heading")}</h2>
         {!writing ? <Button variant="outline" onClick={() => setWriting(true)}>{t("reviews.write")}</Button> : null}

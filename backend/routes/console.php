@@ -2,6 +2,7 @@
 
 use App\Domain\Marketing\Actions\SendAbandonedCartReminders;
 use App\Domain\Marketing\Actions\SendBackInStockAlerts;
+use App\Domain\Reviews\Actions\SendReviewRequests;
 use App\Http\Controllers\Api\V1\System\HealthController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
@@ -28,6 +29,11 @@ Schedule::call(fn () => app(SendAbandonedCartReminders::class)())
     ->name('abandoned-cart-reminders')
     ->everyFifteenMinutes()
     ->withoutOverlapping(15);
+
+Schedule::call(fn () => app(SendReviewRequests::class)())
+    ->name('review-requests')
+    ->hourly()
+    ->withoutOverlapping(30);
 
 Schedule::command('queue:prune-failed --hours=720')->weekly();
 Schedule::command('auth:clear-resets')->hourly();

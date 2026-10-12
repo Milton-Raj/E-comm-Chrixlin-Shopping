@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Domain\Catalog\Enums\ProductStatus;
+use App\Domain\Orders\Enums\OrderStatus;
 use App\Domain\Shipping\Actions\BookCourierPickup;
 use App\Models\DigitalEntitlement;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
+use App\Models\Review;
 use App\Models\Shipment;
 use App\Support\Money\Money;
 use Illuminate\Http\Request;
@@ -60,6 +63,12 @@ class OrderResource extends JsonResource
             return $data;
         }
 
+        // Delivered orders invite a review of each piece the customer has not reviewed yet.
+        $canReview = ! $this->forAdmin && $this->status === OrderStatus::Delivered;
+        $reviewed = $canReview && $this->user_id
+            ? Review::withTrashed()->where('user_id', $this->user_id)->whereIn('product_id', $this->items->pluck('product_id')->filter())->pluck('product_id')->all()
+            : [];
+
         $data += [
             'phone' => $this->phone,
             'tax_breakdown' => collect($this->tax_breakdown ?? [])->map(fn (int $amount, string $code) => ['code' => $code, 'amount' => $money($amount)])->values(),
@@ -79,6 +88,7 @@ class OrderResource extends JsonResource
                 'unit_price' => $money($item->unit_price),
                 'quantity' => $item->quantity,
                 'line_total' => $money($item->line_total),
+                'can_review' => $canReview && $item->product?->status === ProductStatus::Active && ! in_array($item->product_id, $reviewed, true),
             ])->values(),
             'shipments' => $this->relationLoaded('shipments') ? $this->shipments->filter(fn (Shipment $s) => $s->tracking_number !== null)->map(fn (Shipment $s) => $s->only(['carrier', 'tracking_number', 'tracking_url', 'courier_status']) + ['shipped_at' => $s->shipped_at?->toIso8601String()])->values() : [],
             'history' => $this->relationLoaded('history') ? $this->history->map(fn (OrderStatusHistory $h) => [

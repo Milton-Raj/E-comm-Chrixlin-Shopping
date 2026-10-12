@@ -36,6 +36,7 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
     low_stock_count: String(settings.marketing.low_stock_count), whatsapp_number: settings.marketing.whatsapp_number ?? "",
     gift_wrap_enabled: settings.marketing.gift_wrap_enabled, gift_wrap_price: fromMinorUnits(settings.marketing.gift_wrap_price),
     abandoned_cart_enabled: settings.marketing.abandoned_cart_enabled, abandoned_cart_delay_hours: String(settings.marketing.abandoned_cart_delay_hours),
+    review_request_enabled: settings.marketing.review_request_enabled, review_request_delay_days: String(settings.marketing.review_request_delay_days),
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const update = (i: number, patch: Partial<(typeof shipping)[number]>) => setShipping(shipping.map((x, j) => (j === i ? { ...x, ...patch } : x)));
@@ -50,6 +51,7 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
         low_stock_count: Number(marketing.low_stock_count || 0), whatsapp_number: marketing.whatsapp_number.trim() || null,
         gift_wrap_enabled: marketing.gift_wrap_enabled, gift_wrap_price: toMinorUnits(marketing.gift_wrap_price) ?? -1,
         abandoned_cart_enabled: marketing.abandoned_cart_enabled, abandoned_cart_delay_hours: Number(marketing.abandoned_cart_delay_hours || 0),
+        review_request_enabled: marketing.review_request_enabled, review_request_delay_days: Number(marketing.review_request_delay_days || 0),
       },
       tax_classes: taxes.map((t) => ({ uuid: t.uuid, rate_bps: Math.round(Number(t.rate) * 100) })),
       shipping_methods: shipping.map((m) => ({
@@ -158,6 +160,14 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
                 <input id="m-delay" inputMode="numeric" className={inputClass} value={marketing.abandoned_cart_delay_hours} onChange={(e) => setMarketing({ ...marketing, abandoned_cart_delay_hours: e.target.value.replace(/\D/g, "") })} />
               </Field>
             </fieldset>
+            <fieldset className="grid content-start gap-3">
+              <legend className="mb-1 text-sm font-medium">Review request</legend>
+              <label className={checkboxLabelClass}><input type="checkbox" className="size-4 accent-primary" checked={marketing.review_request_enabled} onChange={(e) => setMarketing({ ...marketing, review_request_enabled: e.target.checked })} />Email customers after delivery asking them to rate what they bought</label>
+              <Field label="Send after (days since delivery)" htmlFor="m-review" error={err("marketing.review_request_delay_days")} hint="1–30 days. Sent once per order, only for pieces the customer hasn’t reviewed. Reviews still wait for your approval.">
+                <input id="m-review" inputMode="numeric" className={inputClass} value={marketing.review_request_delay_days} onChange={(e) => setMarketing({ ...marketing, review_request_delay_days: e.target.value.replace(/\D/g, "") })} />
+              </Field>
+            </fieldset>
+            <div aria-hidden="true" className="hidden md:block" />
             <Field label="Show “Only N left” at or below" htmlFor="m-low" error={err("marketing.low_stock_count")} hint="Units in stock (0–50). Enter 0 to never show stock counts.">
               <input id="m-low" inputMode="numeric" className={inputClass} value={marketing.low_stock_count} onChange={(e) => setMarketing({ ...marketing, low_stock_count: e.target.value.replace(/\D/g, "") })} />
             </Field>

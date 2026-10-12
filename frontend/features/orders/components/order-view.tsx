@@ -1,13 +1,14 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Package, Truck } from "lucide-react";
+import { CheckCircle2, Package, Star, Truck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/button-link";
 import { ErrorState } from "@/components/states/error-state";
 import { LoadingState } from "@/components/states/loading-state";
 import { useCurrentUser } from "@/features/auth/hooks";
+import { t } from "@/lib/i18n";
 import { formatMoney } from "@/lib/money";
 import { ApiError } from "@/services/api-client";
 import { ordersApi } from "../api";
@@ -130,6 +131,11 @@ export function OrderView({ orderNumber, token, confirmation = false }: { orderN
                   {item.product_slug ? <Link href={`/${item.product_type === "digital" ? "digital" : "product"}/${item.product_slug}`} className="font-medium hover:text-primary">{item.name}</Link> : <p className="font-medium">{item.name}</p>}
                   {item.variant_name ? <p className="text-sm text-muted-foreground">{item.variant_name}</p> : null}
                   <p className="text-sm text-muted-foreground">{item.quantity} × {formatMoney(item.unit_price)}</p>
+                  {item.can_review && item.product_slug && !confirmation ? (
+                    <Link href={`/${item.product_type === "digital" ? "digital" : "product"}/${item.product_slug}#write-review`} className="mt-2 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium underline underline-offset-4 hover:text-primary">
+                      <Star className="size-4" aria-hidden />{t("reviews.write")}
+                    </Link>
+                  ) : null}
                 </div>
                 <p className="text-sm font-medium">{formatMoney(item.line_total)}</p>
               </li>

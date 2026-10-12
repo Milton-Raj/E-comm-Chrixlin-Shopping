@@ -43,6 +43,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $placed_at
  * @property Carbon|null $paid_at
  * @property Carbon|null $cancelled_at
+ * @property Carbon|null $review_requested_at
  * @property Carbon $created_at
  * @property-read Collection<int, OrderItem> $items
  * @property-read Collection<int, OrderAddress> $addresses
@@ -82,6 +83,7 @@ class Order extends Model
             'placed_at' => 'datetime',
             'paid_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'review_requested_at' => 'datetime',
         ];
     }
 

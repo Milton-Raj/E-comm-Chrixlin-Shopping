@@ -37,7 +37,7 @@ export type OrderDetail = OrderSummary & {
   gift: { wrap: boolean; message: string | null } | null;
   shipping_method: { name: string; days_min: number; days_max: number } | null;
   shipping_address: { name: string; line1: string; line2: string | null; city: string; state_code: string; postal_code: string; country_code: string } | null;
-  items: { uuid: string; name: string; variant_name: string | null; sku: string; product_type: string; product_slug: string | null; image: string | null; unit_price: Money; quantity: number; line_total: Money }[];
+  items: { uuid: string; name: string; variant_name: string | null; sku: string; product_type: string; product_slug: string | null; image: string | null; unit_price: Money; quantity: number; line_total: Money; can_review: boolean }[];
   shipments: { carrier: string | null; tracking_number: string | null; tracking_url: string | null; shipped_at: string | null }[];
   history: { from: string | null; to: string; actor: string; reason: string | null; at: string }[];
   downloads: Entitlement[];

@@ -226,7 +226,7 @@ Indexes: `(user_id, placed_at)` Q-O1 account order list; `(status, placed_at)` Q
 **stock_alerts** — `id, uuid, product_id FK, variant_id FK, user_id NULL FK, email, notified_at NULL, timestamps`. Unique `(variant_id, email)`; index `(notified_at, variant_id)`. One email when the variant is available again (scheduler, every 5 min); a new request resets `notified_at`.
 **enquiries** — `id, uuid, type (corporate_gifting), name, company, email, phone, quantity, budget, occasion, needed_by DATE, message, status (new|contacted|quoted|won|lost), notes, updated_by NULL FK users, ip_address, timestamps`. Index `(status, created_at)`.
 **carts** additions — `reminder_sent_at` (one abandoned-bag email per cart), `gift_wrap` bool, `gift_message` (≤300).
-**orders** additions — `gift_wrap_total` (GST-inclusive, minor units, included in `grand_total`), `gift_wrap_tax` (part of `tax_total`, taxed at the default class rate), `gift_message`.
+**orders** additions — `gift_wrap_total` (GST-inclusive, minor units, included in `grand_total`), `gift_wrap_tax` (part of `tax_total`, taxed at the default class rate), `gift_message`, `review_requested_at` (the one review request email after delivery; claimed before sending).
 **notifications** — Laravel standard (`id UUID PK, type, notifiable_type, notifiable_id, data JSON, read_at, created_at`). Index `(notifiable_type, notifiable_id, read_at)`.
 **subscribers** — `id, uuid, email UNIQUE, status (pending|subscribed|unsubscribed|bounced), source (footer|checkout|account|import), consent_text, consent_ip, consented_at, unsubscribed_at, timestamps` (§80).
 

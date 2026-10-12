@@ -132,7 +132,7 @@ export type SalesReport = {
 export type StoreSettings = {
   store: { name: string; currency: string; state_code: string; support_email: string | null; legal_name: string | null; gstin: string | null; address: string | null };
   tax_classes: { uuid: string; name: string; rate_bps: number; is_default: boolean }[];
-  marketing: { low_stock_count: number; whatsapp_number: string | null; gift_wrap_enabled: boolean; gift_wrap_price: number; abandoned_cart_enabled: boolean; abandoned_cart_delay_hours: number };
+  marketing: { low_stock_count: number; whatsapp_number: string | null; gift_wrap_enabled: boolean; gift_wrap_price: number; abandoned_cart_enabled: boolean; abandoned_cart_delay_hours: number; review_request_enabled: boolean; review_request_delay_days: number };
   shipping_methods: { uuid: string; code: string; zone: string; name: string; amount: number; free_over: number | null; days_min: number; days_max: number; is_active: boolean }[];
   payments: { key: string; name: string; description: string }[];
   security: { admin_requires_2fa: boolean; locked: boolean; you_have_2fa: boolean };

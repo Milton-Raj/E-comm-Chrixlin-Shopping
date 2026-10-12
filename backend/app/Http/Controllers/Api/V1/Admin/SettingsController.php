@@ -130,6 +130,8 @@ class SettingsController extends Controller
             'marketing.gift_wrap_price' => ['required_with:marketing', 'integer', 'min:0', 'max:10000000'],
             'marketing.abandoned_cart_enabled' => ['required_with:marketing', 'boolean'],
             'marketing.abandoned_cart_delay_hours' => ['required_with:marketing', 'integer', 'min:1', 'max:72'],
+            'marketing.review_request_enabled' => ['sometimes', 'boolean'],
+            'marketing.review_request_delay_days' => ['sometimes', 'integer', 'min:1', 'max:30'],
             'tax_classes' => ['array'],
             'tax_classes.*.uuid' => ['required', 'uuid'],
             'tax_classes.*.rate_bps' => ['required', 'integer', 'min:0', 'max:5000'],

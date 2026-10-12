@@ -27,6 +27,8 @@ return [
         'gift_wrap_price' => 9_900,
         'abandoned_cart_enabled' => false,
         'abandoned_cart_delay_hours' => 3,
+        'review_request_enabled' => true,
+        'review_request_delay_days' => 4,
     ],
 
     // ISO-4217 code => minor-unit exponent. Never assume 2 decimals.
