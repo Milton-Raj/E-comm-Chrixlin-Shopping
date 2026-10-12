@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useCurrentUser } from "@/features/auth/hooks";
 import { checkoutApi } from "@/features/cart/api";
-import { cartKey } from "@/features/cart/cart-context";
+import { cartKey, checkoutKey, useCartMutations } from "@/features/cart/cart-context";
 import { CartTotals } from "@/features/cart/components/cart-totals";
 import { CouponForm } from "@/features/cart/components/coupon-form";
 import type { Address, Cart, Gateway, PlacedOrder } from "@/features/cart/types";
@@ -28,7 +28,6 @@ import { openRazorpay } from "../razorpay";
 
 type Step = "contact" | "address" | "shipping" | "payment";
 
-const checkoutKey = ["checkout"] as const;
 
 function message(error: unknown): string {
   if (error instanceof ApiError) return Object.values(error.fieldErrors)[0]?.[0] ?? error.message;
@@ -44,6 +43,8 @@ export function CheckoutPage() {
   const [step, setStep] = useState<Step>("contact");
   const [placed, setPlaced] = useState<PlacedOrder | null>(null);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const { remove } = useCartMutations();
+  const removing = remove.isPending ? remove.variables : null;
 
   const store = (cart: Cart) => {
     queryClient.setQueryData(checkoutKey, (old: { cart: Cart; gateways: Gateway[]; saved_address: Address | null } | undefined) => (old ? { ...old, cart } : old));
@@ -100,7 +101,7 @@ export function CheckoutPage() {
         <h2 className="text-xl font-semibold">Order summary</h2>
         <ul className="grid gap-4">
           {cart.items.map((item) => (
-            <li key={item.uuid} className="flex gap-3">
+            <li key={item.uuid} className="flex gap-3" aria-busy={removing === item.uuid || undefined}>
               <div className="relative aspect-4/5 w-16 shrink-0 overflow-hidden bg-muted">
                 {item.product.image ? <Image src={item.product.image.url} alt={item.product.image.alt} fill sizes="64px" className="object-cover" /> : null}
                 <span className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-brand-black text-xs text-brand-cultured">{item.quantity}</span>
@@ -108,6 +109,17 @@ export function CheckoutPage() {
               <div className="min-w-0 flex-1 text-sm">
                 <p className="font-medium">{item.product.name}</p>
                 {item.variant.name ? <p className="text-muted-foreground">{item.variant.name}</p> : null}
+                {!placed ? (
+                  <button
+                    type="button"
+                    className="-ml-1 inline-flex min-h-11 items-center px-1 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground disabled:opacity-50"
+                    disabled={remove.isPending}
+                    onClick={() => remove.mutate(item.uuid)}
+                    aria-label={`Remove ${item.product.name} from your order`}
+                  >
+                    {removing === item.uuid ? "Removing…" : "Remove"}
+                  </button>
+                ) : null}
               </div>
               <p className="text-sm">{formatMoney(item.line_total)}</p>
             </li>

@@ -8,6 +8,8 @@ import { cartApi } from "./api";
 import type { Cart } from "./types";
 
 export const cartKey = ["cart"] as const;
+/** The checkout page holds the cart inside its own query; bag changes must update both. */
+export const checkoutKey = ["checkout"] as const;
 
 type CartContextValue = {
   drawerOpen: boolean;
@@ -39,7 +41,10 @@ function errorMessage(error: unknown): string {
 export function useCartMutations() {
   const queryClient = useQueryClient();
   const { setDrawerOpen } = useCartDrawer();
-  const store = (cart: Cart) => queryClient.setQueryData(cartKey, cart);
+  const store = (cart: Cart) => {
+    queryClient.setQueryData(cartKey, cart);
+    queryClient.setQueryData(checkoutKey, (old: { cart: Cart } | undefined) => (old ? { ...old, cart } : old));
+  };
   const onError = (error: unknown) => toast.error(errorMessage(error));
 
   return {
@@ -53,7 +58,8 @@ export function useCartMutations() {
     }),
     update: useMutation({ mutationFn: ({ item, quantity }: { item: string; quantity: number }) => cartApi.update(item, quantity), onSuccess: store, onError }),
     remove: useMutation({ mutationFn: (item: string) => cartApi.remove(item), onSuccess: store, onError }),
-    applyCoupon: useMutation({ mutationFn: (code: string) => cartApi.applyCoupon(code), onSuccess: store }),
+    // A rejected code may mean the bag changed elsewhere (another tab), so reload it rather than show stale lines.
+    applyCoupon: useMutation({ mutationFn: (code: string) => cartApi.applyCoupon(code), onSuccess: store, onError: () => { void queryClient.invalidateQueries({ queryKey: cartKey }); void queryClient.invalidateQueries({ queryKey: checkoutKey }); } }),
     removeCoupon: useMutation({ mutationFn: () => cartApi.removeCoupon(), onSuccess: store, onError }),
   };
 }

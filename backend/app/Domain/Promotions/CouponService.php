@@ -6,6 +6,7 @@ use App\Domain\Payments\Enums\PaymentStatus;
 use App\Exceptions\ApiException;
 use App\Models\Coupon;
 use App\Models\Order;
+use App\Support\Money\Money;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -34,8 +35,14 @@ class CouponService
         if ($coupon->usage_limit !== null && $coupon->usage_count >= $coupon->usage_limit) {
             $fail('This code has reached its usage limit.', 'coupon_exhausted');
         }
+        if ($merchandiseTotal <= 0) {
+            $fail('Your bag is empty. Add something before using a code.', 'coupon_minimum_not_met');
+        }
         if ($coupon->min_order_total !== null && $merchandiseTotal < $coupon->min_order_total) {
-            $fail('Your order does not meet the minimum for this code.', 'coupon_minimum_not_met');
+            $currency = (string) config('commerce.store.currency');
+            $minimum = Money::of($coupon->min_order_total, $currency);
+            $short = Money::of($coupon->min_order_total - $merchandiseTotal, $currency);
+            $fail("This code needs a bag total of {$minimum->format()}. Add {$short->format()} more to use it.", 'coupon_minimum_not_met');
         }
 
         if ($coupon->per_customer_limit !== null && ($userId || $email)) {

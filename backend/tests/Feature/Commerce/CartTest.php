@@ -32,6 +32,12 @@ it('refuses sold-out items', function () {
     expect($this->postJson('/api/v1/cart/items', ['variant_uuid' => $variant->uuid, 'quantity' => 1]))->toBeApiError(409, 'out_of_stock');
 });
 
+it('explains a rejected code on an empty bag instead of quoting the minimum', function () {
+    Coupon::create(['code' => 'BIG', 'type' => 'fixed', 'value' => 50_000, 'min_order_total' => 100_000, 'is_active' => true]);
+
+    expect($this->postJson('/api/v1/cart/coupon', ['code' => 'BIG'])->json('errors.coupon.0'))->toContain('bag is empty');
+});
+
 it('applies valid coupons and rejects invalid, expired and below-minimum ones', function () {
     $variant = variantOf(makeProduct(price: 300_000));
     Coupon::create(['code' => 'TEN', 'type' => 'percentage', 'value' => 1000, 'is_active' => true]);
@@ -42,6 +48,7 @@ it('applies valid coupons and rejects invalid, expired and below-minimum ones', 
     expect($this->postJson('/api/v1/cart/coupon', ['code' => 'NOPE']))->toBeApiError(422, 'coupon_invalid');
     expect($this->postJson('/api/v1/cart/coupon', ['code' => 'old']))->toBeApiError(422, 'coupon_expired');
     expect($this->postJson('/api/v1/cart/coupon', ['code' => 'BIG']))->toBeApiError(422, 'coupon_minimum_not_met');
+    expect($this->postJson('/api/v1/cart/coupon', ['code' => 'BIG'])->json('errors.coupon.0'))->toContain('Add ')->toContain('2,000');
 
     $this->postJson('/api/v1/cart/coupon', ['code' => 'ten'])->assertOk()
         ->assertJsonPath('data.coupon.code', 'TEN')
