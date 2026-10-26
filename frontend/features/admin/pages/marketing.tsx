@@ -81,7 +81,7 @@ function WaitingForRestock() {
                   {q.data.waiting.map((w, i) => (
                     <tr key={`${w.variant?.sku ?? i}`}>
                       <td className="p-2">
-                        {w.product ? <Link href={`/admin/products/${w.product.uuid}`} className="font-medium underline-offset-4 hover:underline">{w.product.name}</Link> : "Removed product"}
+                        {w.product ? <Link href={`/admin/products/${w.product.slug}`} className="font-medium underline-offset-4 hover:underline">{w.product.name}</Link> : "Removed product"}
                         {w.variant ? <span className="block text-xs text-muted-foreground">{[w.variant.name, w.variant.sku].filter(Boolean).join(" · ")}</span> : null}
                       </td>
                       <td className="p-2 font-semibold">{w.waiting}</td>

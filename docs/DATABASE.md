@@ -80,7 +80,7 @@ erDiagram
 ## 3. Tables by domain
 
 ### 3.1 Identity & access
-**users** ☐SD — `id, uuid, name, email UNIQUE, email_verified_at, password (bcrypt/argon2id hash), phone NULL, locale VARCHAR(10) DEFAULT 'en', two_factor_secret TEXT NULL (encrypted cast), two_factor_recovery_codes TEXT NULL (encrypted JSON of SHA-256 hashes), two_factor_confirmed_at NULL, two_factor_last_used_timestep BIGINT NULL (TOTP replay protection), remember_token, is_active TINYINT(1), last_login_at, last_login_ip VARCHAR(45), marketing_opt_in TINYINT(1), timestamps, deleted_at`.
+**users** ☐SD — `id, uuid, customer_number VARCHAR(20) UNIQUE (CUS-000001, from the locked single-row `customer_number_sequences`; readable admin URLs), name, email UNIQUE, email_verified_at, password (bcrypt/argon2id hash), phone NULL, locale VARCHAR(10) DEFAULT 'en', two_factor_secret TEXT NULL (encrypted cast), two_factor_recovery_codes TEXT NULL (encrypted JSON of SHA-256 hashes), two_factor_confirmed_at NULL, two_factor_last_used_timestep BIGINT NULL (TOTP replay protection), remember_token, is_active TINYINT(1), last_login_at, last_login_ip VARCHAR(45), marketing_opt_in TINYINT(1), timestamps, deleted_at`.
 - Customers and staff share this table; staff = users with any role other than `customer`.
 
 **roles** — `id, name (slug, e.g. order-manager), guard_name, timestamps`; unique `(name, guard_name)` (spatie schema).

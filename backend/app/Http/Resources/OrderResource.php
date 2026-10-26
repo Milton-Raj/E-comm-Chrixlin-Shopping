@@ -101,7 +101,7 @@ class OrderResource extends JsonResource
 
         if ($this->forAdmin) {
             $data += [
-                'customer' => $this->user ? ['uuid' => $this->user->uuid, 'name' => $this->user->name, 'email' => $this->user->email] : null,
+                'customer' => $this->user ? ['uuid' => $this->user->uuid, 'customer_number' => $this->user->customer_number, 'name' => $this->user->name, 'email' => $this->user->email] : null,
                 'requires_attention' => $this->requires_attention,
                 'payments' => $this->payments->map(fn ($p) => [
                     'uuid' => $p->uuid, 'provider' => $p->provider, 'status' => $p->status->value, 'amount' => $money($p->amount),

@@ -4,5 +4,5 @@ import { ProductEditorPage } from "@/features/admin/pages/product-editor";
 export const instant = false;
 
 export default function Page() {
-  return <ProductEditorPage uuid={null} />;
+  return <ProductEditorPage slug={null} />;
 }

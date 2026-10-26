@@ -4,5 +4,5 @@ import { PageEditor } from "@/features/admin/pages/content";
 export const instant = false;
 
 export default function Page() {
-  return <PageEditor uuid={null} />;
+  return <PageEditor slug={null} />;
 }

@@ -168,7 +168,7 @@ function DashboardBody({ d }: { d: Dashboard }) {
               <tbody className="divide-y divide-border">
                 {d.low_stock.map((s) => (
                   <tr key={s.sku}>
-                    <td className="py-2"><Link className="hover:text-primary" href={`/admin/products/${s.product_uuid}`}>{s.name}</Link>{s.variant ? <span className="text-muted-foreground"> · {s.variant}</span> : null}</td>
+                    <td className="py-2"><Link className="hover:text-primary" href={`/admin/products/${s.product_slug}`}>{s.name}</Link>{s.variant ? <span className="text-muted-foreground"> · {s.variant}</span> : null}</td>
                     <td className="py-2 font-mono text-xs">{s.sku}</td>
                     <td className={cn("py-2 text-right font-semibold tabular-nums", s.available === 0 && "text-red-700")}>{s.available === 0 ? "Sold out" : s.available}</td>
                   </tr>

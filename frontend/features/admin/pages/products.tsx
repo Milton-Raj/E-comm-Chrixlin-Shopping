@@ -60,7 +60,7 @@ export function ProductsPage() {
                 {products.data.items.map((p) => (
                   <tr key={p.uuid} className="hover:bg-muted/40">
                     <td className="p-3">
-                      <Link href={`/admin/products/${p.uuid}`} className="flex items-center gap-3 font-medium hover:text-primary">
+                      <Link href={`/admin/products/${p.slug}`} className="flex items-center gap-3 font-medium hover:text-primary">
                         <span className="relative size-10 shrink-0 overflow-hidden bg-muted">{p.image ? <Image src={p.image} alt="" fill sizes="40px" className="object-cover" /> : null}</span>
                         <span>{p.name}<span className="block text-xs font-normal text-muted-foreground">{p.category?.name ?? "Uncategorised"} · {p.variant_count} variant{p.variant_count === 1 ? "" : "s"}</span></span>
                       </Link>

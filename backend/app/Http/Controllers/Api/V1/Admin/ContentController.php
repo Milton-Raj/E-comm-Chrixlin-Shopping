@@ -21,12 +21,12 @@ class ContentController extends Controller
 
     public function show(string $page): JsonResponse
     {
-        return ApiResponse::success($this->present(Page::query()->where('uuid', $page)->firstOrFail(), true));
+        return ApiResponse::success($this->present($this->find($page), true));
     }
 
     public function save(Request $request, ?string $page = null): JsonResponse
     {
-        $model = $page ? Page::query()->where('uuid', $page)->firstOrFail() : new Page;
+        $model = $page ? $this->find($page) : new Page;
         $data = $request->validate([
             'title' => ['required', 'string', 'max:200'],
             'slug' => ['required', 'string', 'max:120', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', Rule::unique('pages', 'slug')->ignore($model->id)],
@@ -44,7 +44,7 @@ class ContentController extends Controller
 
     public function destroy(Request $request, string $page): JsonResponse
     {
-        $model = Page::query()->where('uuid', $page)->firstOrFail();
+        $model = $this->find($page);
         $model->delete();
         Audit::record('page.deleted', $model, ['title' => $model->title], null, $request->user());
         StorefrontCache::invalidate(['content']);
@@ -59,5 +59,11 @@ class ContentController extends Controller
             'uuid' => $p->uuid, 'slug' => $p->slug, 'title' => $p->title, 'status' => $p->status,
             'seo_description' => $p->seo_description, 'updated_at' => $p->updated_at->toIso8601String(),
         ] + ($withBody ? ['body' => $p->body] : []);
+    }
+
+    /** Admin URLs address pages by slug (/admin/content/about); API calls may still pass the uuid. */
+    private function find(string $key): Page
+    {
+        return Page::query()->where(fn ($w) => $w->where('uuid', $key)->orWhere('slug', $key))->firstOrFail();
     }
 }

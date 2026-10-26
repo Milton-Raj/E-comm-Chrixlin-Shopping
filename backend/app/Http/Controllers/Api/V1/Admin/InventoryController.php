@@ -27,11 +27,11 @@ class InventoryController extends Controller
             ->when($filters['q'] ?? null, fn ($q, $t) => $q->where(fn ($w) => $w->where('products.name', 'like', "%{$t}%")->orWhere('product_variants.sku', 'like', "%{$t}%")))
             ->when($filters['low'] ?? false, fn ($q) => $q->whereRaw('inventory.on_hand - inventory.reserved <= inventory.low_stock_threshold'))
             ->orderByRaw('inventory.on_hand - inventory.reserved asc')
-            ->select(['product_variants.uuid', 'product_variants.sku', 'product_variants.name as variant_name', 'products.name as product_name', 'products.uuid as product_uuid', 'inventory.on_hand', 'inventory.reserved', 'inventory.low_stock_threshold'])
+            ->select(['product_variants.uuid', 'product_variants.sku', 'product_variants.name as variant_name', 'products.name as product_name', 'products.uuid as product_uuid', 'products.slug as product_slug', 'inventory.on_hand', 'inventory.reserved', 'inventory.low_stock_threshold'])
             ->paginate(50);
 
         return ApiResponse::success(collect($rows->items())->map(fn ($r) => [
-            'variant_uuid' => $r->uuid, 'sku' => $r->sku, 'variant_name' => $r->variant_name, 'product_name' => $r->product_name, 'product_uuid' => $r->product_uuid,
+            'variant_uuid' => $r->uuid, 'sku' => $r->sku, 'variant_name' => $r->variant_name, 'product_name' => $r->product_name, 'product_uuid' => $r->product_uuid, 'product_slug' => $r->product_slug,
             'on_hand' => (int) $r->on_hand, 'reserved' => (int) $r->reserved, 'available' => max(0, (int) $r->on_hand - (int) $r->reserved),
             'low' => ((int) $r->on_hand - (int) $r->reserved) <= (int) $r->low_stock_threshold,
         ]), meta: ['pagination' => ['page' => $rows->currentPage(), 'per_page' => $rows->perPage(), 'total' => $rows->total(), 'last_page' => $rows->lastPage()]]);

@@ -74,8 +74,8 @@ class DashboardController extends Controller
                 ->whereNull('product_variants.deleted_at')->where('products.status', 'active')
                 ->whereRaw('inventory.on_hand - inventory.reserved <= inventory.low_stock_threshold')
                 ->orderByRaw('inventory.on_hand - inventory.reserved')->limit(8)
-                ->get(['products.name', 'products.uuid', 'product_variants.name as variant', 'product_variants.sku', DB::raw('inventory.on_hand - inventory.reserved as available')])
-                ->map(fn ($r) => ['name' => $r->name, 'product_uuid' => $r->uuid, 'variant' => $r->variant, 'sku' => $r->sku, 'available' => (int) $r->available]),
+                ->get(['products.name', 'products.uuid', 'products.slug', 'product_variants.name as variant', 'product_variants.sku', DB::raw('inventory.on_hand - inventory.reserved as available')])
+                ->map(fn ($r) => ['name' => $r->name, 'product_uuid' => $r->uuid, 'product_slug' => $r->slug, 'variant' => $r->variant, 'sku' => $r->sku, 'available' => (int) $r->available]),
             'recent_orders' => Order::query()->whereNotNull('placed_at')->latest('placed_at')->limit(8)->get()
                 ->map(fn (Order $o) => ['order_number' => $o->order_number, 'email' => $o->email, 'status' => $o->status->value, 'payment_status' => $o->payment_status->value, 'total' => $money($o->grand_total), 'placed_at' => $o->placed_at?->toIso8601String()]),
         ]);

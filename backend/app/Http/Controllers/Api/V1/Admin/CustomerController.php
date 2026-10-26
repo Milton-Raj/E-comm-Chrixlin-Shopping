@@ -30,7 +30,7 @@ class CustomerController extends Controller
             ->latest('id')->paginate(25);
 
         return ApiResponse::success(collect($customers->items())->map(fn (User $u) => [
-            'uuid' => $u->uuid, 'name' => $u->name, 'email' => $u->email, 'is_active' => $u->is_active,
+            'uuid' => $u->uuid, 'customer_number' => $u->customer_number, 'name' => $u->name, 'email' => $u->email, 'is_active' => $u->is_active,
             'orders_count' => (int) $u->orders_count, 'total_spent' => Money::of((int) $u->total_spent, $currency)->toArray(),
             'created_at' => $u->created_at?->toIso8601String(), 'last_login_at' => $u->last_login_at?->toIso8601String(),
         ]), meta: ['pagination' => ['page' => $customers->currentPage(), 'per_page' => $customers->perPage(), 'total' => $customers->total(), 'last_page' => $customers->lastPage()]]);
@@ -39,14 +39,14 @@ class CustomerController extends Controller
     /** Customer profile with analytics (PRD §74). */
     public function show(string $customer): JsonResponse
     {
-        $user = User::query()->where('uuid', $customer)->firstOrFail();
+        $user = $this->find($customer);
         $currency = (string) config('commerce.store.currency');
         $paid = Order::query()->where('user_id', $user->id)->where('payment_status', PaymentStatus::Captured->value);
         $count = (clone $paid)->count();
         $spent = (int) (clone $paid)->sum('grand_total');
 
         return ApiResponse::success([
-            'uuid' => $user->uuid, 'name' => $user->name, 'email' => $user->email, 'phone' => $user->phone,
+            'uuid' => $user->uuid, 'customer_number' => $user->customer_number, 'name' => $user->name, 'email' => $user->email, 'phone' => $user->phone,
             'is_active' => $user->is_active, 'email_verified' => $user->email_verified_at !== null,
             'created_at' => $user->created_at?->toIso8601String(), 'last_login_at' => $user->last_login_at?->toIso8601String(),
             'stats' => [
@@ -65,7 +65,7 @@ class CustomerController extends Controller
     public function update(Request $request, string $customer): JsonResponse
     {
         $data = $request->validate(['is_active' => ['required', 'boolean']]);
-        $user = User::query()->where('uuid', $customer)->firstOrFail();
+        $user = $this->find($customer);
         abort_if($user->isStaff(), 403);
         $before = ['is_active' => $user->is_active];
         $user->forceFill($data)->save();
@@ -75,5 +75,11 @@ class CustomerController extends Controller
         Audit::record($data['is_active'] ? 'customer.unblocked' : 'customer.blocked', $user, $before, $data, $request->user());
 
         return ApiResponse::success(message: $data['is_active'] ? 'Customer unblocked.' : 'Customer blocked.');
+    }
+
+    /** Admin URLs address customers by number (/admin/customers/CUS-000042); API calls may still pass the uuid. */
+    private function find(string $key): User
+    {
+        return User::query()->where(fn ($w) => $w->where('customer_number', $key)->orWhere('uuid', $key))->firstOrFail();
     }
 }

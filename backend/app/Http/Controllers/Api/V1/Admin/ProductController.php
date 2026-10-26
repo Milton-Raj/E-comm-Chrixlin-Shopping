@@ -128,8 +128,10 @@ class ProductController extends Controller
         return ApiResponse::success((new AdminProductResource($this->find($model->uuid)))->detailed(), 'File removed.');
     }
 
-    private function find(string $uuid): Product
+    /** Admin URLs address products by slug (/admin/products/silk-scarf); API calls may still pass the uuid. */
+    private function find(string $key): Product
     {
-        return Product::query()->with(['brand', 'category', 'taxClass', 'media', 'variants.inventory', 'digital', 'files'])->where('uuid', $uuid)->firstOrFail();
+        return Product::query()->with(['brand', 'category', 'taxClass', 'media', 'variants.inventory', 'digital', 'files'])
+            ->where(fn ($w) => $w->where('uuid', $key)->orWhere('slug', $key))->firstOrFail();
     }
 }

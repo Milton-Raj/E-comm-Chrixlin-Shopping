@@ -32,7 +32,7 @@ class MarketingController extends Controller
                 $product = $variant ? ($products[$variant->product_id] ?? null) : null;
 
                 return [
-                    'product' => $product ? ['uuid' => $product->uuid, 'name' => $product->name] : null,
+                    'product' => $product ? ['uuid' => $product->uuid, 'slug' => $product->slug, 'name' => $product->name] : null,
                     'variant' => $variant ? ['sku' => $variant->sku, 'name' => $variant->name] : null,
                     'waiting' => (int) $row->waiting,
                     'available' => $variant?->available(),

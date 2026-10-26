@@ -47,7 +47,7 @@ export function InventoryPage() {
               <tbody className="divide-y divide-border">
                 {rows.data.items.map((r) => (
                   <tr key={r.variant_uuid} className={r.low ? "bg-primary/5" : ""}>
-                    <td className="p-3"><Link href={`/admin/products/${r.product_uuid}`} className="font-medium hover:text-primary">{r.product_name}</Link>{r.variant_name ? <span className="block text-xs text-muted-foreground">{r.variant_name}</span> : null}</td>
+                    <td className="p-3"><Link href={`/admin/products/${r.product_slug}`} className="font-medium hover:text-primary">{r.product_name}</Link>{r.variant_name ? <span className="block text-xs text-muted-foreground">{r.variant_name}</span> : null}</td>
                     <td className="p-3 font-mono text-xs">{r.sku}</td>
                     <td className="p-3">{r.on_hand}</td>
                     <td className="p-3">{r.reserved}</td>

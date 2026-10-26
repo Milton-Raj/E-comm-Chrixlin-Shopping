@@ -49,7 +49,7 @@ function PagesList() {
       <ul className="divide-y divide-border border border-border bg-card text-sm">
         {pages.data.map((p) => (
           <li key={p.uuid}>
-            <Link href={`/admin/content/${p.uuid}`} className="flex items-center justify-between gap-3 p-3 hover:bg-muted/40">
+            <Link href={`/admin/content/${p.slug}`} className="flex items-center justify-between gap-3 p-3 hover:bg-muted/40">
               <span><span className="font-medium">{p.title}</span> <span className="text-muted-foreground">/{p.slug === "faq" ? "faq" : `pages/${p.slug}`}</span></span>
               <span className="flex items-center gap-3"><StatusBadge value={p.status} /><span className="text-xs text-muted-foreground">{new Date(p.updated_at).toLocaleDateString("en-IN")}</span></span>
             </Link>
@@ -60,9 +60,9 @@ function PagesList() {
   );
 }
 
-export function PageEditor({ uuid }: { uuid: string | null }) {
-  const page = useQuery({ queryKey: ["admin", "page", uuid], queryFn: () => miscAdminApi.page(uuid!), enabled: Boolean(uuid) });
-  if (uuid && page.isPending) return <LoadingState lines={8} />;
+export function PageEditor({ slug }: { slug: string | null }) {
+  const page = useQuery({ queryKey: ["admin", "page", slug], queryFn: () => miscAdminApi.page(slug!), enabled: Boolean(slug) });
+  if (slug && page.isPending) return <LoadingState lines={8} />;
   if (page.isError) return <ErrorState onRetry={() => void page.refetch()} />;
   return <Editor key={page.data?.uuid ?? "new"} page={page.data ?? null} />;
 }
@@ -74,7 +74,7 @@ function Editor({ page }: { page: AdminPageItem | null }) {
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const save = useMutation({
     mutationFn: () => miscAdminApi.savePage(page?.uuid ?? null, { ...f, seo_description: f.seo_description || null }),
-    onSuccess: (saved) => { toast.success("Page saved."); void queryClient.invalidateQueries({ queryKey: ["admin", "pages"] }); if (!page) router.replace(`/admin/content/${saved.uuid}`); },
+    onSuccess: (saved) => { toast.success("Page saved."); void queryClient.invalidateQueries({ queryKey: ["admin", "pages"] }); if (saved.slug !== page?.slug) router.replace(`/admin/content/${saved.slug}`); },
     onError: (e) => { if (e instanceof ApiError) setErrors(e.fieldErrors); toast.error(e instanceof ApiError ? e.message : "Could not save."); },
   });
   const remove = useMutation({ mutationFn: () => miscAdminApi.deletePage(page!.uuid), onSuccess: () => { toast.success("Page deleted."); router.push("/admin/content"); } });

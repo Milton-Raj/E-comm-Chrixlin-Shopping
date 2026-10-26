@@ -21,7 +21,7 @@ function renderEditor() {
   vi.spyOn(adminApi, "product").mockResolvedValue(product);
   vi.spyOn(adminApi, "lookups").mockResolvedValue({ categories: [], brands: [], tax_classes: [] } as never);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}><ProductEditorPage uuid="p-1" /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><ProductEditorPage slug="macaron-candle" /></QueryClientProvider>);
 }
 
 describe("product editor pricing", () => {

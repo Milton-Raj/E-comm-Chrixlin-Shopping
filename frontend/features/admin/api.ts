@@ -37,7 +37,8 @@ export const adminApi = {
   dashboard: (range: number) => api.get<Dashboard>(`/admin/dashboard?range=${range}`),
   lookups: () => api.get<Lookups>("/admin/lookups"),
   products: (query: string) => api.getPaged<AdminProduct>(`/admin/products${query}`),
-  product: (uuid: string) => api.get<AdminProductDetail>(`/admin/products/${uuid}`),
+  /** Accepts the product slug (used in admin URLs) or uuid. */
+  product: (key: string) => api.get<AdminProductDetail>(`/admin/products/${encodeURIComponent(key)}`),
   saveProduct: (uuid: string | null, body: unknown) => (uuid ? api.put<AdminProductDetail>(`/admin/products/${uuid}`, body) : api.post<AdminProductDetail>("/admin/products", body)),
   archiveProduct: (uuid: string) => api.delete(`/admin/products/${uuid}`),
   uploadMedia: (uuid: string, form: FormData) => api.post<AdminProductDetail>(`/admin/products/${uuid}/media`, form),
@@ -61,12 +62,12 @@ export type Dashboard = {
   by_category: { category: string; revenue: Money; units: number }[];
   by_type: { type: "physical" | "digital"; revenue: Money; units: number }[];
   orders_by_status: { status: string; count: number }[];
-  low_stock: { name: string; product_uuid: string; variant: string | null; sku: string; available: number }[];
+  low_stock: { name: string; product_uuid: string; product_slug: string; variant: string | null; sku: string; available: number }[];
   recent_orders: { order_number: string; email: string; status: string; payment_status: string; total: Money; placed_at: string | null }[];
 };
 
 export type AdminCategory = { uuid: string; name: string; slug: string; description: string | null; sort_order?: number; is_active: boolean; products_count: number; image?: string | null };
-export type InventoryRow = { variant_uuid: string; sku: string; variant_name: string | null; product_name: string; product_uuid: string; on_hand: number; reserved: number; available: number; low: boolean };
+export type InventoryRow = { variant_uuid: string; sku: string; variant_name: string | null; product_name: string; product_uuid: string; product_slug: string; on_hand: number; reserved: number; available: number; low: boolean };
 export type LedgerRow = { type: string; quantity: number; balance_after: number; note: string | null; actor: string | null; created_at: string };
 
 export const taxonomyApi = {
@@ -85,7 +86,7 @@ export const inventoryApi = {
 };
 
 export type AdminOrderDetail = import("@/features/orders/types").OrderDetail & {
-  customer: { uuid: string; name: string; email: string } | null;
+  customer: { uuid: string; customer_number: string; name: string; email: string } | null;
   requires_attention: boolean;
   payments: { uuid: string; provider: string; status: string; amount: Money; method: string | null; provider_payment_id: string | null; created_at: string }[];
   refunds: { uuid: string; amount: Money; reason: string; status: string; created_at: string }[];
@@ -113,9 +114,9 @@ export const ordersAdminApi = {
   bookCourier: (n: string) => api.post<AdminOrderDetail>(`/admin/orders/${n}/courier-booking`),
 };
 
-export type AdminCustomer = { uuid: string; name: string; email: string; is_active: boolean; orders_count: number; total_spent: Money; created_at: string | null; last_login_at: string | null };
+export type AdminCustomer = { uuid: string; customer_number: string; name: string; email: string; is_active: boolean; orders_count: number; total_spent: Money; created_at: string | null; last_login_at: string | null };
 export type AdminCustomerDetail = {
-  uuid: string; name: string; email: string; phone: string | null; is_active: boolean; email_verified: boolean; created_at: string | null; last_login_at: string | null;
+  uuid: string; customer_number: string; name: string; email: string; phone: string | null; is_active: boolean; email_verified: boolean; created_at: string | null; last_login_at: string | null;
   stats: { total_orders: number; total_spent: Money; average_order_value: Money; last_purchase_at: string | null; wishlist_items: number; downloads: number; refunded_orders: number };
   orders: import("@/features/orders/types").OrderSummary[];
 };
@@ -159,7 +160,7 @@ export type AbandonedCarts = {
 };
 export type StockAlertDemand = {
   notified_last_30_days: number;
-  waiting: { product: { uuid: string; name: string } | null; variant: { sku: string; name: string | null } | null; waiting: number; available: number | null; last_requested_at: string | null }[];
+  waiting: { product: { uuid: string; slug: string; name: string } | null; variant: { sku: string; name: string | null } | null; waiting: number; available: number | null; last_requested_at: string | null }[];
 };
 export type EnquiryStatus = "new" | "contacted" | "quoted" | "won" | "lost";
 
@@ -171,7 +172,8 @@ export const miscAdminApi = {
   enquiries: (query: string) => api.getPaged<AdminEnquiry>(`/admin/enquiries${query}`),
   updateEnquiry: (uuid: string, body: { status: EnquiryStatus; notes: string | null }) => api.patch<AdminEnquiry>(`/admin/enquiries/${uuid}`, body),
   customers: (query: string) => api.getPaged<AdminCustomer>(`/admin/customers${query}`),
-  customer: (uuid: string) => api.get<AdminCustomerDetail>(`/admin/customers/${uuid}`),
+  /** Accepts the customer number (used in admin URLs) or uuid. */
+  customer: (key: string) => api.get<AdminCustomerDetail>(`/admin/customers/${encodeURIComponent(key)}`),
   setCustomerActive: (uuid: string, is_active: boolean) => api.patch(`/admin/customers/${uuid}`, { is_active }),
   entitlements: (query: string) => api.getPaged<AdminEntitlement>(`/admin/digital/entitlements${query}`),
   updateEntitlement: (uuid: string, action: "revoke" | "restore" | "reset") => api.patch(`/admin/digital/entitlements/${uuid}`, { action }),
@@ -181,7 +183,8 @@ export const miscAdminApi = {
   deleteCoupon: (uuid: string) => api.delete(`/admin/coupons/${uuid}`),
   sales: (from: string, to: string) => api.get<SalesReport>(`/admin/reports/sales?from=${from}&to=${to}`),
   pages: () => api.get<AdminPageItem[]>("/admin/pages"),
-  page: (uuid: string) => api.get<AdminPageItem>(`/admin/pages/${uuid}`),
+  /** Accepts the page slug (used in admin URLs) or uuid. */
+  page: (key: string) => api.get<AdminPageItem>(`/admin/pages/${encodeURIComponent(key)}`),
   savePage: (uuid: string | null, body: unknown) => (uuid ? api.put<AdminPageItem>(`/admin/pages/${uuid}`, body) : api.post<AdminPageItem>("/admin/pages", body)),
   deletePage: (uuid: string) => api.delete(`/admin/pages/${uuid}`),
   settings: () => api.get<StoreSettings>("/admin/settings"),

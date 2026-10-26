@@ -43,7 +43,7 @@ export function CustomersPage() {
               <tbody className="divide-y divide-border">
                 {customers.data.items.map((c) => (
                   <tr key={c.uuid} className="hover:bg-muted/40">
-                    <td className="p-3"><Link href={`/admin/customers/${c.uuid}`} className="font-medium hover:text-primary">{c.name}</Link><span className="block text-xs text-muted-foreground">{c.email}</span></td>
+                    <td className="p-3"><Link href={`/admin/customers/${c.customer_number}`} className="font-medium hover:text-primary">{c.name}</Link><span className="block text-xs text-muted-foreground">{c.email}</span></td>
                     <td className="p-3">{c.orders_count}</td>
                     <td className="p-3">{formatMoney(c.total_spent)}</td>
                     <td className="p-3 text-muted-foreground">{c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN") : ""}</td>
@@ -60,19 +60,19 @@ export function CustomersPage() {
   );
 }
 
-export function CustomerDetailPage({ uuid }: { uuid: string }) {
+export function CustomerDetailPage({ customerNumber }: { customerNumber: string }) {
   const queryClient = useQueryClient();
-  const customer = useQuery({ queryKey: ["admin", "customer", uuid], queryFn: () => miscAdminApi.customer(uuid) });
+  const customer = useQuery({ queryKey: ["admin", "customer", customerNumber], queryFn: () => miscAdminApi.customer(customerNumber) });
   const toggle = useMutation({
-    mutationFn: (active: boolean) => miscAdminApi.setCustomerActive(uuid, active),
-    onSuccess: () => { toast.success("Customer updated."); void queryClient.invalidateQueries({ queryKey: ["admin", "customer", uuid] }); },
+    mutationFn: (active: boolean) => miscAdminApi.setCustomerActive(customer.data!.uuid, active),
+    onSuccess: () => { toast.success("Customer updated."); void queryClient.invalidateQueries({ queryKey: ["admin", "customer", customerNumber] }); },
   });
   if (customer.isPending) return <LoadingState lines={8} />;
   if (customer.isError) return <ErrorState onRetry={() => void customer.refetch()} />;
   const c = customer.data;
 
   return (
-    <AdminPage title={c.name} description={`${c.email}${c.phone ? ` · ${c.phone}` : ""} · joined ${c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN") : ""}`}
+    <AdminPage title={c.name} description={`${c.customer_number} · ${c.email}${c.phone ? ` · ${c.phone}` : ""} · joined ${c.created_at ? new Date(c.created_at).toLocaleDateString("en-IN") : ""}`}
       actions={<Button variant="outline" disabled={toggle.isPending} onClick={() => toggle.mutate(!c.is_active)}>{c.is_active ? "Block account" : "Unblock account"}</Button>}>
       <ul className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {[

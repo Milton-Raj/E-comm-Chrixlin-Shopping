@@ -169,7 +169,7 @@ export function OrderDetailPage({ orderNumber }: { orderNumber: string }) {
             </Panel>
           ) : null}
           <Panel title="Customer">
-            <p className="text-sm">{o.customer ? <Link className="underline underline-offset-4" href={`/admin/customers/${o.customer.uuid}`}>{o.customer.name}</Link> : "Guest checkout"}</p>
+            <p className="text-sm">{o.customer ? <Link className="underline underline-offset-4" href={`/admin/customers/${o.customer.customer_number}`}>{o.customer.name}</Link> : "Guest checkout"}</p>
             <p className="text-sm text-muted-foreground">{o.email}{o.phone ? ` · ${o.phone}` : ""}</p>
             {o.shipping_address ? <p className="text-sm text-muted-foreground">{o.shipping_address.name}, {o.shipping_address.line1}, {o.shipping_address.city} {o.shipping_address.postal_code}, {o.shipping_address.state_code}</p> : null}
           </Panel>

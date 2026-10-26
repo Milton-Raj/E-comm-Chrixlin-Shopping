@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Identity\CustomerNumberGenerator;
 use App\Domain\Identity\PermissionCatalog;
 use App\Models\Concerns\HasPublicUuid;
 use App\Notifications\Auth\ResetPasswordNotification;
@@ -24,6 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
  *
  * @property int $id
  * @property string $uuid
+ * @property string|null $customer_number
  * @property string $name
  * @property string $email
  * @property string|null $phone
@@ -83,6 +85,13 @@ class User extends Authenticatable implements MustVerifyEmail
             'marketing_opt_in' => 'boolean',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            $user->customer_number ??= app(CustomerNumberGenerator::class)->next();
+        });
     }
 
     /** @return HasMany<Order, $this> */

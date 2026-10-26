@@ -54,11 +54,11 @@ function initial(p?: AdminProductDetail): FormState {
   };
 }
 
-export function ProductEditorPage({ uuid }: { uuid: string | null }) {
-  const product = useQuery({ queryKey: ["admin", "product", uuid], queryFn: () => adminApi.product(uuid!), enabled: Boolean(uuid) });
+export function ProductEditorPage({ slug }: { slug: string | null }) {
+  const product = useQuery({ queryKey: ["admin", "product", slug], queryFn: () => adminApi.product(slug!), enabled: Boolean(slug) });
   const lookups = useQuery({ queryKey: ["admin", "lookups"], queryFn: adminApi.lookups, staleTime: 60_000 });
 
-  if ((uuid && product.isPending) || lookups.isPending) return <LoadingState lines={10} />;
+  if ((slug && product.isPending) || lookups.isPending) return <LoadingState lines={10} />;
   if (product.isError || lookups.isError) return <ErrorState onRetry={() => { void product.refetch(); void lookups.refetch(); }} />;
 
   return <Editor key={product.data?.uuid ?? "new"} product={product.data} lookups={lookups.data} />;
@@ -93,9 +93,9 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
     onSuccess: (saved) => {
       setErrors({});
       toast.success(product ? "Product saved." : "Product created.");
-      queryClient.setQueryData(["admin", "product", saved.uuid], saved);
+      queryClient.setQueryData(["admin", "product", saved.slug], saved);
       void queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
-      if (!product) router.replace(`/admin/products/${saved.uuid}`);
+      if (saved.slug !== product?.slug) router.replace(`/admin/products/${saved.slug}`);
       else setForm(initial(saved));
     },
     onError: (e) => {
@@ -274,7 +274,7 @@ function Err({ msg }: { msg?: string }) {
 
 function MediaPanel({ product }: { product: AdminProductDetail }) {
   const queryClient = useQueryClient();
-  const store = (p: AdminProductDetail) => queryClient.setQueryData(["admin", "product", p.uuid], p);
+  const store = (p: AdminProductDetail) => queryClient.setQueryData(["admin", "product", p.slug], p);
   const upload = useMutation({
     mutationFn: (file: File) => { const form = new FormData(); form.append("image", file); form.append("alt_text", product.name); return adminApi.uploadMedia(product.uuid, form); },
     onSuccess: (p) => { store(p); toast.success("Image uploaded."); },
@@ -301,7 +301,7 @@ function MediaPanel({ product }: { product: AdminProductDetail }) {
 
 function FilesPanel({ product }: { product: AdminProductDetail }) {
   const queryClient = useQueryClient();
-  const store = (p: AdminProductDetail) => queryClient.setQueryData(["admin", "product", p.uuid], p);
+  const store = (p: AdminProductDetail) => queryClient.setQueryData(["admin", "product", p.slug], p);
   const upload = useMutation({
     mutationFn: (file: File) => { const form = new FormData(); form.append("file", file); return adminApi.uploadFile(product.uuid, form); },
     onSuccess: (p) => { store(p); toast.success("File uploaded to private storage."); },

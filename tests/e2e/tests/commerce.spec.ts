@@ -104,7 +104,7 @@ test("admin manages the catalogue and fulfils an order", async ({ page }, testIn
   await page.getByLabel("Status").selectOption("active");
   await page.getByRole("button", { name: "Save product" }).click();
   await expect(page.getByText("Product created.")).toBeVisible();
-  await expect(page).toHaveURL(/\/admin\/products\/[0-9a-f-]{36}$/);
+  await expect(page).toHaveURL(/\/admin\/products\/atelier-test-scarf-\d+$/);
 
   await page.goto(`/search?q=${encodeURIComponent(name)}`);
   await expect(page.getByRole("link", { name })).toBeVisible();
