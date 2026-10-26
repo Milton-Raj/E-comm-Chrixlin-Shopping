@@ -56,6 +56,8 @@ class ProductResource extends JsonResource
             'free_shipping' => $this->free_shipping,
             'is_featured' => $this->is_featured,
             'images' => $this->media->map(fn (ProductMedia $m) => ['url' => $m->url(), 'alt' => $m->alt_text ?? $this->name])->values(),
+            // Sitemap <lastmod>: tells search engines which products are new or changed.
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
 
         if ($this->detailed) {

@@ -121,7 +121,7 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 | GET | `/categories` | 3 | tree |
 | GET | `/categories/{slug}` | 3 | category + breadcrumbs + child categories + available facets |
 | GET | `/brands`, `/brands/{slug}` | 3 | |
-| GET | `/products` | 3 | list; filters/sort §1.5; `filter[category]`, `filter[q]` |
+| GET | `/products` | 3 | list; filters/sort §1.5; `filter[category]`, `filter[q]`; each item carries `updated_at` (ISO 8601, used as sitemap `lastmod`) |
 | GET | `/products/{slug}` | 3 | detail: variants, media, specs, price range, stock state (`in_stock|low_stock|out_of_stock`, never exact counts), rating summary, SEO, JSON-LD data |
 | GET | `/products/{slug}/related` | 3 | related/upsell/cross-sell |
 | GET | `/products/{slug}/reviews` | 4 | approved reviews, paginated, rating histogram |

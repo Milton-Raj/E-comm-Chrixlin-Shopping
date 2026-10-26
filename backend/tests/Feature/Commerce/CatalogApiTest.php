@@ -8,6 +8,7 @@ it('lists only visible products with public fields', function () {
 
     expect(collect($response->json('data'))->pluck('name')->all())->toContain('Visible Bag')->not->toContain('Draft Bag');
     $response->assertJsonPath('data.0.price.currency', 'INR')
+        ->assertJsonPath('data.0.updated_at', fn ($v) => is_string($v) && strtotime($v) !== false) // sitemap lastmod
         ->assertJsonMissingPath('data.0.id')
         ->assertJsonMissingPath('data.0.stock_on_hand');
 });

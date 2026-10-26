@@ -3,8 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LoadingState } from "@/components/states/loading-state";
+import { SHOP_PAGE_SIZE } from "@/features/catalog/catalog";
 import { ShopBrowser } from "@/features/catalog/components/shop-browser";
-import { getCategory } from "@/features/catalog/server";
+import { getCategory, getProducts } from "@/features/catalog/server";
 import { t } from "@/lib/i18n";
 
 export async function generateMetadata({ params }: PageProps<"/category/[slug]">): Promise<Metadata> {
@@ -23,7 +24,11 @@ export default function CategoryPage({ params }: PageProps<"/category/[slug]">) 
 }
 
 async function CategoryContent({ slug }: { slug: string }) {
-  const category = await getCategory(slug);
+  const [category, initial] = await Promise.all([
+    getCategory(slug),
+    // Server-rendered first page: product links are in the HTML search engines read.
+    getProducts({ category: slug, type: null, sort: "featured", page: 1, per_page: SHOP_PAGE_SIZE }),
+  ]);
   if (!category) notFound();
 
   return (
@@ -36,7 +41,7 @@ async function CategoryContent({ slug }: { slug: string }) {
         {category.description ? <p className="mx-auto mt-4 max-w-xl text-muted-foreground">{category.description}</p> : null}
       </header>
       <Suspense fallback={<LoadingState lines={6} />}>
-        <ShopBrowser fixedCategory={category.slug} />
+        <ShopBrowser fixedCategory={category.slug} initialProducts={initial} />
       </Suspense>
     </>
   );

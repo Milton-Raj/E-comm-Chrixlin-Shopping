@@ -9,17 +9,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { t } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { fetchCategories, fetchProducts } from "../api";
-import { sortOptions } from "../catalog";
-import type { ProductSort, ProductType } from "../types";
+import { SHOP_PAGE_SIZE, sortOptions } from "../catalog";
+import type { Paginated, Product, ProductSort, ProductType } from "../types";
 import { ProductGrid } from "./product-card";
 
 const sorts = new Set<string>(sortOptions.map((s) => s.value));
 
 /**
  * Category / type / sort filters kept in the URL (shareable, back-button friendly)
- * and applied without a full page reload (PRD §24).
+ * and applied without a full page reload (PRD §24). The unfiltered first page arrives
+ * server-rendered (`initialProducts`), so search engines see every product link in the HTML.
  */
-export function ShopBrowser({ fixedCategory }: { fixedCategory?: string }) {
+export function ShopBrowser({ fixedCategory, initialProducts }: { fixedCategory?: string; initialProducts?: Paginated<Product> }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -31,9 +32,11 @@ export function ShopBrowser({ fixedCategory }: { fixedCategory?: string }) {
   const sort = (rawSort && sorts.has(rawSort) ? rawSort : "featured") as ProductSort;
   const page = Math.max(1, Number(params.get("page") ?? 1) || 1);
 
+  const isDefaultView = category === (fixedCategory ?? null) && !type && sort === "featured" && page === 1;
   const products = useQuery({
     queryKey: ["products", { category, type, sort, page }],
-    queryFn: () => fetchProducts({ category, type, sort, page, per_page: 24 }),
+    queryFn: () => fetchProducts({ category, type, sort, page, per_page: SHOP_PAGE_SIZE }),
+    initialData: isDefaultView ? initialProducts : undefined,
     placeholderData: (previous) => previous,
   });
   const categories = useQuery({ queryKey: ["categories"], queryFn: fetchCategories, staleTime: 300_000 });

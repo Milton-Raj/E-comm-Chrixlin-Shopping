@@ -3,6 +3,9 @@ import type { Product, ProductOption, ProductSort, ProductVariant } from "./type
 
 /** Pure catalog helpers shared by server and client components. */
 
+/** Products per shop/category page; the server prefetch and the browser ask for the same page. */
+export const SHOP_PAGE_SIZE = 24;
+
 export const sortOptions: { value: ProductSort; label: string }[] = [
   { value: "featured", label: "Featured" },
   { value: "newest", label: "Newest" },

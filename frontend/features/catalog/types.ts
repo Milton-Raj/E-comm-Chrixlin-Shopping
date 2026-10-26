@@ -56,6 +56,8 @@ export type Product = {
   free_shipping: boolean;
   is_featured: boolean;
   images: ProductImage[];
+  /** ISO 8601; feeds the sitemap's lastmod. */
+  updated_at?: string | null;
 };
 
 export type ProductDetail = Product & {
