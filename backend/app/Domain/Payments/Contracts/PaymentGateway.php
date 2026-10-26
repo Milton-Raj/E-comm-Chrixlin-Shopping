@@ -28,6 +28,12 @@ interface PaymentGateway
      */
     public function confirm(Payment $payment, array $data): ?GatewayEvent;
 
+    /**
+     * Asks the provider, server to server, where the payment stands (reconciliation for
+     * missed webhooks and closed browsers). Null when there is nothing conclusive yet.
+     */
+    public function fetchStatus(Payment $payment): ?GatewayEvent;
+
     public function verifyWebhook(Request $request): bool;
 
     public function parseWebhook(Request $request): ?GatewayEvent;

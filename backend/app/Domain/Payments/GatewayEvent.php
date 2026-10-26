@@ -9,6 +9,8 @@ final class GatewayEvent
 
     public const FAILED = 'failed';
 
+    public const PENDING = 'pending';
+
     /**
      * @param  array<string, mixed>  $payload
      */

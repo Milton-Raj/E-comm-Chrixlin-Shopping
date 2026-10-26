@@ -12,7 +12,7 @@
 | 2 | Design system | ✅ Palette, type and core components (owner palette, D15); component gallery pending |
 | 3 | Catalog | ✅ Built (DB-backed catalog, variants, stock ledger, search, admin CRUD) |
 | 4 | Customer experience | ✅ Built (home, shop, PDP, bag + drawer, wishlist, account, orders, downloads, reviews with photos) |
-| 5 | Checkout, payments, orders | ✅ Built with test gateway; Razorpay coded, needs keys to verify live |
+| 5 | Checkout, payments, orders | ✅ Built; Razorpay hardened + tested against a faked API (2026-10-26) — needs real keys to verify end to end |
 | 6 | Digital products | ✅ Built (private files, single-use links, limits, expiry, revocation, logs) |
 | 7 | Admin | ✅ Built (dashboard, products, categories/brands, inventory, orders, customers, digital, coupons, reports, content, settings, audit); staff management (Admin → Staff); CSV import/export, support tickets pending |
 | 8 | Marketing | 🟡 Owner-selected set built 2026-10-12: free-delivery progress, gift wrapping + message, abandoned-bag reminder, Pairs well with, reviews with photos + moderation + review request email after delivery and "Write a review" on delivered orders, back-in-stock alerts, WhatsApp share/ask, honest low-stock count + reassurance, corporate gifting enquiries (Admin → Marketing / Reviews / Enquiries, Settings → Marketing). Promotions engine, subscribers, price-drop alerts pending |
@@ -120,3 +120,11 @@ DEPLOYMENT.md §9 checklist: domains, SSL, DB, backend, frontend (Vercel Pro), m
 - Admin "Cancel & refund" on paid orders (full amount cancels via automatic Razorpay refund; lower amount = partial refund) and `OrderRefundedNotification` emailed to the customer after every refund. E2E `cancel-refund.spec.ts`.
 - Shiprocket test mode (`SHIPROCKET_TEST_MODE`): Shiprocket has no sandbox, so packing an order only creates the free Shiprocket order (status `test_created`) — no AWB, wallet charge or pickup. Shown in Settings and on the order page.
 - Returning customers: checkout shows last order's delivery address (`SavedAddress`, from `order_addresses`) for confirmation every time, with "Change address" opening the form pre-filled; phone pre-filled. Guests: nothing saved. E2E `saved-address.spec.ts`.
+
+## Build log — 2026-10-26 (Razorpay go-live hardening)
+- `PaymentGateway::fetchStatus` + `ReconcilePayments` (every 15 min): payments whose webhook and browser confirmation both went missing still end as paid orders.
+- `orders:expire-unpaid` is now scheduled (every 5 min; it was never scheduled before, so unpaid orders held stock indefinitely) and reconciles each order with the provider before cancelling.
+- Authorized-but-uncaptured Razorpay payments are captured server-side (amount/currency must match).
+- Order creation, capture and refunds are no longer auto-retried; refunds send `X-Refund-Idempotency` so a repeated request cannot refund twice.
+- Tests: `tests/Feature/Commerce/RazorpayTest.php` (10 cases: signature + server status, failed status, capture fallback, amount mismatch, webhook signature + dedupe, reconciliation, expiry safety, refund idempotency). Backend 240 tests green, Pint + Larastan clean.
+- Still open: verify with real Razorpay test keys, then live keys; refund webhooks (`refund.processed/failed`) are not consumed yet — refunds are recorded on Razorpay's API acceptance.

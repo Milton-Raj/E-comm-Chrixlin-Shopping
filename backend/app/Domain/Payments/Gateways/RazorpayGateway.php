@@ -26,7 +26,7 @@ class RazorpayGateway implements PaymentGateway
 
     public function createPayment(Payment $payment): array
     {
-        $response = $this->http()->post(self::API.'/orders', [
+        $response = $this->http(retry: false)->post(self::API.'/orders', [
             'amount' => $payment->amount,
             'currency' => $payment->currency,
             'receipt' => $payment->order->order_number,
@@ -71,18 +71,29 @@ class RazorpayGateway implements PaymentGateway
             return null;
         }
 
-        $status = (string) $remote->json('status');
+        return $this->eventFromRemote($payment, (array) $remote->json());
+    }
 
-        return new GatewayEvent(
-            eventId: "rzp_confirm_{$paymentId}_{$status}",
-            type: $status === 'captured' ? GatewayEvent::CAPTURED : ($status === 'failed' ? GatewayEvent::FAILED : 'pending'),
-            providerOrderId: $orderId,
-            providerPaymentId: $paymentId,
-            amount: (int) $remote->json('amount'),
-            currency: (string) $remote->json('currency'),
-            method: $remote->json('method'),
-            failureMessage: $remote->json('error_description'),
-        );
+    public function fetchStatus(Payment $payment): ?GatewayEvent
+    {
+        if (! $payment->provider_order_id) {
+            return null;
+        }
+
+        $remote = $this->http()->get(self::API."/orders/{$payment->provider_order_id}/payments");
+        if (! $remote->successful()) {
+            Log::channel('payments')->warning('Razorpay status fetch failed.', ['status' => $remote->status(), 'payment' => $payment->uuid]);
+
+            return null;
+        }
+
+        // One Razorpay order can hold several attempts (a declined card, then UPI). Money wins.
+        $attempts = collect((array) $remote->json('items', []));
+        $best = $attempts->firstWhere('status', 'captured')
+            ?? $attempts->firstWhere('status', 'authorized')
+            ?? ($attempts->isNotEmpty() && $attempts->every(fn ($a) => ($a['status'] ?? null) === 'failed') ? $attempts->first() : null);
+
+        return $best ? $this->eventFromRemote($payment, (array) $best) : null;
     }
 
     public function verifyWebhook(Request $request): bool
@@ -116,17 +127,64 @@ class RazorpayGateway implements PaymentGateway
 
     public function refund(Payment $payment, int $amount, string $reason): string
     {
-        $response = $this->http()->post(self::API."/payments/{$payment->provider_payment_id}/refund", ['amount' => $amount, 'notes' => ['reason' => $reason]]);
+        // Never retried blindly, and keyed so a repeated request cannot refund twice: the key is
+        // fixed by the payment, how much was already refunded and this amount.
+        $idempotencyKey = substr(hash('sha256', "{$payment->uuid}|{$payment->order->refunded_total}|{$amount}"), 0, 32);
+        $response = $this->http(retry: false)->withHeaders(['X-Refund-Idempotency' => $idempotencyKey])
+            ->post(self::API."/payments/{$payment->provider_payment_id}/refund", ['amount' => $amount, 'notes' => ['reason' => $reason]]);
         if (! $response->successful()) {
+            Log::channel('payments')->error('Razorpay refund failed.', ['status' => $response->status(), 'payment' => $payment->uuid]);
             throw new ApiException('The payment provider rejected the refund.', 502, 'gateway_error');
         }
 
         return (string) $response->json('id');
     }
 
-    private function http(): PendingRequest
+    /**
+     * Maps a Razorpay payment entity to an event. Authorized-but-uncaptured money (auto-capture
+     * switched off in the dashboard) is captured here, or Razorpay would refund it after a few days.
+     *
+     * @param  array<string, mixed>  $entity
+     */
+    private function eventFromRemote(Payment $payment, array $entity): GatewayEvent
     {
-        return Http::withBasicAuth((string) config('payments.razorpay.key_id'), (string) config('payments.razorpay.key_secret'))
-            ->acceptJson()->timeout(15)->retry(2, 300, throw: false);
+        $paymentId = (string) ($entity['id'] ?? '');
+        $status = (string) ($entity['status'] ?? '');
+        $amount = (int) ($entity['amount'] ?? 0);
+        $currency = strtoupper((string) ($entity['currency'] ?? ''));
+
+        if ($status === 'authorized') {
+            if ($amount !== $payment->amount || $currency !== $payment->currency) {
+                Log::channel('payments')->critical('Authorized amount does not match the order; not capturing.', ['payment' => $payment->uuid, 'expected' => $payment->amount, 'got' => $amount]);
+            } else {
+                $capture = $this->http(retry: false)->post(self::API."/payments/{$paymentId}/capture", ['amount' => $amount, 'currency' => $currency]);
+                $status = $capture->successful() ? (string) $capture->json('status') : 'authorized';
+            }
+        }
+
+        return new GatewayEvent(
+            eventId: "rzp_{$paymentId}_{$status}",
+            type: match ($status) {
+                'captured' => GatewayEvent::CAPTURED,
+                'failed' => GatewayEvent::FAILED,
+                default => GatewayEvent::PENDING,
+            },
+            providerOrderId: $payment->provider_order_id,
+            providerPaymentId: $paymentId,
+            amount: $amount,
+            currency: $currency,
+            method: $entity['method'] ?? null,
+            failureMessage: $entity['error_description'] ?? null,
+            payload: ['status' => $status, 'payment_id' => $paymentId],
+        );
+    }
+
+    /** Reads are retried on hiccups; anything that moves money is sent exactly once. */
+    private function http(bool $retry = true): PendingRequest
+    {
+        $request = Http::withBasicAuth((string) config('payments.razorpay.key_id'), (string) config('payments.razorpay.key_secret'))
+            ->acceptJson()->timeout(15);
+
+        return $retry ? $request->retry(2, 300, throw: false) : $request;
     }
 }

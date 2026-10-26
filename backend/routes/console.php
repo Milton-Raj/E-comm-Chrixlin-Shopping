@@ -2,6 +2,7 @@
 
 use App\Domain\Marketing\Actions\SendAbandonedCartReminders;
 use App\Domain\Marketing\Actions\SendBackInStockAlerts;
+use App\Domain\Payments\Actions\ReconcilePayments;
 use App\Domain\Reviews\Actions\SendReviewRequests;
 use App\Http\Controllers\Api\V1\System\HealthController;
 use Illuminate\Support\Facades\Cache;
@@ -19,6 +20,16 @@ Schedule::call(fn () => Cache::forever(HealthController::SCHEDULER_HEARTBEAT_KEY
 Schedule::command('queue:work database --queue=critical,default,low --stop-when-empty --max-time=50 --tries=3')
     ->everyMinute()
     ->withoutOverlapping(5);
+
+// Payments: settle attempts whose webhook never arrived, then release stock held by unpaid orders.
+Schedule::call(fn () => app(ReconcilePayments::class)())
+    ->name('reconcile-payments')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping(15);
+
+Schedule::command('orders:expire-unpaid')
+    ->everyFiveMinutes()
+    ->withoutOverlapping(10);
 
 Schedule::call(fn () => app(SendBackInStockAlerts::class)())
     ->name('back-in-stock-alerts')

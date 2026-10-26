@@ -263,7 +263,9 @@ interface PaymentGateway {
   3. Respond 200 fast; dispatch `ProcessWebhookEvent` job.
   4. Job applies the event through the same `RecordPaymentCaptured` Action used by the confirm path; Actions are idempotent (state checks + unique `payment_transactions.provider_transaction_id`).
   5. Failures → `status=failed`, retried with backoff; `webhook:retry` command; admin view of failed events.
-- **Reconciliation job** (every 15 min): payments in `initiated/pending` older than 10 min are checked with `fetchPaymentStatus` — covers webhooks lost on shared hosting.
+- **Reconciliation** (`ReconcilePayments`, every 15 min): open attempts (`initiated/pending/authorized/failed/cancelled`, order not yet paid) between 10 min and 2 days old are checked with `PaymentGateway::fetchStatus` (Razorpay: `GET /orders/{id}/payments`, a captured attempt wins) and applied through `ProcessGatewayEvent` — covers lost webhooks and closed browsers. `orders:expire-unpaid` (every 5 min, 60-min window) reconciles each order before cancelling it, so a paid order is never expired.
+- **Capture:** an `authorized` Razorpay payment (auto-capture off in the dashboard) is captured server-side when its amount and currency match the order; a mismatch is logged as critical and left uncaptured.
+- **Money-moving calls are never retried blindly:** order creation, capture and refund are sent once; refunds carry `X-Refund-Idempotency` derived from payment + already-refunded total + amount. Read calls retry twice.
 - Refunds: `RefundOrderAction` (permission `orders.refund`) → gateway refund → `refunds` row + `payment_transactions` row → order/payment status → inventory/entitlement side effects → audit log.
 
 ### 6.12 Digital product delivery (§16–§17)

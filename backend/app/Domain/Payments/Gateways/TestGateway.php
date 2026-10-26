@@ -46,6 +46,11 @@ class TestGateway implements PaymentGateway
         );
     }
 
+    public function fetchStatus(Payment $payment): ?GatewayEvent
+    {
+        return null; // the test "provider" only knows what the browser tells it
+    }
+
     public function verifyWebhook(Request $request): bool
     {
         $secret = (string) config('payments.test.webhook_secret');

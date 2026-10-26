@@ -104,7 +104,12 @@ cd tests/e2e && npm install && npx playwright install chromium && npm run e2e
 5. `deployment/hostinger/.htaccess` (LiteSpeed): Laravel front controller, deny access to dotfiles, force HTTPS, cache headers for `/storage/media/*`, no PHP execution under `/storage`.
 6. `php artisan storage:link` (public media only). Private disk stays at `backend/storage/app/private`.
 7. **Cron** (hPanel → Cron Jobs): `* * * * * cd ~/apps/ecom/backend && php artisan schedule:run >> /dev/null 2>&1` (use full PHP binary path shown by hPanel, e.g. `/opt/alt/php84/usr/bin/php` — **VERIFY**).
-8. Payment provider dashboard: webhook URL `https://api.<domain>/api/webhooks/payment/razorpay`, events `payment.captured`, `payment.failed`, `order.paid`, `refund.processed`, `refund.failed`; copy secret to `.env`.
+8. **Razorpay** (Dashboard → Account & Settings):
+   - API keys: start with **Test mode** keys (`rzp_test_…`, the store labels the method "test mode"), then generate **Live** keys once KYC/activation is approved. Set `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET` in the server `.env` only; run `php artisan config:cache`.
+   - Webhooks → Add: URL `https://api.<domain>/api/webhooks/payment/razorpay`, a long random secret (→ `RAZORPAY_WEBHOOK_SECRET`), events `payment.captured`, `payment.failed`, `order.paid`. Test and Live mode each need their own webhook.
+   - Payment capture: keep **Automatic** (the server also captures authorized payments as a fallback).
+   - If the API sits behind Cloudflare/WAF, allow-list `/api/webhooks/payment/razorpay`.
+   - Verify: Admin → Settings → Payments shows "connected"; place a ₹1-level order, pay, check the order turns Paid; refund it from Admin and confirm in the Razorpay dashboard.
 9. DNS: `www` → Vercel (CNAME), apex → Vercel (A/ALIAS, redirect to www), `api` → Hostinger. Optionally proxy `api` through Cloudflare (WAF + CDN) — then allow-list the webhook path and make sure the real client IP header is trusted (`TrustProxies`).
 10. Email: SPF, DKIM, DMARC records for the sending domain.
 
