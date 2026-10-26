@@ -13,3 +13,10 @@ export function formatMoney(money: Money, locale = "en-IN"): string {
 
   return formatter.format(money.amount / 10 ** exponent);
 }
+
+/** Plain decimal amount for machine-readable formats (schema.org, product feeds): "2499.00". */
+export function moneyToDecimal(money: Money): string {
+  const exponent = new Intl.NumberFormat("en", { style: "currency", currency: money.currency }).resolvedOptions().maximumFractionDigits ?? 2;
+
+  return (money.amount / 10 ** exponent).toFixed(exponent);
+}

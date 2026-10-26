@@ -128,3 +128,9 @@ DEPLOYMENT.md §9 checklist: domains, SSL, DB, backend, frontend (Vercel Pro), m
 - Order creation, capture and refunds are no longer auto-retried; refunds send `X-Refund-Idempotency` so a repeated request cannot refund twice.
 - Tests: `tests/Feature/Commerce/RazorpayTest.php` (10 cases: signature + server status, failed status, capture fallback, amount mismatch, webhook signature + dedupe, reconciliation, expiry safety, refund idempotency). Backend 240 tests green, Pint + Larastan clean.
 - Still open: verify with real Razorpay test keys, then live keys; refund webhooks (`refund.processed/failed`) are not consumed yet — refunds are recorded on Razorpay's API acceptance.
+
+## Build log — 2026-10-26 (SEO: Google can read the store)
+- Sitemap (`/sitemap.xml`, 38 URLs on the demo catalog incl. product images), `/robots.txt`, JSON-LD Product + BreadcrumbList on product/digital pages, Organization + WebSite on home, Google Merchant feed `/feeds/google-merchant.xml` (16 physical products). These were planned in Phase 3 but had not been built.
+- Tests: `features/catalog/structured-data.test.ts` (5) + `moneyToDecimal`. Frontend 48 tests, lint, typecheck, production build green.
+- Owner actions: Search Console + sitemap submission, Merchant Center feed registration (DEPLOYMENT §7a).
+- Open: Next.js 16.4.0 flagged by a security advisory at build time — upgrade to 16.4.3 pending owner approval.

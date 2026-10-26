@@ -1,7 +1,7 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
 import { fetchCategories, fetchCategory, fetchHeroSlides, fetchPage, fetchProduct, fetchProducts, fetchRelated } from "./api";
-import type { ProductQuery } from "./types";
+import type { Product, ProductQuery } from "./types";
 
 /**
  * Cached server reads (ARCHITECTURE §6.17). Tagged so the backend can invalidate them
@@ -13,6 +13,19 @@ export async function getProducts(params: ProductQuery = {}) {
   cacheLife("minutes");
   cacheTag("catalog");
   return fetchProducts(params);
+}
+
+/** Every listed product, page by page (sitemap, product feed). Capped so a huge catalog cannot stall a request. */
+export async function getAllProducts(params: ProductQuery = {}): Promise<Product[]> {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("catalog");
+  const perPage = 60; // API maximum
+  const first = await fetchProducts({ ...params, per_page: perPage, page: 1 });
+  const lastPage = Math.min(first.pagination.last_page, 200);
+  const rest = await Promise.all(Array.from({ length: lastPage - 1 }, (_, i) => fetchProducts({ ...params, per_page: perPage, page: i + 2 })));
+
+  return [first, ...rest].flatMap((page) => page.items);
 }
 
 export async function getProduct(slug: string) {

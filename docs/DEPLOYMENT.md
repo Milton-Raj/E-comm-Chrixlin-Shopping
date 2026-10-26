@@ -147,6 +147,12 @@ curl -fsS https://api.<domain>/api/v1/health
 | `e2e.yml` (on PR to develop/main) | start MySQL + Laravel (`php artisan serve`) + `next start` → Playwright (mobile/tablet/desktop projects) + axe |
 | `lighthouse.yml` | Lighthouse CI on key pages against preview/staging with §51 budgets |
 
+## 7a. Search engines & Google Shopping (after the domain is live)
+1. **Google Search Console** → add the `https://www.<domain>` property (DNS TXT verification in hPanel) → Sitemaps → submit `https://www.<domain>/sitemap.xml`.
+2. **Rich results check:** run a product URL through https://search.google.com/test/rich-results — expect *Product snippets* and *Breadcrumbs* with no errors.
+3. **Google Merchant Center** (free listings): create the account, verify and claim the same domain, set shipping and return policy in Merchant Center, then Products → Add products from a file → *Scheduled fetch*, URL `https://www.<domain>/feeds/google-merchant.xml`, daily.
+4. Staging must not be indexed: keep basic-auth on staging (robots.txt is the same file on every environment).
+
 ## 8. Backups & monitoring
 - Hostinger automatic backups (**VERIFY** frequency on Premium) + nightly `mysqldump --single-transaction` (scheduler) encrypted and copied off-site (e.g. R2/S3/Google Drive), retained 30 days. Private digital files backed up weekly off-site.
 - **Restore drill** before launch and quarterly: restore to staging, run smoke tests.

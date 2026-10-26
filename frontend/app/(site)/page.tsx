@@ -9,6 +9,8 @@ import { defaultHeroSlides } from "@/features/catalog/hero-defaults";
 import { getCategories, getHeroSlides, getProducts } from "@/features/catalog/server";
 import { getSiteContent, siteText } from "@/features/catalog/site-content";
 import { Skeleton } from "@/components/ui/skeleton";
+import { JsonLd } from "@/components/json-ld";
+import { storeJsonLd } from "@/features/catalog/structured-data";
 import { Suspense } from "react";
 import { Reveal } from "@/components/motion/reveal";
 import { t, type MessageKey } from "@/lib/i18n";
@@ -27,6 +29,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <JsonLd data={storeJsonLd(st("brand.description"))} />
       {/* 1 — Hero slideshow (Admin → Content → Homepage hero) */}
       <Suspense fallback={<HeroSlider slides={defaultHeroSlides().slice(0, 1)} />}>
         <Hero />

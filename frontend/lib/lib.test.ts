@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { adminNav, groupAdminNav, visibleAdminNav } from "@/features/admin/navigation";
 import { t } from "./i18n";
-import { formatMoney } from "./money";
+import { formatMoney, moneyToDecimal } from "./money";
 import { safeRedirectPath } from "./safe-redirect";
 
 describe("formatMoney", () => {
@@ -9,6 +9,11 @@ describe("formatMoney", () => {
     expect(formatMoney({ amount: 249900, currency: "INR" }, "en-IN")).toBe("₹2,499.00");
     expect(formatMoney({ amount: 1999, currency: "USD" }, "en-US")).toBe("$19.99");
     expect(formatMoney({ amount: 500, currency: "JPY" }, "en-US")).toBe("¥500");
+  });
+
+  it("gives a plain decimal for feeds and structured data", () => {
+    expect(moneyToDecimal({ amount: 249900, currency: "INR" })).toBe("2499.00");
+    expect(moneyToDecimal({ amount: 500, currency: "JPY" })).toBe("500");
   });
 });
 

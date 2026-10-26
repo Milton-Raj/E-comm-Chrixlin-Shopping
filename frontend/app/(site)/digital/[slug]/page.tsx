@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
+import { JsonLd } from "@/components/json-ld";
 import { LoadingState } from "@/components/states/loading-state";
 import { productHref } from "@/features/catalog/catalog";
 import { ProductDetail } from "@/features/catalog/components/product-detail";
 import { getProduct, getRelated } from "@/features/catalog/server";
+import { productBreadcrumbs, productJsonLd } from "@/features/catalog/structured-data";
+import { t } from "@/lib/i18n";
 
 /** digital products live at /digital/{slug} (PRD §50); the other path redirects to the canonical URL. */
 export async function generateMetadata({ params }: PageProps<"/digital/[slug]">): Promise<Metadata> {
@@ -33,5 +36,11 @@ async function ProductContent({ slug }: { slug: string }) {
 
   const related = await getRelated(product.slug);
 
-  return <ProductDetail product={product} related={related} />;
+  return (
+    <>
+      <JsonLd data={productJsonLd(product)} />
+      <JsonLd data={productBreadcrumbs(product, t("nav.home"))} />
+      <ProductDetail product={product} related={related} />
+    </>
+  );
 }
