@@ -133,4 +133,4 @@ DEPLOYMENT.md §9 checklist: domains, SSL, DB, backend, frontend (Vercel Pro), m
 - Sitemap (`/sitemap.xml`, 38 URLs on the demo catalog incl. product images), `/robots.txt`, JSON-LD Product + BreadcrumbList on product/digital pages, Organization + WebSite on home, Google Merchant feed `/feeds/google-merchant.xml` (16 physical products). These were planned in Phase 3 but had not been built.
 - Tests: `features/catalog/structured-data.test.ts` (5) + `moneyToDecimal`. Frontend 48 tests, lint, typecheck, production build green.
 - Owner actions: Search Console + sitemap submission, Merchant Center feed registration (DEPLOYMENT §7a).
-- Open: Next.js 16.4.0 flagged by a security advisory at build time — upgrade to 16.4.3 pending owner approval.
+- Next.js upgraded 16.4.0 → 16.4.3 (security advisory blocked builds). Released 2026-10-26 (`b564427`): sitemap submitted in Search Console (domain property `chrixlin.com`, DNS-verified); customer-number migration ran on production.
