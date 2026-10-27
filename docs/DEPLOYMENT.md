@@ -5,6 +5,8 @@
 
 ## 0. Live setup (chrixlin.com, 2026-10-09) — everything on Hostinger, no Vercel
 
+**Releasing (since 2026-10-27): push to `main`.** `.github/workflows/deploy.yml` runs the Frontend and Backend checks, then releases over SSH: `deploy.sh <sha>` on the server (code, `composer install`, migrations, caches, health check), then `release-web.sh <sha>` (storefront built on the GitHub runner and uploaded), then a smoke test. Secrets: `HOSTINGER_SSH_KEY` (private half of the `github-deploy-chrixlin` key, public half in `~/.ssh/authorized_keys` on the server) and `HOSTINGER_KNOWN_HOSTS` (`ssh-keyscan -p 65002 45.84.204.68`). Optional approval gate: repo Settings → Environments → `production` → required reviewers. Flush the Hostinger CDN if a page looks stale. Never use hPanel → Git deployment for this site: it can only pull into `public_html`, which exposed the repo and broke the store on 2026-10-27.
+
 | Piece | Where | Notes |
 |---|---|---|
 | Store (Next.js standalone) | `~/apps/ecom-web/current` → served for `chrixlin.com` by LiteSpeed's Node runner (`~/domains/chrixlin.com/public_html/.htaccess`, `PassengerStartupFile app.js`) | Built **locally** by `deployment/hostinger/release-web.sh` (the shared plan's process limit stops `next build` on the server); keeps the last 3 releases. Server-only settings in `~/apps/ecom-web/shared/runtime.env`. |

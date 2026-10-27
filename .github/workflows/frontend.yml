@@ -1,11 +1,13 @@
 name: Frontend
 
 on:
+  # Pushes to main run these checks inside deploy.yml (they gate the release), so only develop here.
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths: ["frontend/**", ".github/workflows/frontend.yml"]
   pull_request:
     paths: ["frontend/**", ".github/workflows/frontend.yml"]
+  workflow_call:
 
 permissions:
   contents: read

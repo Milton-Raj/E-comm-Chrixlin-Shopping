@@ -1,11 +1,13 @@
 name: Backend
 
 on:
+  # Pushes to main run these checks inside deploy.yml (they gate the release), so only develop here.
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths: ["backend/**", ".github/workflows/backend.yml"]
   pull_request:
     paths: ["backend/**", ".github/workflows/backend.yml"]
+  workflow_call:
 
 permissions:
   contents: read

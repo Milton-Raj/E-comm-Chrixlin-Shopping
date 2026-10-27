@@ -1,0 +1,65 @@
+name: Deploy
+
+# local → GitHub → live: every push to main is checked, then released to Hostinger
+# (DEPLOYMENT.md §0). Backend first (code + migrations), then the storefront, which is
+# built here because the shared plan cannot run `next build`.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One release at a time; a newer push waits rather than cancelling a half-finished deploy.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  frontend:
+    uses: ./.github/workflows/frontend.yml
+  backend:
+    uses: ./.github/workflows/backend.yml
+
+  deploy:
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    environment: production # add required reviewers in repo Settings → Environments to approve each release
+    env:
+      SSH_TARGET: u462102226@45.84.204.68
+      SSH_PORT: "65002"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      - name: Release the API (code, dependencies, migrations, caches)
+        run: |
+          ssh -o BatchMode=yes -p "$SSH_PORT" "$SSH_TARGET" \
+            "cd ~/apps/ecom && PHP_BIN=/opt/alt/php84/usr/bin/php bash deployment/hostinger/deploy.sh $GITHUB_SHA"
+
+      - name: Release the storefront
+        run: bash deployment/hostinger/release-web.sh "$GITHUB_SHA"
+
+      - name: Smoke test
+        run: |
+          sleep 15
+          curl -fsS -o /dev/null -w "home %{http_code}\n" https://www.chrixlin.com/
+          curl -fsS -o /dev/null -w "shop %{http_code}\n" https://www.chrixlin.com/shop
+          curl -fsS https://api.chrixlin.com/api/v1/health
