@@ -99,7 +99,7 @@ test("admin manages the catalogue and fulfils an order", async ({ page }, testIn
   await page.getByLabel(/^Name\b/).fill(name);
   await page.getByLabel("Short description").fill("A test scarf created by the E2E suite.");
   await page.getByLabel("SKU").fill(`E2E-${Date.now()}`);
-  await page.getByLabel("Price", { exact: true }).fill("1999");
+  await page.getByLabel("MRP", { exact: true }).fill("1999"); // no discount: selling price = MRP
   await page.getByLabel("Opening stock").fill("7");
   await page.getByLabel("Status").selectOption("active");
   await page.getByRole("button", { name: "Save product" }).click();
