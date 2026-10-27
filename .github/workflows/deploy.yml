@@ -45,11 +45,16 @@ jobs:
           KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # The key may be stored as the key file itself or as one base64 line (easier to paste intact).
+          if printf '%s' "$SSH_KEY" | grep -q "BEGIN OPENSSH PRIVATE KEY"; then
+            printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          else
+            printf '%s' "$SSH_KEY" | tr -d ' \r\n' | base64 -d > ~/.ssh/id_ed25519
+          fi
+          printf '%s\n' "$KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
           # Fail early with a clear reason (prints only the key's fingerprint, never the key).
-          ssh-keygen -lf ~/.ssh/id_ed25519 || { echo "::error::HOSTINGER_SSH_KEY is not a valid private key — paste the whole file, BEGIN to END lines"; exit 1; }
+          ssh-keygen -lf ~/.ssh/id_ed25519 || { echo "::error::HOSTINGER_SSH_KEY is not a valid private key (expected the one-line base64 value)"; exit 1; }
           grep -q "45.84.204.68" ~/.ssh/known_hosts || { echo "::error::HOSTINGER_KNOWN_HOSTS is empty or wrong — use the output of ssh-keyscan -p 65002 45.84.204.68"; exit 1; }
           ssh -o BatchMode=yes -o ConnectTimeout=20 -p "$SSH_PORT" "$SSH_TARGET" true \
             || { echo "::error::The server refused the key — check the public key is added in hPanel → SSH Access"; exit 1; }
