@@ -20,7 +20,7 @@ export const en = {
   "nav.newArrivals": "New Arrivals",
   "nav.bestSellers": "Best Sellers",
   "nav.digital": "Digital",
-  "nav.dessertCandles": "Dessert Candles",
+  "nav.dessertCandles": "Artisan Candles",
   "nav.jesmonite": "Jesmonite",
   "nav.physical": "Physical",
   "nav.search": "Search",
