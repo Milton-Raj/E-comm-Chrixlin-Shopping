@@ -56,8 +56,13 @@ jobs:
           # Fail early with a clear reason (prints only the key's fingerprint, never the key).
           ssh-keygen -lf ~/.ssh/id_ed25519 || { echo "::error::HOSTINGER_SSH_KEY is not a valid private key (expected the one-line base64 value)"; exit 1; }
           grep -q "45.84.204.68" ~/.ssh/known_hosts || { echo "::error::HOSTINGER_KNOWN_HOSTS is empty or wrong — use the output of ssh-keyscan -p 65002 45.84.204.68"; exit 1; }
-          ssh -o BatchMode=yes -o ConnectTimeout=20 -p "$SSH_PORT" "$SSH_TARGET" true \
-            || { echo "::error::The server refused the key — check the public key is added in hPanel → SSH Access"; exit 1; }
+          if ! ssh -o BatchMode=yes -o ConnectTimeout=20 -p "$SSH_PORT" "$SSH_TARGET" true; then
+            # Host keys are public: show the stored ones next to what the server presents to this runner.
+            echo "Stored host keys:"; ssh-keygen -lf ~/.ssh/known_hosts || true
+            echo "Server presents:"; ssh-keyscan -p "$SSH_PORT" 45.84.204.68 2>/dev/null | ssh-keygen -lf - || true
+            echo "::error::SSH to the server failed — compare the host keys above; if they match, check the public key is added in hPanel → SSH Access"
+            exit 1
+          fi
 
       - name: Release the API (code, dependencies, migrations, caches)
         run: |
