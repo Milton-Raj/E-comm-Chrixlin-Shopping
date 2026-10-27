@@ -131,6 +131,7 @@ Indexes: `(status, published_at)` Q-P1; `(status, primary_category_id)` Q-P1; `(
 **category_products** — `category_id, product_id` (PK both), `sort_order`. Index `(product_id)`.
 **tags** — `id, name, slug UNIQUE`. **product_tags** — `product_id, tag_id` (PK both).
 **product_media** — `id, product_id FK, variant_id NULL FK, media_asset_id FK, type (image|video|model_360), alt_text NULL (overrides asset alt), sort_order, is_primary`. Index `(product_id, sort_order)`.
+  *As built:* `id, uuid, product_id FK, type VARCHAR(16) DEFAULT 'image' (image|youtube), disk, path NULL (images only), video_id VARCHAR(32) NULL (YouTube 11-char id only — never the pasted URL), alt_text NULL, sort_order`. `Product::media()` returns images only (cards, cart, orders, feeds); `Product::videos()` returns YouTube rows (max 3 per product). Migration `2026_10_27_100000_add_youtube_videos_to_product_media`.
 **related_products** — `product_id, related_product_id, type (related|upsell|cross_sell), sort_order` (PK first three).
 **product_search_index** — `product_id PK FK, document TEXT, updated_at`; `FULLTEXT(document)` Q-S1.
 **search_terms** — `id, term VARCHAR(100) UNIQUE, frequency INT` (typo dictionary).

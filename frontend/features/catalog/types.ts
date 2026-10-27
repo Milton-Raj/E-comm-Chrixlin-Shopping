@@ -16,6 +16,8 @@ export type Category = {
 };
 
 export type ProductImage = { url: string; alt: string };
+/** Optional YouTube video; only the id travels, the player loads on tap. */
+export type ProductVideo = { youtube_id: string; thumbnail: string };
 export type ProductOption = { name: string; values: string[] };
 
 export type ProductVariant = {
@@ -64,6 +66,8 @@ export type ProductDetail = Product & {
   description: string[];
   options: ProductOption[];
   specifications: { label: string; value: string }[];
+  /** Shown after the images in the gallery; may be missing from older API responses. */
+  videos?: ProductVideo[];
   variants: ProductVariant[];
   digital: DigitalDetails | null;
   seo: { title: string; description: string | null };

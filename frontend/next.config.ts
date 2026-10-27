@@ -5,6 +5,8 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC
 const apiOrigin = apiUrl?.origin ?? "";
 // Razorpay Checkout (loaded only when the gateway is enabled) needs its script, frame and API origins.
 const razorpay = { script: "https://checkout.razorpay.com", frame: "https://api.razorpay.com https://checkout.razorpay.com", connect: "https://api.razorpay.com https://lumberjack.razorpay.com" };
+// Product videos: thumbnails from YouTube's image CDN; the player (privacy-enhanced domain) loads only when tapped.
+const youtube = { img: "https://i.ytimg.com", frame: "https://www.youtube-nocookie.com" };
 
 /**
  * Static CSP (SECURITY.md §6, ARCHITECTURE D11). Nonce-based CSP would force
@@ -15,10 +17,10 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' ${razorpay.script}${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${apiOrigin}`.trim(),
+  `img-src 'self' data: blob: ${apiOrigin} ${youtube.img}`.trim(),
   "font-src 'self' data:",
   `connect-src 'self' ${apiOrigin} ${razorpay.connect}${isDev ? " ws: http://localhost:*" : ""}`.trim(),
-  `frame-src 'self' ${razorpay.frame}`,
+  `frame-src 'self' ${razorpay.frame} ${youtube.frame}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -53,7 +55,10 @@ const nextConfig: NextConfig = {
   },
   images: {
     // Product media is served by the API host (public disk / CDN later).
-    remotePatterns: apiUrl ? [{ protocol: apiUrl.protocol.replace(":", "") as "http" | "https", hostname: apiUrl.hostname, port: apiUrl.port, pathname: "/storage/**" }] : [],
+    remotePatterns: [
+      ...(apiUrl ? [{ protocol: apiUrl.protocol.replace(":", "") as "http" | "https", hostname: apiUrl.hostname, port: apiUrl.port, pathname: "/storage/**" }] : []),
+      { protocol: "https", hostname: "i.ytimg.com", pathname: "/vi/**" }, // product video thumbnails
+    ],
     // Local development serves images from localhost, which the optimizer blocks by default.
     dangerouslyAllowLocalIP: isDev || apiUrl?.hostname === "localhost",
     // Optimised images are keyed by URL and uploads get new file names, so they can be

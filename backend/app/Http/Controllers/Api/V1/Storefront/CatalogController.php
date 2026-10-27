@@ -93,7 +93,7 @@ class CatalogController extends Controller
     public function product(string $slug): JsonResponse
     {
         $product = Product::query()->visible()->where('slug', $slug)
-            ->with(['brand', 'category', 'media', 'variants.inventory', 'digital', 'files'])->firstOrFail();
+            ->with(['brand', 'category', 'media', 'videos', 'variants.inventory', 'digital', 'files'])->firstOrFail();
 
         return ApiResponse::success((new ProductResource($product))->detailed());
     }

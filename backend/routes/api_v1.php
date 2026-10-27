@@ -155,6 +155,7 @@ Route::prefix('admin')->name('admin.')
         Route::put('products/{product}', [Admin\ProductController::class, 'update'])->middleware('can:products.edit')->name('products.update');
         Route::delete('products/{product}', [Admin\ProductController::class, 'destroy'])->middleware('can:products.delete')->name('products.destroy');
         Route::post('products/{product}/media', [Admin\ProductController::class, 'uploadMedia'])->middleware('can:products.edit')->name('products.media.store');
+        Route::post('products/{product}/videos', [Admin\ProductController::class, 'addVideo'])->middleware('can:products.edit')->name('products.videos.store');
         Route::delete('products/{product}/media/{media}', [Admin\ProductController::class, 'deleteMedia'])->middleware('can:products.edit')->name('products.media.destroy');
         Route::post('products/{product}/files', [Admin\ProductController::class, 'uploadFile'])->middleware('can:digital.manage')->name('products.files.store');
         Route::delete('products/{product}/files/{file}', [Admin\ProductController::class, 'deleteFile'])->middleware('can:digital.manage')->name('products.files.destroy');

@@ -6,6 +6,7 @@ use App\Domain\Marketing\MarketingSettings;
 use App\Models\Product;
 use App\Models\ProductMedia;
 use App\Models\ProductVariant;
+use App\Support\Media\YouTube;
 use App\Support\Money\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -65,6 +66,10 @@ class ProductResource extends JsonResource
                 'description' => array_values(array_filter(preg_split('/\R{2,}/', (string) $this->description) ?: [])),
                 'options' => $this->options ?? [],
                 'specifications' => $this->specifications ?? [],
+                // Optional YouTube videos, shown after the images in the gallery (loaded only on tap).
+                'videos' => $this->relationLoaded('videos')
+                    ? $this->videos->map(fn (ProductMedia $m) => ['youtube_id' => $m->video_id, 'thumbnail' => YouTube::thumbnail((string) $m->video_id)])->values()
+                    : [],
                 'variants' => $variants->map(fn (ProductVariant $v) => [
                     'uuid' => $v->uuid,
                     'sku' => $v->sku,

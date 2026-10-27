@@ -21,7 +21,7 @@ export type AdminProductDetail = AdminProduct & {
   short_description: string | null; description: string | null; tax_class: { uuid: string; name: string } | null;
   options: { name: string; values: string[] }[]; specifications: { label: string; value: string }[];
   is_featured: boolean; is_new: boolean; is_best_seller: boolean; free_shipping: boolean; seo_title: string | null; seo_description: string | null;
-  published_at: string | null; media: { uuid: string; url: string; alt_text: string | null }[]; variants: AdminVariant[];
+  published_at: string | null; media: { uuid: string; url: string; alt_text: string | null }[]; videos: { uuid: string; youtube_id: string; url: string; thumbnail: string }[]; variants: AdminVariant[];
   pairs_with: { uuid: string; name: string }[];
   digital: { download_limit: number | null; access_days: number | null; format: string | null } | null;
   files: { uuid: string; name: string; size_bytes: number; mime_type: string; created_at: string | null }[];
@@ -42,6 +42,7 @@ export const adminApi = {
   saveProduct: (uuid: string | null, body: unknown) => (uuid ? api.put<AdminProductDetail>(`/admin/products/${uuid}`, body) : api.post<AdminProductDetail>("/admin/products", body)),
   archiveProduct: (uuid: string) => api.delete(`/admin/products/${uuid}`),
   uploadMedia: (uuid: string, form: FormData) => api.post<AdminProductDetail>(`/admin/products/${uuid}/media`, form),
+  addVideo: (uuid: string, url: string) => api.post<AdminProductDetail>(`/admin/products/${uuid}/videos`, { url }),
   deleteMedia: (uuid: string, media: string) => api.delete<AdminProductDetail>(`/admin/products/${uuid}/media/${media}`),
   uploadFile: (uuid: string, form: FormData) => api.post<AdminProductDetail>(`/admin/products/${uuid}/files`, form),
   deleteFile: (uuid: string, file: string) => api.delete<AdminProductDetail>(`/admin/products/${uuid}/files/${file}`),

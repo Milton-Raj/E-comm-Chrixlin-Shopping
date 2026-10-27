@@ -6,6 +6,7 @@ use App\Models\DigitalFile;
 use App\Models\Product;
 use App\Models\ProductMedia;
 use App\Models\ProductVariant;
+use App\Support\Media\YouTube;
 use App\Support\Money\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -66,6 +67,7 @@ class AdminProductResource extends JsonResource
                 'seo_description' => $this->seo_description,
                 'published_at' => $this->published_at?->toIso8601String(),
                 'media' => $this->media->map(fn (ProductMedia $m) => ['uuid' => $m->uuid, 'url' => $m->url(), 'alt_text' => $m->alt_text])->values(),
+                'videos' => $this->videos->map(fn (ProductMedia $m) => ['uuid' => $m->uuid, 'youtube_id' => $m->video_id, 'url' => YouTube::watchUrl((string) $m->video_id), 'thumbnail' => YouTube::thumbnail((string) $m->video_id)])->values(),
                 'variants' => $variants->map(fn (ProductVariant $v) => [
                     'uuid' => $v->uuid, 'sku' => $v->sku, 'name' => $v->name, 'options' => $v->options ?? (object) [],
                     'price' => $v->price, 'compare_at_price' => $v->compare_at_price, 'cost_price' => $v->cost_price, 'is_active' => $v->is_active,

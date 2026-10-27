@@ -47,6 +47,7 @@ use Illuminate\Support\Carbon;
  * @property-read DigitalProduct|null $digital
  * @property-read Collection<int, ProductVariant> $variants
  * @property-read Collection<int, ProductMedia> $media
+ * @property-read Collection<int, ProductMedia> $videos
  * @property-read Collection<int, DigitalFile> $files
  */
 class Product extends Model
@@ -115,10 +116,24 @@ class Product extends Model
         return $this->hasMany(ProductVariant::class)->orderBy('sort_order');
     }
 
-    /** @return HasMany<ProductMedia, $this> */
+    /**
+     * Product images (cards, cart, orders, feeds all use these).
+     *
+     * @return HasMany<ProductMedia, $this>
+     */
     public function media(): HasMany
     {
-        return $this->hasMany(ProductMedia::class)->orderBy('sort_order');
+        return $this->hasMany(ProductMedia::class)->where('type', ProductMedia::TYPE_IMAGE)->orderBy('sort_order');
+    }
+
+    /**
+     * Optional YouTube videos, shown after the images in the product gallery.
+     *
+     * @return HasMany<ProductMedia, $this>
+     */
+    public function videos(): HasMany
+    {
+        return $this->hasMany(ProductMedia::class)->where('type', ProductMedia::TYPE_YOUTUBE)->orderBy('sort_order');
     }
 
     /** @return HasOne<DigitalProduct, $this> */

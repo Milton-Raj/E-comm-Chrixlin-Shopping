@@ -4,7 +4,7 @@ import { getSiteContent, siteText } from "../site-content";
 import { discountPercent } from "../catalog";
 import type { Product, ProductDetail as ProductDetailType } from "../types";
 import { Price } from "./price";
-import { ProductAssurance } from "./product-assurance";
+import { ProductAssurance, ProductShareLinks } from "./product-assurance";
 import { ProductReviews } from "@/features/reviews/components/product-reviews";
 import { ProductGrid } from "./product-card";
 import { ProductGallery } from "./product-gallery";
@@ -20,8 +20,8 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
     product.stock_status === "low_stock" ? (product.low_stock_count ? t("catalog.onlyLeft", { count: product.low_stock_count }) : t("catalog.lowStock")) : product.stock_status === "out_of_stock" ? t("catalog.outOfStock") : t("catalog.inStock");
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-12">
-      <nav aria-label={t("catalog.breadcrumb")} className="eyebrow mb-8 text-muted-foreground">
+    <div className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-6">
+      <nav aria-label={t("catalog.breadcrumb")} className="eyebrow mb-5 hidden truncate text-muted-foreground md:block">
         <Link href="/" className="hover:text-primary">{t("nav.home")}</Link> /{" "}
         {product.category ? (
           <>
@@ -31,28 +31,35 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
         <span className="text-foreground">{product.name}</span>
       </nav>
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-        <ProductGallery images={product.images} name={product.name} />
+      {/* Above the fold on desktop: the whole photo/video and everything down to "Made for you".
+          On phones the purchase buttons pin above the bottom navigation instead (PurchasePanel). */}
+      <div className="grid gap-6 lg:flex lg:items-start lg:gap-14">
+        <div className="min-w-0 lg:shrink-0">
+          <ProductGallery images={product.images} videos={product.videos ?? []} name={product.name} />
+        </div>
 
-        <div className="lg:sticky lg:top-36 lg:self-start">
+        <div className="min-w-0 lg:sticky lg:top-36 lg:flex-1">
           {product.brand ? <p className="eyebrow text-muted-foreground">{product.brand.name}</p> : null}
-          <h1 className="font-display-tight mt-3 text-4xl md:text-5xl">{product.name}</h1>
-          {product.rating.count > 0 ? <Rating average={product.rating.average} count={product.rating.count} className="mt-4" /> : null}
-          <div className="mt-6 flex items-center gap-3">
+          <h1 className="font-display-tight mt-2 text-3xl md:text-4xl">{product.name}</h1>
+          <div className="mt-1 flex flex-wrap items-center justify-between gap-x-6">
+            {product.rating.count > 0 ? <Rating average={product.rating.average} count={product.rating.count} /> : <span />}
+            <ProductShareLinks product={product} content={content} className="text-muted-foreground" />
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
             <Price price={product.price} compareAt={product.compare_at_price} className="text-2xl" />
             {discount ? <span className="eyebrow bg-primary px-2.5 py-1 text-primary-foreground">{t("catalog.off", { percent: discount })}</span> : null}
+            {product.product_type === "physical" ? (
+              <span className={product.stock_status === "low_stock" ? "text-sm text-primary" : "text-sm text-muted-foreground"}>· {stockLabel}</span>
+            ) : null}
           </div>
-          <p className="mt-6 text-muted-foreground">{product.short_description}</p>
-          {product.product_type === "physical" ? (
-            <p className={product.stock_status === "low_stock" ? "mt-4 text-sm text-primary" : "mt-4 text-sm text-muted-foreground"}>{stockLabel}</p>
-          ) : null}
+          <p className="mt-3 text-muted-foreground">{product.short_description}</p>
 
-          <div className="mt-8 border-t border-border pt-8">
+          <div className="mt-4 border-t border-border pt-4">
             <PurchasePanel product={product} />
             <ProductAssurance product={product} content={content} />
           </div>
 
-          <div className="mt-8 grid gap-2 border-t border-border pt-6 text-sm">
+          <div className="mt-4 grid gap-1 border-t border-border pt-4 text-sm">
             <p className="eyebrow">{siteText(content, "catalog.delivery")}</p>
             <p className="text-muted-foreground">
               {product.product_type === "digital" ? t("catalog.deliveryDigital") : siteText(content, "catalog.deliveryPhysical")}
@@ -62,15 +69,16 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
         </div>
       </div>
 
-      <div className="mt-16 grid gap-12 border-t border-border pt-12 md:grid-cols-2 md:gap-16">
+      {/* Sections below the fold share one rhythm: a hairline, then the same space above and below it. */}
+      <div className="mt-12 grid gap-10 border-t border-border pt-10 md:mt-16 md:grid-cols-2 md:gap-16 md:pt-14">
         <section aria-labelledby="desc-heading">
-          <h2 id="desc-heading" className="font-display-tight text-3xl">{t("catalog.description")}</h2>
-          <div className="mt-5 grid gap-4 leading-relaxed text-muted-foreground">
+          <h2 id="desc-heading" className="font-display-tight text-3xl md:text-4xl">{t("catalog.description")}</h2>
+          <div className="mt-5 grid max-w-prose gap-4 leading-relaxed text-muted-foreground">
             {product.description.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           </div>
         </section>
         <section aria-labelledby="spec-heading">
-          <h2 id="spec-heading" className="font-display-tight text-3xl">{t("catalog.details")}</h2>
+          <h2 id="spec-heading" className="font-display-tight text-3xl md:text-4xl">{t("catalog.details")}</h2>
           <dl className="mt-5 divide-y divide-border border-y border-border text-sm">
             {product.digital ? (
               <>
@@ -91,7 +99,7 @@ export async function ProductDetail({ product, related }: { product: ProductDeta
       <ProductReviews slug={product.slug} productName={product.name} />
 
       {related.length ? (
-        <section className="mt-20 md:mt-28">
+        <section className="mt-12 border-t border-border pt-10 md:mt-16 md:pt-14">
           <SectionHeading title={t("catalog.related")} href={product.category ? `/category/${product.category.slug}` : "/shop"} />
           <ProductGrid products={related} />
         </section>

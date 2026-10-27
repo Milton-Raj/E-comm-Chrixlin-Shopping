@@ -38,9 +38,9 @@ export function ProductReviews({ slug, productName }: { slug: string; productNam
   const items = reviews.data?.pages.flatMap((p) => p.reviews) ?? [];
 
   return (
-    <section id="write-review" aria-labelledby="reviews-heading" className="mt-16 scroll-mt-24 border-t border-border pt-12">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h2 id="reviews-heading" className="font-display-tight text-3xl">{t("reviews.heading")}</h2>
+    <section id="write-review" aria-labelledby="reviews-heading" className="mt-12 scroll-mt-24 border-t border-border pt-10 md:mt-16 md:pt-14">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h2 id="reviews-heading" className="font-display-tight text-3xl md:text-4xl">{t("reviews.heading")}</h2>
         {!writing ? <Button variant="outline" onClick={() => setWriting(true)}>{t("reviews.write")}</Button> : null}
       </div>
 
@@ -50,6 +50,12 @@ export function ProductReviews({ slug, productName }: { slug: string; productNam
         <div className="mt-8 grid gap-4"><Skeleton className="h-20" /><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
       ) : reviews.isError ? (
         <div className="mt-8"><ErrorState onRetry={() => void reviews.refetch()} /></div>
+      ) : items.length === 0 && !summary?.count ? (
+        // No reviews yet: one quiet line instead of an empty histogram.
+        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Stars value={0} />
+          <p className="text-muted-foreground">{t("reviews.empty")}</p>
+        </div>
       ) : (
         <div className="mt-8 grid gap-10 md:grid-cols-3 md:gap-14">
           {summary ? <Summary summary={summary} /> : null}

@@ -5,12 +5,15 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Domain\Catalog\Actions\SaveProduct;
 use App\Domain\Catalog\Enums\ProductStatus;
 use App\Domain\Catalog\Enums\ProductType;
+use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminProductResource;
 use App\Models\DigitalFile;
 use App\Models\Product;
+use App\Models\ProductMedia;
 use App\Support\Audit\Audit;
 use App\Support\Http\ApiResponse;
+use App\Support\Media\YouTube;
 use App\Support\Storefront\StorefrontCache;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +22,8 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
+    private const MAX_VIDEOS = 3;
+
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
@@ -84,18 +89,46 @@ class ProductController extends Controller
         return ApiResponse::success((new AdminProductResource($this->find($model->uuid)))->detailed(), 'Image uploaded.', status: 201);
     }
 
+    /** Optional YouTube video for the product gallery; only the video id is stored. */
+    public function addVideo(Request $request, string $product): JsonResponse
+    {
+        $data = $request->validate(['url' => ['required', 'string', 'max:300']]);
+        $videoId = YouTube::videoId($data['url']);
+        if ($videoId === null) {
+            throw new ApiException('Paste a YouTube video link, for example https://www.youtube.com/watch?v=… or https://youtu.be/…', 422, 'invalid_video', ['url' => ['This is not a YouTube video link.']]);
+        }
+
+        $model = $this->find($product);
+        if ($model->videos->contains('video_id', $videoId)) {
+            throw new ApiException('This video is already on the product.', 422, 'duplicate_video', ['url' => ['This video is already added.']]);
+        }
+        if ($model->videos->count() >= self::MAX_VIDEOS) {
+            throw new ApiException('A product can have up to '.self::MAX_VIDEOS.' videos.', 422, 'too_many_videos', ['url' => ['Remove a video first.']]);
+        }
+
+        $model->videos()->create([
+            'type' => ProductMedia::TYPE_YOUTUBE, 'video_id' => $videoId, 'alt_text' => $model->name,
+            'sort_order' => (int) $model->videos()->max('sort_order') + 1,
+        ]);
+        Audit::record('product.video_added', $model, null, ['youtube_id' => $videoId], $request->user());
+        StorefrontCache::invalidate(['catalog', "product:{$model->slug}"]);
+
+        return ApiResponse::success((new AdminProductResource($this->find($model->uuid)))->detailed(), 'Video added.', status: 201);
+    }
+
+    /** Removes an image (and its file) or a video from the gallery. */
     public function deleteMedia(Request $request, string $product, string $media): JsonResponse
     {
         $model = $this->find($product);
-        $item = $model->media()->where('uuid', $media)->firstOrFail();
-        if (! str_starts_with($item->path, 'demo/')) {
+        $item = ProductMedia::query()->where('product_id', $model->id)->where('uuid', $media)->firstOrFail();
+        if (! $item->isVideo() && $item->path && ! str_starts_with($item->path, 'demo/')) {
             Storage::disk($item->disk)->delete($item->path);
         }
         $item->delete();
-        Audit::record('product.media_removed', $model, ['path' => $item->path], null, $request->user());
-        StorefrontCache::invalidate(['catalog']);
+        Audit::record($item->isVideo() ? 'product.video_removed' : 'product.media_removed', $model, $item->isVideo() ? ['youtube_id' => $item->video_id] : ['path' => $item->path], null, $request->user());
+        StorefrontCache::invalidate(['catalog', "product:{$model->slug}"]);
 
-        return ApiResponse::success((new AdminProductResource($this->find($model->uuid)))->detailed(), 'Image removed.');
+        return ApiResponse::success((new AdminProductResource($this->find($model->uuid)))->detailed(), $item->isVideo() ? 'Video removed.' : 'Image removed.');
     }
 
     public function uploadFile(Request $request, string $product): JsonResponse
@@ -131,7 +164,7 @@ class ProductController extends Controller
     /** Admin URLs address products by slug (/admin/products/silk-scarf); API calls may still pass the uuid. */
     private function find(string $key): Product
     {
-        return Product::query()->with(['brand', 'category', 'taxClass', 'media', 'variants.inventory', 'digital', 'files'])
+        return Product::query()->with(['brand', 'category', 'taxClass', 'media', 'videos', 'variants.inventory', 'digital', 'files'])
             ->where(fn ($w) => $w->where('uuid', $key)->orWhere('slug', $key))->firstOrFail();
     }
 }

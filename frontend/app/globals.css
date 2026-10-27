@@ -161,6 +161,23 @@
   }
 }
 
+/* Product page media height (desktop): the whole photo fits on arrival below the sticky header,
+   breadcrumb and a little breathing room; clamped so short and very tall screens stay sensible. */
+:root {
+  --pdp-media-h: clamp(24rem, calc(100svh - 15rem), 46rem);
+}
+@utility pdp-media {
+  height: var(--pdp-media-h);
+}
+@utility pdp-media-max {
+  max-height: var(--pdp-media-h);
+}
+
+/* Pins an element just above the mobile bottom navigation (56px tabs + safe area). */
+@utility above-bottom-nav {
+  bottom: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+}
+
 /* Display headings: high-contrast serif. */
 @utility font-display-tight {
   font-family: var(--font-display);

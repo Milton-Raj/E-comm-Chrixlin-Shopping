@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, Trash2, Upload } from "lucide-react";
+import { FileText, Play, Trash2, Upload } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -201,7 +201,7 @@ function Editor({ product, lookups }: { product?: AdminProductDetail; lookups: N
 
           <PairsWithPanel selfUuid={product?.uuid ?? null} value={form.pairs_with} onChange={(v) => set("pairs_with", v)} error={err("pairs_with")} />
 
-          {product ? <MediaPanel product={product} /> : <Panel title="Images"><p className="text-sm text-muted-foreground">Save the product first, then upload images.</p></Panel>}
+          {product ? <MediaPanel product={product} /> : <Panel title="Images & videos"><p className="text-sm text-muted-foreground">Save the product first, then upload images and add videos.</p></Panel>}
           {product && product.product_type === "digital" ? <FilesPanel product={product} /> : null}
         </div>
 
@@ -281,9 +281,20 @@ function MediaPanel({ product }: { product: AdminProductDetail }) {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Upload failed."),
   });
   const remove = useMutation({ mutationFn: (media: string) => adminApi.deleteMedia(product.uuid, media), onSuccess: store });
+  const [videoUrl, setVideoUrl] = useState("");
+  const [videoError, setVideoError] = useState<string | undefined>();
+  const addVideo = useMutation({
+    mutationFn: (url: string) => adminApi.addVideo(product.uuid, url),
+    onSuccess: (p) => { store(p); setVideoUrl(""); setVideoError(undefined); toast.success("Video added."); },
+    onError: (e) => setVideoError(e instanceof ApiError ? (e.fieldErrors.url?.[0] ?? e.message) : "Could not add the video."),
+  });
+  // Sits inside the product form, so it can't be a <form>: Enter adds the video instead of saving the product.
+  const submitVideo = () => {
+    if (videoUrl.trim() && !addVideo.isPending) addVideo.mutate(videoUrl.trim());
+  };
 
   return (
-    <Panel title="Images" actions={<UploadButton label="Upload image" accept="image/jpeg,image/png,image/webp" busy={upload.isPending} onFile={(f) => upload.mutate(f)} />}>
+    <Panel title="Images & videos" actions={<UploadButton label="Upload image" accept="image/jpeg,image/png,image/webp" busy={upload.isPending} onFile={(f) => upload.mutate(f)} />}>
       {product.media.length ? (
         <ul className="grid grid-cols-3 gap-3 md:grid-cols-4">
           {product.media.map((m, i) => (
@@ -295,6 +306,30 @@ function MediaPanel({ product }: { product: AdminProductDetail }) {
           ))}
         </ul>
       ) : <p className="text-sm text-muted-foreground">No images yet. JPG, PNG or WebP, at least 300×300.</p>}
+
+      {/* Optional YouTube videos: shown after the images in the product page gallery. */}
+      <div className="grid gap-3 border-t border-border pt-4">
+        <div className="grid gap-2">
+          <Field label="YouTube video (optional)" htmlFor="video-url" error={videoError} hint="Paste a YouTube link (videos and Shorts). Up to 3 videos; they play only when a customer taps them.">
+            <div className="flex gap-2">
+              <input id="video-url" type="url" inputMode="url" placeholder="https://youtu.be/…" value={videoUrl} onChange={(e) => { setVideoUrl(e.target.value); setVideoError(undefined); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitVideo(); } }} className={inputClass} aria-invalid={videoError ? true : undefined} />
+              <Button type="button" variant="outline" onClick={submitVideo} disabled={addVideo.isPending || !videoUrl.trim()}>{addVideo.isPending ? "Adding…" : "Add video"}</Button>
+            </div>
+          </Field>
+        </div>
+        {product.videos.length ? (
+          <ul className="grid grid-cols-3 gap-3 md:grid-cols-4">
+            {product.videos.map((v) => (
+              <li key={v.uuid} className="relative aspect-video overflow-hidden bg-muted">
+                <Image src={v.thumbnail} alt="" fill sizes="160px" className="object-cover" />
+                <span className="absolute inset-0 flex items-center justify-center"><span className="inline-flex size-9 items-center justify-center rounded-full bg-background/90"><Play className="size-4" aria-hidden /></span></span>
+                <a href={v.url} target="_blank" rel="noreferrer" className="eyebrow absolute bottom-1 left-1 bg-background/90 px-1.5 py-0.5 underline-offset-2 hover:underline">YouTube</a>
+                <button type="button" aria-label="Remove video" onClick={() => remove.mutate(v.uuid)} className="absolute top-1 right-1 inline-flex size-9 items-center justify-center bg-background/90 hover:text-destructive"><Trash2 className="size-4" aria-hidden /></button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
     </Panel>
   );
 }

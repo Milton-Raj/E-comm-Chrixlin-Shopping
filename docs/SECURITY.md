@@ -107,7 +107,7 @@ Roles and their permissions are editable by `roles.manage` holders in Admin → 
 |---|---|---|
 | HTTPS | Hostinger SSL + HSTS (`max-age=31536000; includeSubDomains`) after verification | Vercel automatic + HSTS |
 | CORS | `allowed_origins=[https://www.<domain>]` (+ local), credentials true, methods/headers whitelisted | n/a |
-| CSP | API returns JSON: `default-src 'none'; frame-ancestors 'none'` | Static policy (ARCHITECTURE D11): `script-src 'self' 'unsafe-inline'`, `connect-src`/`img-src` self + API origin, payment providers added in Phase 5, `frame-ancestors 'none'`, `object-src 'none'`. Nonce/SRI hardening reviewed in Phase 9. |
+| CSP | API returns JSON: `default-src 'none'; frame-ancestors 'none'` | Static policy (ARCHITECTURE D11): `script-src 'self' 'unsafe-inline'`, `connect-src`/`img-src` self + API origin, payment providers added in Phase 5, product videos add `img-src https://i.ytimg.com` (thumbnails) and `frame-src https://www.youtube-nocookie.com` (player loaded only on tap), `frame-ancestors 'none'`, `object-src 'none'`. Nonce/SRI hardening reviewed in Phase 9. |
 | Other headers | `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy` minimal | same + `X-Frame-Options: DENY` |
 | Cookies | session/XSRF: Secure, SameSite=Lax; session HttpOnly | `cart_token` set by API (HttpOnly) |
 

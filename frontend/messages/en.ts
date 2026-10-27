@@ -53,6 +53,13 @@ export const en = {
   "announce.shipping": "Shipped with care across India",
 
   "catalog.new": "New",
+  "gallery.label": "{name} photos and videos",
+  "gallery.slide": "{current} of {total}",
+  "gallery.previous": "Previous photo",
+  "gallery.next": "Next photo",
+  "gallery.show": "Show item {number}",
+  "gallery.playVideo": "Play video: {name}",
+  "gallery.videoTitle": "{name} video",
   "catalog.sale": "Sale",
   "catalog.digital": "Digital",
   "catalog.bestSeller": "Best seller",
