@@ -1,0 +1,54 @@
+name: Monitor
+
+# Uptime check for the live store (DEPLOYMENT.md §8). A failed run emails the repository owner
+# (GitHub → Settings → Notifications → Actions). Add the HEALTH_TOKEN secret to also watch cron and the queue.
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      STORE: https://www.chrixlin.com
+      API: https://api.chrixlin.com
+    steps:
+      - name: Store pages
+        run: |
+          for page in / /shop /pages/terms; do
+            curl -fsS --retry 2 --retry-all-errors -m 30 -o /dev/null -w "$page %{http_code} %{time_total}s\n" "$STORE$page"
+          done
+
+      - name: API, catalog and images
+        run: |
+          curl -fsS --retry 2 --retry-all-errors -m 30 "$API/api/v1/health" -o /dev/null
+          image=$(curl -fsS -m 30 "$API/api/v1/products?per_page=1" | jq -r '.data[0].images[0].url // .data[0].image.url // .data[0].image // empty')
+          slug=$(curl -fsS -m 30 "$API/api/v1/products?per_page=1" | jq -r '.data[0].slug // empty')
+          [ -n "$slug" ] || { echo "::error::The catalog returned no products"; exit 1; }
+          curl -fsS -m 30 -o /dev/null -w "product %{http_code}\n" "$STORE/product/$slug"
+          if [ -n "$image" ]; then
+            type=$(curl -fsS -m 30 -o /dev/null -w "%{content_type}" "$image")
+            case "$type" in image/*) echo "image $type";; *) echo "::error::Product image is not served ($type)"; exit 1;; esac
+          fi
+
+      - name: Scheduler and queue
+        env:
+          HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+        run: |
+          if [ -z "$HEALTH_TOKEN" ]; then echo "HEALTH_TOKEN secret not set; skipping"; exit 0; fi
+          body=$(curl -fsS -m 30 -H "X-Health-Token: $HEALTH_TOKEN" "$API/api/v1/health")
+          echo "$body" | jq -c '.data | {database, queue_pending, queue_lag_seconds, scheduler_last_run_seconds_ago}'
+          age=$(echo "$body" | jq -r '.data.scheduler_last_run_seconds_ago // empty')
+          lag=$(echo "$body" | jq -r '.data.queue_lag_seconds // 0')
+          [ -n "$age" ] || { echo "::error::The health token was not accepted, or the scheduler has never run"; exit 1; }
+          [ "$age" -le 300 ] || { echo "::error::Cron has not run for ${age}s"; exit 1; }
+          [ "$lag" -le 600 ] || { echo "::error::Queue is ${lag}s behind"; exit 1; }

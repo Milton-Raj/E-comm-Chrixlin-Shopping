@@ -159,6 +159,8 @@ curl -fsS https://api.<domain>/api/v1/health
 - Hostinger automatic backups (**VERIFY** frequency on Premium) + nightly `mysqldump --single-transaction` (scheduler) encrypted and copied off-site (e.g. R2/S3/Google Drive), retained 30 days. Private digital files backed up weekly off-site.
 - **Restore drill** before launch and quarterly: restore to staging, run smoke tests.
 - Monitoring: uptime checks on `/api/v1/health` and `/` (e.g. UptimeRobot/Better Stack); error alerts from `errors` channel (Slack/email via log handler or Sentry if added); queue lag reported by `/health` and alerted when > 5 min; failed webhook count alert.
+- **In place:** `.github/workflows/monitor.yml` runs every 15 minutes (store pages, API health, a product page and its image; with the `HEALTH_TOKEN` repo secret, also cron age ≤ 5 min and queue lag ≤ 10 min). A failed run emails the repo owner. GitHub pauses scheduled workflows after 60 days without commits; re-enable it in Actions if that happens.
+- **Readiness report:** `php artisan app:launch-check [--mail-to=you@example.com]` on the server prints PASS/WARN/FAIL for environment, demo accounts, staff 2FA, payments, Shiprocket mode, mailer, cron heartbeat, queue, failed jobs and visible TEST products. Read-only except the optional test email; never prints secrets.
 
 ## 9. Production checklist (Phase 12)
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`, unique `APP_KEY`
