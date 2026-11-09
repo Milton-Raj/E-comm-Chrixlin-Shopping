@@ -116,6 +116,7 @@ Roles and their permissions are editable by `roles.manage` holders in Admin → 
 ## 7. Data protection
 - PII minimization: store only what fulfillment, tax, and support need. IP addresses kept 12 months for fraud/security logs, then anonymized.
 - Encryption: `two_factor_secret`, recovery codes, license keys, encrypted settings use Laravel encryption (`APP_KEY`). DB backups encrypted at rest off-site.
+- WhatsApp order alerts send Meta only the order number, amount, item count, destination city/state or country and the admin link — never the customer's name, email, phone or street address. The token is env-only and never logged; logs show the owner's number masked (`+91••••••3210`). Test sends are limited to 3 a minute per staff member.
 - Visitor country (international selling) is looked up in a local IP-to-country file (DB-IP Lite); no visitor IP is sent to a third party. Exchange rates are fetched server-side; no customer data is sent with that request.
 - Card data never touches our servers (gateway-hosted checkout/SDK) → out of PCI DSS scope beyond SAQ A.
 - Customer data export & deletion (account deletion anonymizes orders — financial records retained per law, PII scrubbed).

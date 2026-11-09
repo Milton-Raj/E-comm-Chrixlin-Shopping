@@ -82,6 +82,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         RateLimiter::for('admin', fn (Request $request) => Limit::perMinute(300)->by('admin:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+        // Each WhatsApp test message costs money and lands on a real phone: its own small budget.
+        RateLimiter::for('whatsapp-test', fn (Request $request) => Limit::perMinute(3)->by('whatsapp-test:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
     }
 
     /**

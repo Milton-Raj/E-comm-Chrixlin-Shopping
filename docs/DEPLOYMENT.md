@@ -77,6 +77,7 @@ cd tests/e2e && npm install && npx playwright install chromium && npm run e2e
 | `REVALIDATE_URL=https://<domain>/revalidate`, `REVALIDATE_SECRET` | on-demand ISR |
 | `LOG_CHANNEL=stack`, `LOG_LEVEL=info`, `LOG_DAILY_DAYS=30` | |
 | `HEALTH_TOKEN` | detailed `/health` |
+| `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` (+ optional `WHATSAPP_API_VERSION` default `v23.0`, `WHATSAPP_ORDER_TEMPLATE` default `new_order_alert`, `WHATSAPP_TEMPLATE_LANGUAGE` default `en`) | WhatsApp new-order alerts to the owner (Meta WhatsApp Business Platform / Cloud API). Permanent **System user** token with `whatsapp_business_messaging`; the sending number must not be in use in the WhatsApp app. The template is a **Utility** template with 5 body variables (order number, amount, items, destination, admin link); its exact text is shown in Admin → Settings → Order alerts on WhatsApp. The recipient number and on/off switch are owner settings, not env. |
 | `FX_RATES_URL` (optional) | Exchange-rate source for international selling; default `https://open.er-api.com/v6/latest/{base}` (free, no key; attribution shown in the footer while selling abroad) |
 | `GEOIP_COUNTRY_HEADER` (optional) | A country header set by a trusted CDN in front of the API (e.g. `CF-IPCountry`); otherwise the local DB-IP file is used. `GEOIP_FAKE_COUNTRY=US` pretends every visitor is in that country — **local only**, ignored in production |
 

@@ -3,6 +3,8 @@
 namespace App\Domain\Orders\Actions;
 
 use App\Domain\Identity\PermissionCatalog;
+use App\Domain\Orders\OrderAlertSettings;
+use App\Jobs\SendWhatsAppOrderAlert;
 use App\Models\Order;
 use App\Models\User;
 use App\Notifications\NewOrderNotification;
@@ -27,6 +29,11 @@ class AlertStaffOfNewOrder
         } catch (Throwable $e) {
             Log::channel('orders')->error('New-order staff alert failed.', ['order' => $order->order_number, 'error' => $e->getMessage()]);
             report($e);
+        }
+
+        // The owner's WhatsApp, when switched on in Settings (sent after the response; retried if needed).
+        if (app(OrderAlertSettings::class)->whatsappEnabled()) {
+            SendWhatsAppOrderAlert::soon($order);
         }
     }
 }

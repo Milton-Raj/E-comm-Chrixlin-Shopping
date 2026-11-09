@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { ApiError } from "@/services/api-client";
 import { miscAdminApi, type StoreSettings } from "../api";
 import { InternationalPanel } from "../components/international-panel";
+import { WhatsAppAlertsPanel } from "../components/whatsapp-alerts-panel";
 import { AdminPage, checkboxLabelClass, Field, FormActions, inputClass, Panel, RequiredNote, textareaClass } from "../components/kit/admin-page";
 
 const settingsKey = ["admin", "settings"] as const;
@@ -181,6 +182,7 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
         </Panel>
 
         <InternationalPanel />
+        <WhatsAppAlertsPanel />
 
         <div className="grid gap-4 lg:grid-cols-2">
           <PaymentsPanel integrations={settings.integrations} />

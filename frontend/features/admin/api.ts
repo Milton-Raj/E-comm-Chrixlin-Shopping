@@ -195,6 +195,9 @@ export const miscAdminApi = {
   international: () => api.get<InternationalSettings>("/admin/settings/international"),
   saveInternational: (body: InternationalSettings["settings"]) => api.put<InternationalSettings>("/admin/settings/international", body),
   refreshRates: () => api.post<InternationalSettings>("/admin/settings/international/rates"),
+  orderAlerts: () => api.get<OrderAlertSettings>("/admin/settings/order-alerts"),
+  saveOrderAlerts: (body: { whatsapp_enabled: boolean; whatsapp_number: string | null }) => api.put<OrderAlertSettings>("/admin/settings/order-alerts", body),
+  testOrderAlert: () => api.post<OrderAlertSettings>("/admin/settings/order-alerts/test"),
   notifications: () => api.get<AdminNotifications>("/admin/notifications"),
   readNotification: (id: string) => api.post<{ unread_count: number }>(`/admin/notifications/${id}/read`),
   readAllNotifications: () => api.post<{ unread_count: number }>("/admin/notifications/read-all"),
@@ -227,6 +230,9 @@ export type FxReport = {
   rates: { currency: string; fetches: number; low: string; high: string; first: string; last: string }[];
 };
 export type RateHistory = { range: { from: string; to: string }; currency: string; items: { rate: string; source: string; fetched_at: string }[] };
+
+/** Admin → Settings → Order alerts on WhatsApp. `connected` = the Meta keys are set on the server. */
+export type OrderAlertSettings = { whatsapp_enabled: boolean; whatsapp_number: string | null; connected: boolean; template: string; template_language: string };
 
 export type OrderAlert = {
   id: string;

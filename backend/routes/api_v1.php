@@ -244,6 +244,9 @@ Route::prefix('admin')->name('admin.')
         Route::put('settings/security', [Admin\SettingsController::class, 'security'])->middleware('can:settings.manage')->name('settings.security');
         Route::get('settings/international', [Admin\InternationalController::class, 'show'])->middleware('can:settings.manage')->name('settings.international.show');
         Route::put('settings/international', [Admin\InternationalController::class, 'update'])->middleware('can:settings.manage')->name('settings.international.update');
+        Route::get('settings/order-alerts', [Admin\OrderAlertController::class, 'show'])->middleware('can:settings.manage')->name('settings.order-alerts.show');
+        Route::put('settings/order-alerts', [Admin\OrderAlertController::class, 'update'])->middleware('can:settings.manage')->name('settings.order-alerts.update');
+        Route::post('settings/order-alerts/test', [Admin\OrderAlertController::class, 'test'])->middleware(['can:settings.manage', 'throttle:whatsapp-test'])->name('settings.order-alerts.test');
         Route::post('settings/international/rates', [Admin\InternationalController::class, 'refreshRates'])->middleware(['can:settings.manage', 'throttle:6,1'])->name('settings.international.rates');
 
         // Each staff member's own alerts (new paid orders); polled by the admin bell.

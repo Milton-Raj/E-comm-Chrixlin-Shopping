@@ -28,6 +28,17 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // WhatsApp Business Platform (Meta Cloud API): new-order alerts to the owner's WhatsApp.
+    // The recipient number and the on/off switch are owner settings (Admin → Settings).
+    'whatsapp' => [
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'api_version' => env('WHATSAPP_API_VERSION', 'v23.0'),
+        // An approved "Utility" message template with 5 body variables (see DEPLOYMENT.md).
+        'order_template' => env('WHATSAPP_ORDER_TEMPLATE', 'new_order_alert'),
+        'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'en'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

@@ -236,6 +236,7 @@ Indexes: `(user_id, placed_at)` Q-O1 account order list; `(status, placed_at)` Q
 - **refunds** additions — `gateway_amount BIGINT NULL`, `gateway_currency CHAR(3) NULL` (what went back to the customer, in the currency they paid). `payment_transactions` refund rows use the payment's currency.
 - **exchange_rate_history** (append-only audit trail) — `id, base_currency, currency, rate DECIMAL(24,12)` (market, no markup), `source, fetched_at, created_at`. Index `(base_currency, currency, fetched_at)`, `(fetched_at)`. One row per currency per fetch; never updated or deleted.
 - **orders** audit additions — `market_rate DECIMAL(24,12) NULL`, `exchange_markup_bps SMALLINT UNSIGNED NULL`, `exchange_rate_fetched_at TIMESTAMP NULL`: what produced `exchange_rate`.
+- **settings** keys — `alerts.whatsapp_enabled`, `alerts.whatsapp_number` (digits with country code) for WhatsApp new-order alerts.
 - **settings** keys — `international.enabled`, `.currencies` (JSON list), `.fallback_currency`, `.markup_bps`, `.unavailable_message`.
 
 **notifications** (Laravel database notifications, 2026-11-09, D22) — `id UUID PK, type VARCHAR (e.g. order_paid), notifiable_type, notifiable_id, data TEXT (JSON: order_number, customer name, item_count, total, charged, country_code — no address or payment detail), read_at NULL, timestamps`. Index `(notifiable_type, notifiable_id, read_at)`. Staff alerts only.

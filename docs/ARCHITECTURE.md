@@ -325,6 +325,7 @@ interface PaymentGateway {
 If the plan's cron minimum interval is > 1 minute, the worker command uses `--max-time` close to that interval. **Verify cron limits in hPanel in Phase 1.**
 
 ### 6.16 Notifications & email (§39–§40)
+- WhatsApp new-order alert to the owner (owner setting, Meta Cloud API template message): `SendWhatsAppOrderAlert` is dispatched after the response from `AlertStaffOfNewOrder`; a temporary WhatsApp failure moves it to the `critical` queue (5 tries, back-off to 30 min); token/number/template errors are logged, not retried. Never affects the payment.
 - Staff new-order alerts (D22): `AlertStaffOfNewOrder` writes a `NewOrderNotification` (database channel) for every active staff member with `orders.view` (and super-admins) after a payment is captured, outside the payment transaction. The admin bell polls `GET /admin/notifications`.
 - Laravel Notifications with channels `mail` and `database` (in-app) in v1; `SmsChannel`/`PushChannel`/`WhatsAppChannel` interfaces reserved.
 - Template codes (§40) map 1:1 to Notification classes + Markdown mail views: `ORDER_CONFIRMATION, PAYMENT_SUCCESS, ORDER_SHIPPED, ORDER_DELIVERED, DIGITAL_PRODUCT_READY, PASSWORD_RESET, WELCOME, REFUND_COMPLETED`. All queued.

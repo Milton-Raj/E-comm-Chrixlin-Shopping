@@ -6,11 +6,13 @@ use App\Domain\Catalog\Enums\ProductStatus;
 use App\Domain\Localization\ExchangeRates;
 use App\Domain\Localization\GeoLocator;
 use App\Domain\Localization\InternationalSettings;
+use App\Domain\Orders\OrderAlertSettings;
 use App\Domain\Payments\GatewayManager;
 use App\Http\Controllers\Api\V1\System\HealthController;
 use App\Http\Middleware\EnsureAdminAccess;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\WhatsApp\WhatsAppClient;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -43,6 +45,7 @@ class LaunchCheck extends Command
         $this->checkPayments($gateways);
         $this->checkShipping();
         $this->checkInternational();
+        $this->checkOrderAlerts();
         $this->checkMail();
         $this->checkBackgroundWork();
         $this->checkCatalog();
@@ -107,6 +110,17 @@ class LaunchCheck extends Command
         $this->add($rates->stale() ? self::FAIL : self::PASS, 'Exchange rates', $at ? 'updated '.$at->diffForHumans() : 'never fetched: run php artisan app:exchange-rates');
         $geo = app(GeoLocator::class)->databaseReady();
         $this->add($geo ? self::PASS : self::WARN, 'Visitor country lookup', $geo ? 'IP country database present' : 'missing: run php artisan app:geoip-update (shoppers see rupees until they pick a currency)');
+    }
+
+    private function checkOrderAlerts(): void
+    {
+        if (! app(OrderAlertSettings::class)->whatsappEnabled()) {
+            $this->add(self::PASS, 'WhatsApp order alerts', 'off');
+
+            return;
+        }
+        $connected = app(WhatsAppClient::class)->configured();
+        $this->add($connected ? self::PASS : self::FAIL, 'WhatsApp order alerts', $connected ? 'on, to '.WhatsAppClient::mask((string) app(OrderAlertSettings::class)->whatsappNumber()) : 'switched on, but WHATSAPP_ACCESS_TOKEN / WHATSAPP_PHONE_NUMBER_ID are missing');
     }
 
     private function checkShipping(): void
