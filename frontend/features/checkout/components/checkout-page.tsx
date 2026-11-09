@@ -21,8 +21,9 @@ import { CartTotals } from "@/features/cart/components/cart-totals";
 import { CouponForm } from "@/features/cart/components/coupon-form";
 import { GiftOption } from "@/features/cart/components/gift-option";
 import type { Address, Cart, Gateway, PlacedOrder } from "@/features/cart/types";
+import { useLocalization } from "@/features/localization/use-localization";
 import { formatMoney } from "@/lib/money";
-import { countries, indianStates } from "@/lib/regions";
+import { countryName, indianStates } from "@/lib/regions";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/services/api-client";
 import { openRazorpay } from "../razorpay";
@@ -179,7 +180,15 @@ function ContactStep({ cart, defaultEmail, defaultPhone, onSaved }: { cart: Cart
 }
 
 function AddressStep({ cart, saved, defaultName, onSaved }: { cart: Cart; saved: Address | null; defaultName: string; onSaved: (cart: Cart) => void }) {
-  const [address, setAddress] = useState<Address>(cart.shipping_address ?? saved ?? { name: defaultName, phone: cart.contact.phone, line1: "", line2: "", city: "", state_code: "TN", postal_code: "", country_code: "IN" });
+  const { data: loc } = useLocalization();
+  // Countries the store delivers to (just its own while international selling is off), by name, home first.
+  const home = loc?.store_country ?? "IN";
+  const deliverable = useMemo(() => {
+    const codes = loc?.countries ?? [home];
+    return [...codes].sort((a, b) => (a === home ? -1 : b === home ? 1 : countryName(a).localeCompare(countryName(b))));
+  }, [loc?.countries, home]);
+  const startCountry = loc?.detected_country && deliverable.includes(loc.detected_country) ? loc.detected_country : home;
+  const [address, setAddress] = useState<Address>(cart.shipping_address ?? saved ?? { name: defaultName, phone: cart.contact.phone, line1: "", line2: "", city: "", state_code: startCountry === "IN" ? "TN" : "", postal_code: "", country_code: startCountry });
   // Returning customers confirm their saved address each time; "Change address" opens the form.
   const [confirming, setConfirming] = useState(Boolean(saved && !cart.shipping_address));
   const save = useMutation({ mutationFn: (a: Address) => checkoutApi.address(a), onSuccess: onSaved });
@@ -198,7 +207,7 @@ function AddressStep({ cart, saved, defaultName, onSaved }: { cart: Cart; saved:
           <span>{saved.line1}</span>
           {saved.line2 ? <span>{saved.line2}</span> : null}
           <span>{saved.city}, {state} {saved.postal_code}</span>
-          {saved.country_code !== "IN" ? <span>{countries.find((c) => c.code === saved.country_code)?.name ?? saved.country_code}</span> : null}
+          {saved.country_code !== "IN" ? <span>{countryName(saved.country_code)}</span> : null}
           {saved.phone ? <span className="text-muted-foreground">Phone: {saved.phone}</span> : null}
         </address>
         <div className="flex flex-wrap gap-3">
@@ -219,9 +228,10 @@ function AddressStep({ cart, saved, defaultName, onSaved }: { cart: Cart; saved:
       <TextField id="postal_code" autoComplete="postal-code" inputMode={india ? "numeric" : "text"} label={india ? "PIN code" : "Postal code"} required value={address.postal_code} onChange={set("postal_code")} error={fieldError("postal_code")} />
       <div className="grid gap-2">
         <Label htmlFor="country_code">Country</Label>
-        <select id="country_code" autoComplete="country" className="min-h-11 border border-input bg-transparent px-3 text-sm" value={address.country_code} onChange={(e) => setAddress((a) => ({ ...a, country_code: e.target.value, state_code: e.target.value === "IN" ? "TN" : "" }))}>
-          {countries.map((c) => <option key={c.code} value={c.code}>{c.name}</option>)}
+        <select id="country_code" autoComplete="country" className="min-h-11 border border-input bg-transparent px-3 text-sm" value={address.country_code} aria-invalid={fieldError("country_code") ? true : undefined} aria-describedby={fieldError("country_code") ? "country_code-error" : undefined} onChange={(e) => setAddress((a) => ({ ...a, country_code: e.target.value, state_code: e.target.value === "IN" ? "TN" : "" }))}>
+          {(deliverable.includes(address.country_code) ? deliverable : [address.country_code, ...deliverable]).map((code) => <option key={code} value={code}>{countryName(code)}</option>)}
         </select>
+        {fieldError("country_code") ? <p id="country_code-error" className="text-sm text-destructive">{fieldError("country_code")}</p> : null}
       </div>
       {india ? (
         <div className="grid gap-2">

@@ -65,7 +65,7 @@ class OrderController extends Controller
         Audit::record('order.status_changed', $model, $before, ['status' => $model->status->value], $request->user());
 
         $message = 'Order updated.';
-        if ($model->status === OrderStatus::Packed && $model->requiresShipping() && $courier->enabled()) {
+        if ($model->status === OrderStatus::Packed && $model->requiresShipping() && $courier->enabled() && $courier->supports($model)) {
             $shipment = $courier->handle($model, $request->user());
             $message = match ($shipment->status) {
                 'failed' => 'Marked packed, but the Shiprocket booking failed: '.$shipment->last_error,
@@ -100,6 +100,9 @@ class OrderController extends Controller
         }
         if ($model->status !== OrderStatus::Packed) {
             throw new ApiException('Only packed orders can be booked for pickup.', 409, 'invalid_transition');
+        }
+        if (! $courier->supports($model)) {
+            throw new ApiException('International orders are not booked with Shiprocket. Send it with your international courier and record the tracking number with "Mark shipped".', 409, 'courier_unsupported');
         }
         $shipment = $courier->handle($model, $request->user());
         if ($shipment->status === 'failed') {

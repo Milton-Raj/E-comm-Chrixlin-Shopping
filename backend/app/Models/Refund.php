@@ -11,6 +11,8 @@ use Illuminate\Support\Carbon;
  * @property string $uuid
  * @property int $amount
  * @property string $currency
+ * @property int|null $gateway_amount returned to the customer, in $gateway_currency
+ * @property string|null $gateway_currency
  * @property string $reason
  * @property string $status
  * @property bool $restock
@@ -24,6 +26,6 @@ class Refund extends Model
 
     protected function casts(): array
     {
-        return ['amount' => 'integer', 'restock' => 'boolean'];
+        return ['amount' => 'integer', 'gateway_amount' => 'integer', 'restock' => 'boolean'];
     }
 }

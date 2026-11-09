@@ -101,6 +101,8 @@ Roles and their permissions are editable by `roles.manage` holders in Admin → 
 - Every route declares authorization: `can:` middleware or FormRequest `authorize()` calling a Policy. A test (`RouteAuthorizationTest`) enumerates all `/api/v1/admin/*` routes and fails if any lacks a permission middleware.
 - Customer resources (orders, addresses, wishlist, entitlements, tickets, reviews) use ownership policies; queries are scoped to the owner.
 - Staff permissions never imply customer-ownership bypass on customer endpoints; staff use admin endpoints.
+- Owner-scoped admin routes without a `can:` permission (staff gate + 2FA still apply): `GET /admin/me` and `/admin/notifications*` — each staff member reads and marks only their own alerts (another's id → 404). New-order alerts are only written for active staff with `orders.view` and hold no address or payment detail.
+- The alert poll (`GET /admin/notifications`) is exempt from refreshing the 30-minute admin idle timer, so an open admin tab does not keep a session alive; an idle session still expires and the bell stops.
 
 ## 6. HTTP security
 | Control | Laravel API | Next.js |
@@ -114,6 +116,7 @@ Roles and their permissions are editable by `roles.manage` holders in Admin → 
 ## 7. Data protection
 - PII minimization: store only what fulfillment, tax, and support need. IP addresses kept 12 months for fraud/security logs, then anonymized.
 - Encryption: `two_factor_secret`, recovery codes, license keys, encrypted settings use Laravel encryption (`APP_KEY`). DB backups encrypted at rest off-site.
+- Visitor country (international selling) is looked up in a local IP-to-country file (DB-IP Lite); no visitor IP is sent to a third party. Exchange rates are fetched server-side; no customer data is sent with that request.
 - Card data never touches our servers (gateway-hosted checkout/SDK) → out of PCI DSS scope beyond SAQ A.
 - Customer data export & deletion (account deletion anonymizes orders — financial records retained per law, PII scrubbed).
 - Consent recorded for marketing (subscribers.consent_*).

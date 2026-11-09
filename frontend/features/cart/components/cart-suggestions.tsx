@@ -6,13 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { productHref } from "@/features/catalog/catalog";
 import { t } from "@/lib/i18n";
-import { formatMoney } from "@/lib/money";
+import { useFormatMoney } from "@/features/localization/use-localization";
 import { cartApi } from "../api";
 import { useCartMutations } from "../cart-context";
 import type { Cart } from "../types";
 
 /** "Pairs well with your bag" — server-picked, never repeats what is already in the bag. */
 export function CartSuggestions({ cart, onNavigate }: { cart: Cart; onNavigate?: () => void }) {
+  const formatMoney = useFormatMoney();
   const { add } = useCartMutations();
   const itemsKey = cart.items.map((i) => i.product.uuid).sort().join(",");
   const suggestions = useQuery({ queryKey: ["cart", "suggestions", itemsKey], queryFn: cartApi.suggestions, enabled: cart.items.length > 0, staleTime: 60_000 });

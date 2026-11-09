@@ -29,6 +29,14 @@ class BookCourierPickup
         return $this->client->configured();
     }
 
+    /** Shiprocket's domestic API books shipments within the store's country only; international orders ship by hand. */
+    public function supports(Order $order): bool
+    {
+        $order->loadMissing('addresses');
+
+        return strtoupper((string) $order->shippingAddress()?->country_code) === strtoupper((string) config('commerce.store.country'));
+    }
+
     public function handle(Order $order, ?User $actor = null): Shipment
     {
         $order->loadMissing(['items.variant', 'addresses']);

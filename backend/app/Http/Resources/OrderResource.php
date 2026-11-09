@@ -31,7 +31,16 @@ class OrderResource extends JsonResource
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
-        $money = fn (int $amount) => Money::of($amount, $this->currency)->toArray();
+        // Customers see the currency they paid in (the locked rate reproduces their bag's figures);
+        // staff see the store currency, with the charged amount beside it.
+        $presentment = $this->forAdmin || $request->routeIs('v1.admin.*') ? null : $this->presentment();
+        $money = fn (int $amount) => ($presentment ? $presentment->money($amount) : Money::of($amount, $this->currency))->toArray();
+        $subtotal = $presentment && $this->relationLoaded('items')
+            ? Money::of($this->items->sum(fn (OrderItem $i) => $presentment->convert($i->unit_price) * $i->quantity), $presentment->currency)->toArray()
+            : $money($this->subtotal);
+        $refunded = $presentment && $this->relationLoaded('refunds')
+            ? Money::of((int) $this->refunds->sum(fn ($r) => $r->gateway_amount ?? $presentment->convert($r->amount)), $presentment->currency)->toArray()
+            : $money($this->refunded_total);
         $address = $this->relationLoaded('addresses') ? $this->shippingAddress() : null;
 
         $data = [
@@ -46,15 +55,20 @@ class OrderResource extends JsonResource
             'invoice_number' => $this->relationLoaded('invoice') ? $this->invoice?->invoice_number : null,
             'placed_at' => $this->placed_at?->toIso8601String(),
             'paid_at' => $this->paid_at?->toIso8601String(),
-            'currency' => $this->currency,
+            'currency' => $presentment->currency ?? $this->currency,
+            'charged' => $this->presentment_currency ? [
+                'amount' => Money::of($this->chargeAmount(), $this->chargeCurrency())->toArray(),
+                'exchange_rate' => rtrim(rtrim((string) $this->exchange_rate, '0'), '.'),
+                'base_currency' => $this->currency,
+            ] : null,
             'totals' => [
-                'subtotal' => $money($this->subtotal),
+                'subtotal' => $subtotal,
                 'discount' => $money($this->discount_total),
                 'shipping' => $money($this->shipping_total),
                 'gift_wrap' => $money($this->gift_wrap_total),
                 'tax' => $money($this->tax_total),
-                'total' => $money($this->grand_total),
-                'refunded' => $money($this->refunded_total),
+                'total' => $presentment ? Money::of($this->chargeAmount(), $this->chargeCurrency())->toArray() : $money($this->grand_total),
+                'refunded' => $refunded,
             ],
             'item_count' => $this->relationLoaded('items') ? $this->items->sum('quantity') : null,
         ];
@@ -104,12 +118,12 @@ class OrderResource extends JsonResource
                 'customer' => $this->user ? ['uuid' => $this->user->uuid, 'customer_number' => $this->user->customer_number, 'name' => $this->user->name, 'email' => $this->user->email] : null,
                 'requires_attention' => $this->requires_attention,
                 'payments' => $this->payments->map(fn ($p) => [
-                    'uuid' => $p->uuid, 'provider' => $p->provider, 'status' => $p->status->value, 'amount' => $money($p->amount),
+                    'uuid' => $p->uuid, 'provider' => $p->provider, 'status' => $p->status->value, 'amount' => Money::of($p->amount, $p->currency)->toArray(),
                     'method' => $p->method, 'provider_payment_id' => $p->provider_payment_id, 'created_at' => $p->created_at->toIso8601String(),
                 ])->values(),
-                'refunds' => $this->refunds->map(fn ($r) => ['uuid' => $r->uuid, 'amount' => $money($r->amount), 'reason' => $r->reason, 'status' => $r->status, 'created_at' => $r->created_at->toIso8601String()])->values(),
+                'refunds' => $this->refunds->map(fn ($r) => ['uuid' => $r->uuid, 'amount' => $money($r->amount), 'gateway_amount' => $r->gateway_currency && $r->gateway_currency !== $r->currency ? Money::of((int) $r->gateway_amount, $r->gateway_currency)->toArray() : null, 'reason' => $r->reason, 'status' => $r->status, 'created_at' => $r->created_at->toIso8601String()])->values(),
                 'allowed_transitions' => array_map(fn ($s) => $s->value, $this->status->allowedTransitions()),
-                'courier_enabled' => app(BookCourierPickup::class)->enabled(),
+                'courier_enabled' => app(BookCourierPickup::class)->enabled() && app(BookCourierPickup::class)->supports($this->resource),
                 'courier_shipments' => $this->relationLoaded('shipments') ? $this->shipments->map(fn (Shipment $s) => [
                     'uuid' => $s->uuid, 'provider' => $s->provider, 'carrier' => $s->carrier, 'tracking_number' => $s->tracking_number, 'tracking_url' => $s->tracking_url,
                     'status' => $s->status, 'courier_status' => $s->courier_status, 'pickup_scheduled_at' => $s->pickup_scheduled_at?->toIso8601String(),

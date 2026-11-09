@@ -165,6 +165,21 @@
     @if ($paidAt)<span class="muted small" style="margin-left: 8px;">on {{ $paidAt->format('j M Y, g:i A') }}</span>@endif
   </div>
 
+  @if ($charged)
+    <table class="totals" style="margin-top: 14px;">
+      <tr><td colspan="2"><strong>In {{ $charged['currency'] }} — the currency you paid</strong></td></tr>
+      <tr class="grand"><td>Total paid</td><td class="num">{{ $charged['amount'] }}</td></tr>
+      <tr><td class="muted">Indian GST included</td><td class="num">{{ $charged['tax'] }}</td></tr>
+      @foreach ($charged['taxes'] as $tax)
+        <tr><td class="muted">&nbsp;&nbsp;{{ $tax['code'] }}</td><td class="num">{{ $tax['amount'] }}</td></tr>
+      @endforeach
+    </table>
+    <p class="muted small" style="margin-top: 6px;">
+      Indian GST (Goods and Services Tax) applies because this order was supplied from India; it is charged under Indian GST law and is already included in the price.
+      Rupee amounts above are the legal values for GST. {{ $charged['currency'] }} amounts use the rate locked when you placed the order ({{ $charged['rate'] }}).
+    </p>
+  @endif
+
   <div class="notes">
     Prices include GST. Tax is not payable on reverse charge. Please keep this invoice for your records.
     @if (! $seller['gstin'])<br>GSTIN not provided by the seller.@endif

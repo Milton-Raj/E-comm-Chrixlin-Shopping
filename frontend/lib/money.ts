@@ -20,3 +20,20 @@ export function moneyToDecimal(money: Money): string {
 
   return (money.amount / 10 ** exponent).toFixed(exponent);
 }
+
+export type CurrencyRate = { code: string; rate: string; exponent: number };
+
+/**
+ * Converts store-currency money at a decimal-string rate with exact integer maths,
+ * rounding half-up to the target's minor unit, so it matches the API (Presentment).
+ */
+export function convertMoney(money: Money, fromExponent: number, to: CurrencyRate): Money {
+  const [whole = "0", fraction = ""] = to.rate.split(".");
+  const rate = BigInt(whole + fraction);
+  const numerator = BigInt(money.amount) * rate * 10n ** BigInt(to.exponent);
+  const denominator = 10n ** BigInt(fraction.length + fromExponent);
+  const sign = numerator < 0n ? -1n : 1n;
+  const rounded = (sign * numerator * 2n + denominator) / (2n * denominator);
+
+  return { amount: Number(sign * rounded), currency: to.code };
+}

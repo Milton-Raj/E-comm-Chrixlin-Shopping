@@ -13,6 +13,7 @@ import { indianStates } from "@/lib/regions";
 import { cn } from "@/lib/utils";
 import { ApiError } from "@/services/api-client";
 import { miscAdminApi, type StoreSettings } from "../api";
+import { InternationalPanel } from "../components/international-panel";
 import { AdminPage, checkboxLabelClass, Field, FormActions, inputClass, Panel, RequiredNote, textareaClass } from "../components/kit/admin-page";
 
 const settingsKey = ["admin", "settings"] as const;
@@ -68,7 +69,7 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
   const err = (k: string) => errors[k]?.[0];
 
   return (
-    <AdminPage title="Settings" description="Store details, GST rates, delivery charges and security. Payment keys stay in the server environment." actions={<Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save settings"}</Button>}>
+    <AdminPage title="Settings" description="Store details, GST rates, delivery charges, international selling and security. Payment keys stay in the server environment." actions={<Button onClick={() => save.mutate()} disabled={save.isPending}>{save.isPending ? "Saving…" : "Save settings"}</Button>}>
       <RequiredNote />
       {/* Panels side by side stretch to the same height; short panels run full width, so nothing leaves a gap. */}
       <div className="grid gap-4">
@@ -178,6 +179,8 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
             </Field>
           </div>
         </Panel>
+
+        <InternationalPanel />
 
         <div className="grid gap-4 lg:grid-cols-2">
           <PaymentsPanel integrations={settings.integrations} />

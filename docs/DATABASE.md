@@ -228,6 +228,17 @@ Indexes: `(user_id, placed_at)` Q-O1 account order list; `(status, placed_at)` Q
 **enquiries** — `id, uuid, type (corporate_gifting), name, company, email, phone, quantity, budget, occasion, needed_by DATE, message, status (new|contacted|quoted|won|lost), notes, updated_by NULL FK users, ip_address, timestamps`. Index `(status, created_at)`.
 **carts** additions — `reminder_sent_at` (one abandoned-bag email per cart), `gift_wrap` bool, `gift_message` (≤300).
 **orders** additions — `gift_wrap_total` (GST-inclusive, minor units, included in `grand_total`), `gift_wrap_tax` (part of `tax_total`, taxed at the default class rate), `gift_message`, `review_requested_at` (the one review request email after delivery; claimed before sending).
+
+**International selling (2026-11-09, ARCHITECTURE D21)**
+- **exchange_rates** — `id, base_currency CHAR(3), currency CHAR(3), rate DECIMAL(24,12)` (1 base = rate currency; market rate, markup applied at use; a rate, not money), `source VARCHAR(32), fetched_at, timestamps`. Unique `(base_currency, currency)`. Refreshed twice daily by `app:exchange-rates`.
+- **carts** addition — `display_currency CHAR(3) NULL` (shopper's chosen currency; null = store currency). `carts.currency` stays the store currency.
+- **orders** additions — `presentment_currency CHAR(3) NULL`, `exchange_rate DECIMAL(24,12) NULL` (locked at placement, markup included), `presentment_total BIGINT NULL` (charged, minor units of `presentment_currency`). All other amount columns stay in the store currency. `payments.amount/currency` hold the charged figures.
+- **refunds** additions — `gateway_amount BIGINT NULL`, `gateway_currency CHAR(3) NULL` (what went back to the customer, in the currency they paid). `payment_transactions` refund rows use the payment's currency.
+- **exchange_rate_history** (append-only audit trail) — `id, base_currency, currency, rate DECIMAL(24,12)` (market, no markup), `source, fetched_at, created_at`. Index `(base_currency, currency, fetched_at)`, `(fetched_at)`. One row per currency per fetch; never updated or deleted.
+- **orders** audit additions — `market_rate DECIMAL(24,12) NULL`, `exchange_markup_bps SMALLINT UNSIGNED NULL`, `exchange_rate_fetched_at TIMESTAMP NULL`: what produced `exchange_rate`.
+- **settings** keys — `international.enabled`, `.currencies` (JSON list), `.fallback_currency`, `.markup_bps`, `.unavailable_message`.
+
+**notifications** (Laravel database notifications, 2026-11-09, D22) — `id UUID PK, type VARCHAR (e.g. order_paid), notifiable_type, notifiable_id, data TEXT (JSON: order_number, customer name, item_count, total, charged, country_code — no address or payment detail), read_at NULL, timestamps`. Index `(notifiable_type, notifiable_id, read_at)`. Staff alerts only.
 **notifications** — Laravel standard (`id UUID PK, type, notifiable_type, notifiable_id, data JSON, read_at, created_at`). Index `(notifiable_type, notifiable_id, read_at)`.
 **subscribers** — `id, uuid, email UNIQUE, status (pending|subscribed|unsubscribed|bounced), source (footer|checkout|account|import), consent_text, consent_ip, consented_at, unsubscribed_at, timestamps` (§80).
 

@@ -48,3 +48,7 @@ Schedule::call(fn () => app(SendReviewRequests::class)())
 
 Schedule::command('queue:prune-failed --hours=720')->weekly();
 Schedule::command('auth:clear-resets')->hourly();
+
+// International selling: today's exchange rates and the monthly IP-to-country database.
+Schedule::command('app:exchange-rates')->twiceDaily(0, 12)->withoutOverlapping(10);
+Schedule::command('app:geoip-update --if-stale')->dailyAt('03:30')->withoutOverlapping(30);

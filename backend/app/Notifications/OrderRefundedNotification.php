@@ -14,7 +14,8 @@ class OrderRefundedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public readonly Order $order, public readonly int $amount, public readonly bool $fully) {}
+    /** $amount is what returns to the customer, in $currency (the currency they paid; the order's when null). */
+    public function __construct(public readonly Order $order, public readonly int $amount, public readonly bool $fully, public readonly ?string $currency = null) {}
 
     /** @return list<string> */
     public function via(object $notifiable): array
@@ -25,7 +26,7 @@ class OrderRefundedNotification extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $number = $this->order->order_number;
-        $money = Money::of($this->amount, $this->order->currency)->format();
+        $money = Money::of($this->amount, $this->currency ?? $this->order->currency)->format();
         $mail = (new MailMessage)
             ->subject($this->fully ? "Order {$number} cancelled: your refund is on its way" : "A refund for order {$number} is on its way")
             ->greeting($this->fully ? 'Your order has been cancelled' : 'Your refund is on its way');

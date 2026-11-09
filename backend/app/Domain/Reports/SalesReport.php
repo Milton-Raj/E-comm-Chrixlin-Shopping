@@ -39,7 +39,10 @@ class SalesReport
             ->selectRaw("COALESCE(categories.name, 'Uncategorised') as category, SUM(order_items.quantity) as units, SUM(order_items.line_total) as revenue")
             ->groupBy('category')->orderByDesc('revenue')->get();
 
-        $daily = (clone $orders)->selectRaw('DATE(paid_at) as day, COUNT(*) as orders, SUM(grand_total - refunded_total) as revenue')->groupBy('day')->orderBy('day')->get();
+        // Days in store time: shift the UTC timestamp by the zone's offset (portable across MySQL and MariaDB).
+        $offset = (int) round(now((string) config('commerce.store.timezone', 'UTC'))->utcOffset());
+        $daily = (clone $orders)->selectRaw('DATE(DATE_ADD(paid_at, INTERVAL ? MINUTE)) as day, COUNT(*) as orders, SUM(grand_total - refunded_total) as revenue', [$offset])
+            ->groupBy('day')->orderBy('day')->get();
         $units = (int) $items()->sum('order_items.quantity');
 
         return [
@@ -54,12 +57,19 @@ class SalesReport
         ];
     }
 
-    /** @return array{0: Carbon, 1: Carbon} the requested range, defaulting to the last 30 days */
+    /**
+     * The requested days in the store's time zone (so a financial year starts at midnight
+     * in India, not UTC), as UTC instants; defaults to the last 30 days.
+     *
+     * @return array{0: Carbon, 1: Carbon}
+     */
     public static function range(?string $from, ?string $to): array
     {
+        $zone = (string) config('commerce.store.timezone', 'UTC');
+
         return [
-            $from ? now()->parse($from)->startOfDay() : now()->subDays(29)->startOfDay(),
-            $to ? now()->parse($to)->endOfDay() : now()->endOfDay(),
+            ($from ? Carbon::parse($from, $zone) : now($zone)->subDays(29))->startOfDay()->utc(),
+            ($to ? Carbon::parse($to, $zone) : now($zone))->endOfDay()->utc(),
         ];
     }
 }

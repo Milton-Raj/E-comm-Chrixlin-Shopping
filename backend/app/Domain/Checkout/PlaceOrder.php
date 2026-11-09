@@ -5,6 +5,7 @@ namespace App\Domain\Checkout;
 use App\Domain\Cart\CartPricer;
 use App\Domain\Cart\PricedCart;
 use App\Domain\Inventory\InventoryService;
+use App\Domain\Localization\InternationalSettings;
 use App\Domain\Orders\Enums\FulfillmentStatus;
 use App\Domain\Orders\Enums\OrderStatus;
 use App\Domain\Orders\OrderNumberGenerator;
@@ -33,6 +34,7 @@ class PlaceOrder
         private readonly OrderNumberGenerator $numbers,
         private readonly OrderStateMachine $states,
         private readonly GatewayManager $gateways,
+        private readonly InternationalSettings $international,
     ) {}
 
     /**
@@ -59,6 +61,13 @@ class PlaceOrder
                 'payment_status' => PaymentStatus::Initiated,
                 'fulfillment_status' => $priced->requiresShipping ? FulfillmentStatus::Unfulfilled : FulfillmentStatus::NotRequired,
                 'currency' => $priced->currency,
+                // Charged abroad in the shopper's currency at the rate shown to them, locked here.
+                'presentment_currency' => $priced->presentment?->currency,
+                'exchange_rate' => $priced->presentment?->rate,
+                'market_rate' => $priced->presentment?->marketRate,
+                'exchange_markup_bps' => $priced->presentment?->markupBps,
+                'exchange_rate_fetched_at' => $priced->presentment?->fetchedAt,
+                'presentment_total' => $priced->presentment ? $priced->chargeTotal() : null,
                 'subtotal' => $priced->subtotal,
                 'discount_total' => $priced->discountTotal,
                 'shipping_total' => $priced->shippingTotal,
@@ -123,8 +132,8 @@ class PlaceOrder
             $this->inventory->reserve($order, $reserve);
 
             $payment = Payment::create([
-                'order_id' => $order->id, 'provider' => $gatewayKey, 'amount' => $order->grand_total,
-                'currency' => $order->currency, 'status' => PaymentStatus::Initiated,
+                'order_id' => $order->id, 'provider' => $gatewayKey, 'amount' => $order->chargeAmount(),
+                'currency' => $order->chargeCurrency(), 'status' => PaymentStatus::Initiated,
             ]);
 
             $accessToken = null;
@@ -145,7 +154,7 @@ class PlaceOrder
         $payment->forceFill(['provider_order_id' => $providerOrderId, 'status' => PaymentStatus::Pending])->save();
         $result['order']->forceFill(['payment_status' => PaymentStatus::Pending])->save();
 
-        Log::channel('orders')->info('Order placed.', ['order' => $result['order']->order_number, 'total' => $result['order']->grand_total, 'gateway' => $gatewayKey]);
+        Log::channel('orders')->info('Order placed.', ['order' => $result['order']->order_number, 'total' => $result['order']->grand_total, 'charged' => $payment->amount, 'charged_currency' => $payment->currency, 'gateway' => $gatewayKey]);
 
         return ['order' => $result['order'], 'payment' => $payment, 'client_payload' => $payload, 'access_token' => $result['accessToken']];
     }
@@ -169,6 +178,9 @@ class PlaceOrder
         if ($priced->requiresShipping) {
             if (! $cart->shipping_address) {
                 $errors['address'] = ['Enter a delivery address.'];
+            } elseif (! $this->international->deliversTo($cart->shipping_address['country_code'] ?? null)) {
+                // International selling was switched off after this address was entered.
+                throw new ApiException($this->international->unavailableMessage(), 422, 'country_unavailable', ['country_code' => [$this->international->unavailableMessage()]]);
             } elseif (! $priced->shippingMethod) {
                 $errors['shipping_method'] = ['Choose a delivery method.'];
             }
@@ -177,7 +189,8 @@ class PlaceOrder
             throw new ApiException('Please complete your checkout details.', 422, 'checkout_incomplete', $errors);
         }
 
-        if ($expectedTotal !== null && $expectedTotal !== $priced->grandTotal) {
+        // The shopper confirmed the total in the currency they pay in.
+        if ($expectedTotal !== null && $expectedTotal !== $priced->chargeTotal()) {
             throw new ApiException('Your total has changed. Please review your order.', 409, 'price_changed');
         }
     }

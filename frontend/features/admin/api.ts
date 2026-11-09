@@ -90,7 +90,7 @@ export type AdminOrderDetail = import("@/features/orders/types").OrderDetail & {
   customer: { uuid: string; customer_number: string; name: string; email: string } | null;
   requires_attention: boolean;
   payments: { uuid: string; provider: string; status: string; amount: Money; method: string | null; provider_payment_id: string | null; created_at: string }[];
-  refunds: { uuid: string; amount: Money; reason: string; status: string; created_at: string }[];
+  refunds: { uuid: string; amount: Money; gateway_amount: Money | null; reason: string; status: string; created_at: string }[];
   allowed_transitions: string[];
   ip_address: string | null;
   courier_enabled: boolean;
@@ -192,8 +192,50 @@ export const miscAdminApi = {
   saveSettings: (body: unknown) => api.put("/admin/settings", body),
   testShiprocket: () => api.post<{ pickup_locations: string[]; pickup_location_found: boolean }>("/admin/settings/shiprocket/test"),
   saveSecurity: (body: { admin_require_2fa: boolean; password: string }) => api.put<{ admin_requires_2fa: boolean }>("/admin/settings/security", body),
+  international: () => api.get<InternationalSettings>("/admin/settings/international"),
+  saveInternational: (body: InternationalSettings["settings"]) => api.put<InternationalSettings>("/admin/settings/international", body),
+  refreshRates: () => api.post<InternationalSettings>("/admin/settings/international/rates"),
+  notifications: () => api.get<AdminNotifications>("/admin/notifications"),
+  readNotification: (id: string) => api.post<{ unread_count: number }>(`/admin/notifications/${id}/read`),
+  readAllNotifications: () => api.post<{ unread_count: number }>("/admin/notifications/read-all"),
+  fxReport: (from: string, to: string) => api.get<FxReport>(`/admin/reports/international?from=${from}&to=${to}`),
+  rateHistory: (currency: string, from: string, to: string) => api.get<RateHistory>(`/admin/exchange-rates/history?currency=${currency}&from=${from}&to=${to}`),
   audit: (page: number) => api.getPaged<AuditEntry>(`/admin/audit-logs?page=${page}`),
 };
+
+/** Admin → Settings → International (API.md §3.10). Rates are decimal strings: units per 1 store-currency unit. */
+export type InternationalSettings = {
+  settings: { enabled: boolean; currencies: string[]; fallback_currency: string; markup_bps: number; unavailable_message: string };
+  store_currency: string;
+  currencies: { code: string; market_rate: string | null; rate: string | null; exponent: number }[];
+  rates_updated_at: string | null;
+  rates_stale: boolean;
+  geoip: { ready: boolean; updated_at: string | null; your_country: string | null };
+};
+
+/** Month-end FX audit (API.md §3.10): sales by payment date, refunds by refund date, in store time. Rates are per 1 unit of the store currency. */
+export type FxReport = {
+  range: { from: string; to: string };
+  store_currency: string;
+  by_currency: { currency: string; orders: number; refunds: number; average_rate: string | null; charged: Money; booked: Money; refunded_charged: Money; refunded_booked: Money; net_charged: Money; net_booked: Money }[];
+  /** Per month ("2026-05") and currency, with that month's market-rate range. */
+  by_month: { month: string; currency: string; orders: number; refunds: number; average_rate: string | null; rate_low: string | null; rate_high: string | null; charged: Money; booked: Money; net_charged: Money; net_booked: Money }[];
+  orders: {
+    order_number: string; paid_at: string | null; country: string | null; currency: string; charged: Money; market_rate: string | null; markup_bps: number | null;
+    applied_rate: string; rate_fetched_at: string | null; booked: Money; refunded_booked: Money; payment_reference: string | null;
+  }[];
+  rates: { currency: string; fetches: number; low: string; high: string; first: string; last: string }[];
+};
+export type RateHistory = { range: { from: string; to: string }; currency: string; items: { rate: string; source: string; fetched_at: string }[] };
+
+export type OrderAlert = {
+  id: string;
+  type: "order_paid";
+  data: { order_number: string; customer: string; item_count: number; total: Money; charged: Money | null; country_code: string | null };
+  read: boolean;
+  created_at: string | null;
+};
+export type AdminNotifications = { items: OrderAlert[]; unread_count: number };
 
 export type StaffMember = { uuid: string; name: string; email: string; role: string | null; is_active: boolean; two_factor_enabled: boolean; is_you: boolean; last_login_at: string | null; created_at: string | null };
 export type StaffRole = { name: string; assignable: boolean; everything: boolean; permissions: string[] };

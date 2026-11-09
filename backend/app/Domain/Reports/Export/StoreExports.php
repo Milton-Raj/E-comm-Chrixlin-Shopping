@@ -3,6 +3,7 @@
 namespace App\Domain\Reports\Export;
 
 use App\Domain\Payments\Enums\PaymentStatus;
+use App\Domain\Reports\InternationalReport;
 use App\Domain\Reports\SalesReport;
 use App\Models\Coupon;
 use App\Models\DigitalEntitlement;
@@ -10,6 +11,8 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Support\Money\Money;
+use Brick\Math\BigDecimal;
 use Generator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -29,9 +32,10 @@ class StoreExports
         'customers' => ['customers.view', 'Customer accounts with order count, spend and last order'],
         'digital' => ['downloads.view', 'Digital access per customer and the download log'],
         'coupons' => ['coupons.manage', 'Coupon rules, usage and the discount they have given'],
+        'international' => ['reports.finance', 'Sales in other currencies: what each customer paid, the locked rate and the rupee value, refunds and rate history'],
     ];
 
-    public function __construct(private readonly SalesReport $sales) {}
+    public function __construct(private readonly SalesReport $sales, private readonly InternationalReport $international) {}
 
     public function products(WorkbookBuilder $book): void
     {
@@ -262,6 +266,60 @@ class StoreExports
     }
 
     /** The full report: period summary and sales breakdowns, then every area the user may see. */
+    /** Month-end FX audit: totals per currency, each order abroad, refunds and the rates fetched (ARCHITECTURE D21). */
+    public function international(WorkbookBuilder $book, Carbon $from, Carbon $to): void
+    {
+        $r = $this->international->build($from, $to);
+        $zone = (string) config('commerce.store.timezone', 'UTC');
+        $period = $from->copy()->setTimezone($zone)->format('j M Y').' – '.$to->copy()->setTimezone($zone)->format('j M Y');
+        $decimal = fn (?int $minor, string $currency) => $minor === null ? null : (string) BigDecimal::ofUnscaledValue($minor, Money::exponent($currency));
+
+        $book->table('FX by currency', "Sales by currency · {$period}", [
+            Column::code('Currency', 'currency', 10), Column::int('Paid orders', 'orders', true, 11),
+            Column::number('Charged (their currency)', 'charged', 2, 18), Column::money('Booked in rupees', 'booked'),
+            Column::int('Refunds', 'refunds', true, 9), Column::number('Refunded (their currency)', 'refunded_charged', 2, 18), Column::money('Refunded in rupees', 'refunded_booked'),
+            Column::number('Net (their currency)', 'net_charged', 2, 16), Column::money('Net in rupees', 'net_booked'),
+            Column::number('Average rate (per ₹1)', 'average_rate', 6, 16),
+        ], array_map(fn ($c) => [...$c,
+            'charged' => $decimal($c['charged'], $c['currency']), 'refunded_charged' => $decimal($c['refunded_charged'], $c['currency']),
+            'net_charged' => $decimal($c['net_charged'], $c['currency']),
+        ], $r['by_currency']), 'Sales by payment date, refunds by refund date (store time). "Booked in rupees" is each order\'s total at its own locked rate — the figure in your books and on the GST invoice.');
+
+        if (count(array_unique(array_column($r['by_month'], 'month'))) > 1) {
+            $book->table('FX by month', "Month by month · {$period}", [
+                Column::code('Month', 'month', 10), Column::code('Currency', 'currency', 10), Column::int('Paid orders', 'orders', false, 11),
+                Column::number('Charged (their currency)', 'charged', 2, 18), Column::money('Booked in rupees', 'booked'),
+                Column::int('Refunds', 'refunds', false, 9), Column::number('Net (their currency)', 'net_charged', 2, 16), Column::money('Net in rupees', 'net_booked'),
+                Column::number('Average rate (per ₹1)', 'average_rate', 6, 16), Column::number('Lowest market rate', 'rate_low', 6), Column::number('Highest market rate', 'rate_high', 6),
+            ], array_map(fn ($m) => [...$m,
+                'charged' => $decimal($m['charged'], $m['currency']), 'net_charged' => $decimal($m['net_charged'], $m['currency']),
+            ], $r['by_month']), 'Rupee columns total across months; foreign columns are per currency and are not added together.');
+        }
+
+        $book->table('FX orders', "Orders paid in other currencies · {$period}", [
+            Column::code('Order', 'order_number', 18), Column::datetime('Paid', 'paid_at'), Column::code('Country', 'country', 8), Column::code('Currency', 'currency', 9),
+            Column::number('Customer paid', 'charged', 2, 14), Column::number('Market rate (per ₹1)', 'market_rate', 6, 16), Column::percent('Markup', 'markup', 9),
+            Column::number('Rate charged (per ₹1)', 'applied_rate', 6, 16), Column::datetime('Rate fetched', 'rate_fetched_at'),
+            Column::money('Booked in rupees', 'booked'), Column::money('Refunded in rupees (to date)', 'refunded_booked'), Column::code('Payment reference', 'payment_reference', 22),
+        ], $r['orders']->map(fn ($o) => [...$o,
+            'charged' => $decimal($o['charged'], $o['currency']), 'markup' => $o['markup_bps'] === null ? null : $o['markup_bps'] / 10_000,
+        ]), 'Each order is locked to the rate shown to the customer at checkout. Match "Payment reference" with the Razorpay settlement report for the rupees actually received.');
+
+        $book->table('FX refunds', "Refunds · {$period}", [
+            Column::code('Order', 'order_number', 18), Column::datetime('Refunded', 'refunded_at'), Column::code('Currency', 'currency', 9),
+            Column::number('Returned to customer', 'charged', 2, 16), Column::money('Rupees', 'booked'), Column::text('Reason', 'reason', 30),
+        ], $r['refunds']->filter(fn ($x) => $x['foreign'])->map(fn ($x) => [...$x, 'charged' => $decimal($x['charged'], $x['currency'])])->values());
+
+        $book->table('Rate history', "Exchange rates fetched · {$period}", [
+            Column::code('Currency', 'currency', 10), Column::int('Times fetched', 'fetches', false, 12),
+            Column::number('First (per ₹1)', 'first', 6), Column::number('Lowest', 'low', 6), Column::number('Highest', 'high', 6), Column::number('Last', 'last', 6),
+        ], $r['rates'], 'Market rates without markup, from open.er-api.com, fetched twice a day. Every fetch is kept.');
+
+        $book->table('All rate fetches', "Every exchange rate fetched · {$period}", [
+            Column::datetime('Fetched', 'fetched_at'), Column::code('Currency', 'currency', 10), Column::number('Market rate (per ₹1)', 'rate', 6, 18), Column::text('Source', 'source', 18),
+        ], $this->international->fetches($from, $to), 'The complete audit trail: one row per currency per fetch, never edited.');
+    }
+
     public function report(WorkbookBuilder $book, Carbon $from, Carbon $to, User $user): void
     {
         $r = $this->sales->build($from, $to, null);
@@ -278,10 +336,16 @@ class StoreExports
         ];
         foreach ($areas as $key => [, $description]) {
             $contents[] = [match ($key) {
-                'digital' => 'Digital access', default => Str::headline($key)
+                'digital' => 'Digital access', 'international' => 'FX by currency', default => Str::headline($key)
             }, $description];
             if ($key === 'orders') {
                 $contents[] = ['Order items', 'Every line of every order in the period'];
+            }
+            if ($key === 'international') {
+                $contents[] = ['FX orders', 'Each order paid in another currency with its locked rate and rupee value'];
+                $contents[] = ['FX refunds', 'Refunds on those orders, in both currencies'];
+                $contents[] = ['Rate history', 'Each currency\'s rates in the period: first, lowest, highest, last'];
+                $contents[] = ['All rate fetches', 'Every exchange rate fetched, one row per currency per fetch'];
             }
             if ($key === 'digital') {
                 $contents[] = ['Download log', 'Each download attempt, allowed or denied'];
@@ -315,6 +379,7 @@ class StoreExports
         foreach (array_keys($areas) as $key) {
             match ($key) {
                 'orders' => $this->orders($book, $from, $to),
+                'international' => $this->international($book, $from, $to),
                 default => $this->{$key}($book),
             };
         }

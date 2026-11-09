@@ -57,7 +57,10 @@ class EnsureAdminAccess
                 throw ApiException::sessionExpired();
             }
 
-            $session->put(self::LAST_ACTIVITY_KEY, now()->timestamp);
+            // The bell polls in the background; that is not someone using the admin.
+            if (! $request->routeIs('v1.admin.notifications.index')) {
+                $session->put(self::LAST_ACTIVITY_KEY, now()->timestamp);
+            }
         }
 
         return $next($request);

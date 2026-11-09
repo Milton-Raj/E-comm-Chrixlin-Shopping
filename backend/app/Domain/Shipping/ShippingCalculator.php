@@ -2,14 +2,18 @@
 
 namespace App\Domain\Shipping;
 
+use App\Domain\Localization\InternationalSettings;
 use App\Models\ShippingMethod;
 use Illuminate\Support\Collection;
 
 /**
- * Zone + method + rate resolution (ARCHITECTURE §6.7). v1 zones: domestic (IN) and international.
+ * Zone + method + rate resolution (ARCHITECTURE §6.7). v1 zones: domestic (IN) and international
+ * (offered only while international selling is on).
  */
 class ShippingCalculator
 {
+    public function __construct(private readonly InternationalSettings $international) {}
+
     public static function zoneFor(?string $countryCode): string
     {
         return strtoupper((string) $countryCode) === 'IN' ? 'domestic' : 'international';
@@ -22,6 +26,11 @@ class ShippingCalculator
      */
     public function optionsFor(?string $countryCode, int $merchandiseTotal, bool $freeDelivery = false): Collection
     {
+        // With international selling off, there is no delivery outside the store's country.
+        if (! $this->international->deliversTo($countryCode)) {
+            return collect();
+        }
+
         return ShippingMethod::query()
             ->where('zone', self::zoneFor($countryCode))
             ->where('is_active', true)

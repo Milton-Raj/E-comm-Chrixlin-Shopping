@@ -42,6 +42,17 @@ export const en = {
   "footer.privacy": "Privacy",
   "footer.terms": "Terms",
   "footer.rights": "© {year} {store}. All rights reserved.",
+  "footer.currency": "Currency",
+  "footer.currencyNote": "Prices in {currency} are converted from {base} at today’s rate.",
+  "footer.ratesCredit": "Rates by Exchange Rate API",
+  "footer.geoCredit": "IP geolocation by DB-IP",
+
+  "intl.unavailableTitle": "We don’t deliver to your country yet",
+  "intl.browse": "Keep browsing",
+  "intl.gstIncluded": "Includes {amount} GST{breakdown}",
+  "intl.indianGstIncluded": "Includes {amount} Indian GST{breakdown}",
+  "intl.indianGstNote": "We ship from India, so Indian GST (Goods and Services Tax) applies under Indian law. It is already included in the price.",
+  "intl.chargedIn": "Charged in {currency} at today’s rate (1 {base} = {rate} {currency}).",
 
   "home.heroTitle": "Discover products worth buying.",
   "home.heroBody": "Everything you need. One beautiful marketplace.",

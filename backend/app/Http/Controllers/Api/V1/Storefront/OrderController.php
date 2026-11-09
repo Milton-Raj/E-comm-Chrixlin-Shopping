@@ -34,7 +34,7 @@ class OrderController extends Controller
     public function show(Request $request, string $orderNumber): JsonResponse
     {
         $order = $this->ownedOrder($request, $orderNumber);
-        $order->load(['items.product', 'addresses', 'history', 'shipments', 'entitlements.product.files', 'entitlements.order', 'invoice']);
+        $order->load(['items.product', 'addresses', 'history', 'shipments', 'entitlements.product.files', 'entitlements.order', 'invoice', 'refunds']);
 
         return ApiResponse::success(new OrderResource($order));
     }
@@ -97,7 +97,7 @@ class OrderController extends Controller
         $payment = DB::transaction(function () use ($order, $gateway) {
             $order->payments()->whereIn('status', [PaymentStatus::Initiated, PaymentStatus::Pending])->update(['status' => PaymentStatus::Cancelled]);
 
-            return Payment::create(['order_id' => $order->id, 'provider' => $gateway->key(), 'amount' => $order->grand_total, 'currency' => $order->currency, 'status' => PaymentStatus::Initiated]);
+            return Payment::create(['order_id' => $order->id, 'provider' => $gateway->key(), 'amount' => $order->chargeAmount(), 'currency' => $order->chargeCurrency(), 'status' => PaymentStatus::Initiated]);
         });
         [$providerOrderId, $payload] = $gateway->createPayment($payment->setRelation('order', $order));
         $payment->forceFill(['provider_order_id' => $providerOrderId, 'status' => PaymentStatus::Pending])->save();

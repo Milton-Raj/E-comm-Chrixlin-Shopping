@@ -44,20 +44,23 @@ class RefundOrder
             }
             $refundable = $order->grand_total - $order->refunded_total;
             if ($amount <= 0 || $amount > $refundable) {
-                throw new ApiException('Refund amount must be between ₹0.01 and the remaining paid amount.', 422, 'invalid_amount', ['amount' => ["Maximum refundable is {$refundable}."]]);
+                throw new ApiException('Refund amount must be more than zero and at most the remaining paid amount.', 422, 'invalid_amount', ['amount' => ["Maximum refundable is {$refundable}."]]);
             }
 
-            $providerRefundId = $this->gateways->get($payment->provider)->refund($payment, $amount, $reason);
+            $fully = $order->refunded_total + $amount >= $order->grand_total;
+            $gatewayAmount = $this->gatewayAmount($order, $payment, $amount, $fully);
+
+            $providerRefundId = $this->gateways->get($payment->provider)->refund($payment, $gatewayAmount, $reason);
             $refund = $order->refunds()->create([
-                'payment_id' => $payment->id, 'amount' => $amount, 'currency' => $order->currency, 'reason' => $reason,
+                'payment_id' => $payment->id, 'amount' => $amount, 'currency' => $order->currency,
+                'gateway_amount' => $gatewayAmount, 'gateway_currency' => $payment->currency, 'reason' => $reason,
                 'status' => 'processed', 'provider_refund_id' => $providerRefundId, 'restock' => $restock, 'requested_by' => $actor->id,
             ]);
             $payment->transactions()->create([
-                'type' => 'refund', 'amount' => $amount, 'currency' => $order->currency, 'status' => 'succeeded', 'provider_transaction_id' => $providerRefundId,
+                'type' => 'refund', 'amount' => $gatewayAmount, 'currency' => $payment->currency, 'status' => 'succeeded', 'provider_transaction_id' => $providerRefundId,
             ]);
 
             $before = $order->only(['status', 'refunded_total']);
-            $fully = $order->refunded_total + $amount >= $order->grand_total;
             $order->forceFill([
                 'refunded_total' => $order->refunded_total + $amount,
                 'payment_status' => $fully ? PaymentStatus::Refunded : PaymentStatus::PartiallyRefunded,
@@ -83,8 +86,26 @@ class RefundOrder
 
         // Tell the customer once the refund is committed (queued, so a mail hiccup never undoes it).
         $order->refresh();
-        Notification::route('mail', $order->email)->notify(new OrderRefundedNotification($order, $amount, $order->refunded_total >= $order->grand_total));
+        Notification::route('mail', $order->email)->notify(new OrderRefundedNotification($order, $refund->gateway_amount ?? $amount, $order->refunded_total >= $order->grand_total, $refund->gateway_currency ?? $order->currency));
 
         return $refund;
+    }
+
+    /**
+     * What the gateway returns, in the currency the customer paid. Abroad, staff refund in
+     * the store currency and the customer gets the same share of what they were charged;
+     * the last refund returns exactly what is left, so nothing is lost to rounding.
+     */
+    private function gatewayAmount(Order $order, Payment $payment, int $amount, bool $fully): int
+    {
+        if ($payment->currency === $order->currency) {
+            return $amount;
+        }
+
+        $returned = (int) $order->refunds()->sum('gateway_amount');
+        $left = $payment->amount - $returned;
+        $share = $order->presentment()?->share($amount, $order->grand_total, $payment->amount) ?? $left;
+
+        return $fully ? $left : min($share, $left);
     }
 }

@@ -3,27 +3,14 @@
 use App\Models\Coupon;
 use App\Models\User;
 use Database\Seeders\StoreSetupSeeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Testing\TestResponse;
-use PhpOffice\PhpSpreadsheet\IOFactory;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
 
 beforeEach(function () {
     Notification::fake();
     (new StoreSetupSeeder)->run();
     $this->admin = User::factory()->staff('administrator')->create();
 });
-
-function workbook(TestResponse $response): Spreadsheet
-{
-    $response->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    $path = tempnam(sys_get_temp_dir(), 'xlsx');
-    file_put_contents($path, $response->streamedContent());
-    $book = IOFactory::load($path);
-    unlink($path);
-
-    return $book;
-}
 
 it('exports every admin area as a formatted Excel workbook', function (string $type, array $sheets) {
     paidOrder($this, makeProduct(['name' => 'Export Scarf'], stock: 4, price: 250_000));
@@ -69,7 +56,7 @@ it('builds the full report with a summary and every area the user can see', func
 
     $book = workbook($this->get('/api/v1/admin/exports/report?from='.now()->subDays(6)->toDateString().'&to='.now()->toDateString()));
 
-    expect($book->getSheetNames())->toBe(['Summary', 'Daily sales', 'Sales by product', 'Sales by category', 'Products', 'Inventory', 'Orders', 'Order items', 'Customers', 'Digital access', 'Download log', 'Coupons']);
+    expect($book->getSheetNames())->toBe(['Summary', 'Daily sales', 'Sales by product', 'Sales by category', 'Products', 'Inventory', 'Orders', 'Order items', 'Customers', 'Digital access', 'Download log', 'Coupons', 'FX by currency', 'FX orders', 'FX refunds', 'Rate history', 'All rate fetches']);
     $summary = $book->getSheetByName('Summary');
     $rows = collect($summary->rangeToArray('A5:B18', null, false, false))->mapWithKeys(fn ($r) => [$r[0] => $r[1]]);
     expect($rows['Paid orders'])->toBe(1)->and($rows['Gross sales (incl. GST & delivery)'])->toEqual(1450.0); // ₹1,200 + ₹250 delivery
@@ -94,4 +81,21 @@ it('stores text as text so spreadsheet formulas cannot be injected', function ()
 
     $cell = workbook($this->get('/api/v1/admin/exports/products'))->getSheet(0)->getCell('A5');
     expect($cell->getDataType())->toBe('s')->and($cell->getValue())->toStartWith('=HYPERLINK');
+});
+
+it('reports a financial year in India time, so a 1:30 AM payment on 1 April counts in the new year', function () {
+    Carbon::setTestNow('2026-03-31 20:00:00'); // 1 Apr 2026, 01:30 in India
+    $order = paidOrder($this, makeProduct(price: 120_000));
+    Carbon::setTestNow();
+    $this->flushSession();
+    $this->actingAs($this->admin);
+
+    $this->getJson('/api/v1/admin/reports/sales?from=2026-04-01&to=2027-03-31')->assertOk()
+        ->assertJsonPath('data.summary.orders', 1)
+        ->assertJsonPath('data.daily.0.date', '2026-04-01')
+        ->assertJsonPath('data.daily.0.revenue', $order->grand_total);
+    $this->getJson('/api/v1/admin/reports/sales?from=2025-04-01&to=2026-03-31')->assertJsonPath('data.summary.orders', 0);
+
+    $response = $this->get('/api/v1/admin/exports/report?from=2026-04-01&to=2027-03-31')->assertOk();
+    expect($response->headers->get('content-disposition'))->toContain('-report-2026-04-01_to_2027-03-31.xlsx');
 });

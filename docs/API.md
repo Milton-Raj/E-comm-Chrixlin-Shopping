@@ -92,6 +92,8 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 | GET | `/health` | public | 1 | `{status, db, queue_lag_seconds, version}` — db/queue details only with internal token |
 | GET | `/settings/public` | public | 1 | store name, currency, locale, enabled payment methods, feature flags |
 
+- `GET /localization` — public, not cached (`Cache-Control: private, no-store`). The visitor's detected country, whether international selling is on, `default_currency` for that country, `currencies` (`[{code, rate, exponent}]`, store currency first with rate `"1"`; rates include the markup and are decimal strings), deliverable `countries`, `delivers_to_visitor`, `unavailable_message`, `rates_updated_at`. Rates here are for showing catalogue prices only; bag and checkout amounts always come converted from the server.
+
 ### 3.2 Auth & account
 | Method | Path | Auth | Ph |
 |---|---|---|---|
@@ -146,6 +148,7 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 | POST | `/cart/shipping-estimate` | 5 | `{country_code, state_code, postal_code}` → methods + rates |
 
 *(PRD §68 `POST /api/v1/cart` is realized as `POST /cart/items`.)*
+- `PUT /cart/currency {currency}` — the currency the shopper sees and pays in: the store currency, or one the owner offers while international selling is on (`422 currency_unavailable` otherwise). Every amount in the cart response is then in that currency (`currency`); `base_currency` and `exchange_rate` (null at home) say how it was converted. A currency with no stored rate falls back to the store currency.
 
 ### 3.5 Wishlist (user)
 | Method | Path | Ph |
@@ -172,6 +175,7 @@ Legend: **Auth** — `public`, `guest|user` (guest allowed, user optional), `use
 | POST | `/orders/{order_number}/claim` | user | 5 | attach a guest order to a new account (email must match + access token) |
 
 *(PRD §68 `POST /checkout` + `POST /orders` are merged into `POST /checkout/place-order` so an order can never exist without a priced checkout.)*
+- International selling: `PUT /checkout/address` and `place-order` refuse an address outside the store country while it is off (`422 country_unavailable`, message = the owner's text). `expected_total` is compared with the total **in the currency the shopper pays in**. Orders paid abroad carry `charged {amount, exchange_rate, base_currency}`; the customer's order view shows amounts in that currency.
 
 ### 3.7 Digital downloads
 | Method | Path | Auth | Ph | Notes |
@@ -235,6 +239,11 @@ All admin endpoints: `auth:sanctum` + `admin.2fa` + per-route permission. Every 
 | POST | `/admin/settings/shiprocket/test` | `settings.manage` | Logs in to Shiprocket and lists pickup locations |
 | GET | `/admin/orders/{order}/invoice` | `orders.view` | GST tax invoice PDF (issued on demand for older paid orders) |
 | GET | `/admin/exports/{type}` | `exports.run` + area permission | `.xlsx` download; type ∈ products, inventory, orders, customers, digital, coupons, report (`from`/`to` for orders and report). Report includes only the areas the user may view. Audited as `export.downloaded` |
+- `GET|PUT /admin/settings/international` (`settings.manage`, audited `settings.international_updated`) — `{enabled, currencies[], fallback_currency, markup_bps (0–1000), unavailable_message}` plus every offerable currency's market and effective rate, rate freshness and the IP-country check ("the store sees you in …"). `POST /admin/settings/international/rates` (`settings.manage`, 6/min, audited) fetches today's rates now.
+- Report periods (`reports/sales`, `exports/report`, `exports/orders`, `reports/international`): `from`/`to` are **dates in store time** (India); a day runs midnight–midnight IST, so a financial year is `from=YYYY-04-01&to=YYYY+1-03-31`. Daily figures are grouped by India date. The Reports screen offers financial years (April–March), quick ranges and custom dates.
+- `GET /admin/reports/international?from&to` (`reports.finance`) — month-end FX audit, a calendar month in store time by default: `by_currency` (paid orders by payment date, refunds by refund date, in their currency and in rupees, average rate), `orders` abroad (charged, market rate, markup, locked rate, rate time, rupees booked, payment reference), `rates` (fetches, first/low/high/last), `by_month` (per month in store time and currency, with that month's market-rate low/high). Any period up to 731 days (two financial years; longer → 422). `GET /admin/exchange-rates/history?currency&from&to` (`reports.finance`) — every fetch, newest first (max 500). `GET /admin/exports/international?from&to` (`exports.run` + `reports.finance`, audited) — the same as Excel (adds "FX by month" for multi-month periods and "All rate fetches", every fetch in the period); also part of the full report. History lists up to 2,000 fetches (a year is ~730 per currency).
+- `GET /admin/notifications` — the signed-in staff member's own latest 20 alerts + `unread_count` (owner-scoped, no extra permission; alerts are only ever written for staff with `orders.view`). Polled every 15 s; **does not refresh the admin idle timeout**. `POST /admin/notifications/{id}/read`, `POST /admin/notifications/read-all`. Another staff member's alert id → 404.
+- Admin order detail: `charged` (see 3.6), `payments[].amount` in the payment's own currency, `refunds[].gateway_amount` (what went back, in the customer's currency) for foreign orders. `courier_enabled` is false for international orders (Shiprocket books domestic shipments only); `POST …/courier-booking` returns `409 courier_unsupported` for them.
 
 ## 4. Frontend → API mapping (public URLs, §50)
 | Page | API |

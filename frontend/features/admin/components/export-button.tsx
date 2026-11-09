@@ -9,12 +9,12 @@ import { apiDownload, ApiError } from "@/services/api-client";
 import type { AdminMe } from "@/types/api";
 import { adminMeKey } from "./admin-gate";
 
-export type ExportType = "products" | "inventory" | "orders" | "customers" | "digital" | "coupons" | "report";
+export type ExportType = "products" | "inventory" | "orders" | "customers" | "digital" | "coupons" | "international" | "report";
 
 /** Mirrors StoreExports::AREAS on the API: the view permission each export needs (plus exports.run). */
 const NEEDS: Record<ExportType, string> = {
   products: "products.view", inventory: "inventory.view", orders: "orders.view", customers: "customers.view",
-  digital: "downloads.view", coupons: "coupons.manage", report: "reports.view",
+  digital: "downloads.view", coupons: "coupons.manage", international: "reports.finance", report: "reports.view",
 };
 
 /** "Export to Excel" for an admin area; hidden for staff who may not export it. */

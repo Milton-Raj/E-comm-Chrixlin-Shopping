@@ -143,6 +143,7 @@ export function OrderDetailPage({ orderNumber }: { orderNumber: string }) {
               {o.gift ? <Row label="Gift wrapping" value={formatMoney(o.totals.gift_wrap)} /> : null}
               <Row label={`GST (incl.) ${o.tax_breakdown.map((t) => t.code).join("+")}`} value={formatMoney(o.totals.tax)} />
               <Row label="Total" value={formatMoney(o.totals.total)} strong />
+              {o.charged ? <Row label={`Charged in ${o.charged.amount.currency} (1 ${o.charged.base_currency} = ${o.charged.exchange_rate})`} value={formatMoney(o.charged.amount)} /> : null}
               {o.totals.refunded.amount ? <Row label="Refunded" value={`− ${formatMoney(o.totals.refunded)}`} /> : null}
             </dl>
           </Panel>
@@ -246,6 +247,11 @@ function RefundPanel({ order, onSaved, onError }: { order: AdminOrderDetail; onS
         <p className="text-sm text-muted-foreground">
           To cancel a paid order (for example, within the 6-hour cancellation window), keep the full amount and confirm.
           Razorpay sends the money back to the customer&apos;s card, UPI or bank automatically, and the customer gets an email. Lower the amount for a partial refund instead.
+        </p>
+      ) : null}
+      {order.charged ? (
+        <p className="text-sm text-muted-foreground">
+          This customer paid {formatMoney(order.charged.amount)}. Enter the refund in rupees; they get back the same share of what they paid, in {order.charged.amount.currency}, and a full refund returns exactly what is left.
         </p>
       ) : null}
       <form className="grid items-start gap-4 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); if (confirming) refund.mutate(); else setConfirming(true); }}>

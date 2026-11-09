@@ -13,6 +13,7 @@ export const adminNav: AdminNavItem[] = [
   { href: "/admin/inventory", label: "admin.inventory", permission: "inventory.view", available: true, group: null },
   { href: "/admin/customers", label: "admin.customers", permission: "customers.view", available: true, group: null },
   { href: "/admin/reports", label: "admin.reports", permission: "reports.view", available: true, group: null },
+  { href: "/admin/international", label: "International sales", permission: "reports.finance", available: true, group: null },
   { href: "/admin/coupons", label: "Coupons", permission: "coupons.manage", available: true, group: "Grow sales" },
   { href: "/admin/marketing", label: "Marketing", permission: "promotions.manage", available: true, group: "Grow sales" },
   { href: "/admin/reviews", label: "Reviews", permission: "reviews.moderate", available: true, group: "Grow sales" },

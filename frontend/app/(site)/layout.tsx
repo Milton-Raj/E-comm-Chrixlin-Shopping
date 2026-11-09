@@ -2,6 +2,8 @@ import { BottomNav } from "@/components/layout/bottom-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { CartDrawer } from "@/features/cart/components/cart-drawer";
+import { CurrencySync } from "@/features/localization/components/currency-sync";
+import { DeliveryNoticeDialog } from "@/features/localization/components/delivery-notice";
 import { Suspense } from "react";
 
 /** Storefront chrome: header, footer and mobile bottom navigation. */
@@ -18,6 +20,8 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
         <BottomNav />
       </Suspense>
       <CartDrawer />
+      <CurrencySync />
+      <DeliveryNoticeDialog />
     </>
   );
 }

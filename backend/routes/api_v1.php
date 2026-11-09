@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\V1\Storefront\CheckoutController;
 use App\Http\Controllers\Api\V1\Storefront\DownloadController;
 use App\Http\Controllers\Api\V1\Storefront\EnquiryController;
 use App\Http\Controllers\Api\V1\Storefront\HeroSlideController;
+use App\Http\Controllers\Api\V1\Storefront\LocalizationController;
 use App\Http\Controllers\Api\V1\Storefront\OrderController;
 use App\Http\Controllers\Api\V1\Storefront\PageController;
 use App\Http\Controllers\Api\V1\Storefront\ReviewController;
@@ -37,6 +38,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('throttle:public')->group(function () {
     Route::get('health', HealthController::class)->name('health');
     Route::get('settings/public', PublicSettingsController::class)->name('settings.public');
+    Route::get('localization', LocalizationController::class)->name('localization');
 });
 
 // Catalog & content (public, cacheable)
@@ -69,6 +71,7 @@ Route::prefix('cart')->name('cart.')->middleware('throttle:cart')->group(functio
     Route::delete('items/{item}', [CartController::class, 'removeItem'])->name('items.destroy');
     Route::post('coupon', [CartController::class, 'applyCoupon'])->name('coupon.store');
     Route::delete('coupon', [CartController::class, 'removeCoupon'])->name('coupon.destroy');
+    Route::put('currency', [CartController::class, 'currency'])->name('currency');
 });
 
 // Checkout
@@ -203,6 +206,8 @@ Route::prefix('admin')->name('admin.')
         Route::get('digital/downloads', [Admin\DigitalController::class, 'downloads'])->middleware('can:downloads.view')->name('digital.downloads');
 
         Route::get('reports/sales', [Admin\ReportController::class, 'sales'])->middleware('can:reports.view')->name('reports.sales');
+        Route::get('reports/international', [Admin\InternationalReportController::class, 'report'])->middleware('can:reports.finance')->name('reports.international');
+        Route::get('exchange-rates/history', [Admin\InternationalReportController::class, 'history'])->middleware('can:reports.finance')->name('exchange-rates.history');
 
         Route::get('pages', [Admin\ContentController::class, 'index'])->middleware('can:content.manage')->name('pages.index');
         Route::post('pages', [Admin\ContentController::class, 'save'])->middleware('can:content.manage')->name('pages.store');
@@ -237,5 +242,13 @@ Route::prefix('admin')->name('admin.')
         Route::get('exports/{type}', Admin\ExportController::class)->middleware(['can:exports.run', 'throttle:20,1'])->name('exports');
         Route::post('settings/shiprocket/test', [Admin\SettingsController::class, 'testShiprocket'])->middleware(['can:settings.manage', 'throttle:6,1'])->name('settings.shiprocket-test');
         Route::put('settings/security', [Admin\SettingsController::class, 'security'])->middleware('can:settings.manage')->name('settings.security');
+        Route::get('settings/international', [Admin\InternationalController::class, 'show'])->middleware('can:settings.manage')->name('settings.international.show');
+        Route::put('settings/international', [Admin\InternationalController::class, 'update'])->middleware('can:settings.manage')->name('settings.international.update');
+        Route::post('settings/international/rates', [Admin\InternationalController::class, 'refreshRates'])->middleware(['can:settings.manage', 'throttle:6,1'])->name('settings.international.rates');
+
+        // Each staff member's own alerts (new paid orders); polled by the admin bell.
+        Route::get('notifications', [Admin\NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('notifications/read-all', [Admin\NotificationController::class, 'readAll'])->name('notifications.read-all');
+        Route::post('notifications/{notification}/read', [Admin\NotificationController::class, 'read'])->whereUuid('notification')->name('notifications.read');
         Route::get('audit-logs', Admin\AuditLogController::class)->middleware('can:audit.view')->name('audit-logs');
     });

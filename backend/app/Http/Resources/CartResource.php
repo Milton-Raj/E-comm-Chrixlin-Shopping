@@ -10,7 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
- * Priced cart; every amount is server-computed (ARCHITECTURE §6.5).
+ * Priced cart; every amount is server-computed (ARCHITECTURE §6.5) and given in the
+ * currency the shopper pays in (D21): store-currency prices converted at today's rate.
  *
  * @property PricedCart $resource
  */
@@ -21,14 +22,19 @@ class CartResource extends JsonResource
     {
         $priced = $this->resource;
         $cart = $priced->cart;
-        $money = fn (int $amount) => Money::of($amount, $priced->currency)->toArray();
+        $currency = $priced->chargeCurrency();
+        $money = fn (int $amount) => Money::of($priced->present($amount), $currency)->toArray();
+        $minor = fn (int $amount) => Money::of($amount, $currency)->toArray(); // already converted
+        $shippingOption = fn (array $o) => [...$o, 'amount' => $money($o['amount']), 'free_over' => $o['free_over'] === null ? null : $priced->present($o['free_over'])];
 
         return [
             'uuid' => $cart->uuid,
             'item_count' => $priced->itemCount(),
-            'currency' => $priced->currency,
+            'currency' => $currency,
+            'base_currency' => $priced->currency,
+            'exchange_rate' => $priced->presentment?->rate,
             'requires_shipping' => $priced->requiresShipping,
-            'items' => array_map(function (PricedLine $line) use ($money) {
+            'items' => array_map(function (PricedLine $line) use ($money, $minor, $priced) {
                 $variant = $line->item->variant;
                 $product = $variant->product;
                 $media = $product->media->first();
@@ -46,18 +52,18 @@ class CartResource extends JsonResource
                     ],
                     'variant' => ['uuid' => $variant->uuid, 'sku' => $variant->sku, 'name' => $variant->name],
                     'unit_price' => $money($line->unitPrice),
-                    'line_total' => $money($line->lineSubtotal),
+                    'line_total' => $minor($priced->presentLine($line)),
                     'available' => ! $line->unavailable,
                     'max_quantity' => $product->product_type->tracksInventory() ? min(10, (int) ($variant->available() ?? 10)) : 1,
                 ];
             }, $priced->lines),
             'totals' => [
-                'subtotal' => $money($priced->subtotal),
+                'subtotal' => $minor($priced->chargeSubtotal()),
                 'discount' => $money($priced->discountTotal),
                 'shipping' => $money($priced->shippingTotal),
                 'gift_wrap' => $money($priced->giftWrapTotal),
                 'tax' => $money($priced->taxTotal),
-                'total' => $money($priced->grandTotal),
+                'total' => $minor($priced->chargeTotal()),
             ],
             'tax_breakdown' => collect($priced->taxBreakdown)->map(fn (int $amount, string $code) => ['code' => $code, 'amount' => $money($amount)])->values(),
             'tax_inclusive' => true,
@@ -65,8 +71,8 @@ class CartResource extends JsonResource
             'coupon_error' => $priced->couponError,
             'contact' => ['email' => $cart->email, 'phone' => $cart->phone],
             'shipping_address' => $cart->shipping_address,
-            'shipping_method' => $priced->shippingMethod ? [...$priced->shippingMethod, 'amount' => $money($priced->shippingMethod['amount'])] : null,
-            'shipping_options' => array_map(fn (array $o) => [...$o, 'amount' => $money($o['amount'])], $priced->shippingOptions),
+            'shipping_method' => $priced->shippingMethod ? $shippingOption($priced->shippingMethod) : null,
+            'shipping_options' => array_map($shippingOption, $priced->shippingOptions),
             'gift' => [
                 // Offered only for bags that ship; the price is the owner's current setting.
                 'available' => $priced->requiresShipping && app(MarketingSettings::class)->giftWrapEnabled(),

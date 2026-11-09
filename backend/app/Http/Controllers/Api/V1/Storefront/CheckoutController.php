@@ -6,6 +6,7 @@ use App\Domain\Cart\CartPricer;
 use App\Domain\Cart\CartService;
 use App\Domain\Checkout\PlaceOrder;
 use App\Domain\Checkout\SavedAddress;
+use App\Domain\Localization\InternationalSettings;
 use App\Domain\Marketing\MarketingSettings;
 use App\Domain\Payments\GatewayManager;
 use App\Domain\Shipping\ShippingCalculator;
@@ -49,7 +50,7 @@ class CheckoutController extends Controller
         return $this->respond($request, $cart);
     }
 
-    public function address(Request $request): JsonResponse
+    public function address(Request $request, InternationalSettings $international): JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
@@ -63,6 +64,9 @@ class CheckoutController extends Controller
         ]);
         $data['country_code'] = strtoupper($data['country_code']);
         $data['state_code'] = strtoupper($data['state_code']);
+        if (! $international->deliversTo($data['country_code'])) {
+            throw new ApiException($international->unavailableMessage(), 422, 'country_unavailable', ['country_code' => [$international->unavailableMessage()]]);
+        }
         if ($data['country_code'] === 'IN' && ! preg_match('/^\d{6}$/', $data['postal_code'])) {
             throw new ApiException('Validation failed', 422, null, ['postal_code' => ['Enter a valid 6-digit PIN code.']]);
         }

@@ -27,7 +27,11 @@ export type CartItem = {
 export type Cart = {
   uuid: string;
   item_count: number;
+  /** What the shopper pays in; amounts below are in it. */
   currency: string;
+  base_currency: string;
+  /** Today's rate from the store currency, markup included; null when paying in the store currency. */
+  exchange_rate: string | null;
   requires_shipping: boolean;
   items: CartItem[];
   totals: { subtotal: Money; discount: Money; shipping: Money; gift_wrap: Money; tax: Money; total: Money };

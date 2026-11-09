@@ -1,3 +1,5 @@
+import { DeliveryNotice } from "@/features/localization/components/delivery-notice";
+import { GstLine } from "@/features/localization/components/gst-line";
 import { t } from "@/lib/i18n";
 import { formatMoney } from "@/lib/money";
 import type { Cart } from "../types";
@@ -19,11 +21,11 @@ export function CartTotals({ cart, showShipping = true }: { cart: Cart; showShip
         <dd className="text-xl font-semibold">{formatMoney(totals.total)}</dd>
       </div>
     </dl>
-      {cart.tax_inclusive && totals.tax.amount > 0 ? (
-        <p className="text-xs text-muted-foreground">
-          Includes {formatMoney(totals.tax)} GST{cart.tax_breakdown.length ? ` (${cart.tax_breakdown.map((t) => `${t.code} ${formatMoney(t.amount)}`).join(", ")})` : ""}
-        </p>
+      {cart.tax_inclusive ? <GstLine tax={totals.tax} breakdown={cart.tax_breakdown} abroad={cart.exchange_rate !== null} /> : null}
+      {cart.exchange_rate ? (
+        <p className="text-xs text-muted-foreground">{t("intl.chargedIn", { currency: cart.currency, base: cart.base_currency, rate: cart.exchange_rate })}</p>
       ) : null}
+      <DeliveryNotice />
     </div>
   );
 }

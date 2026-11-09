@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Domain\Localization\Presentment;
 use App\Domain\Orders\Enums\FulfillmentStatus;
 use App\Domain\Orders\Enums\OrderStatus;
 use App\Domain\Payments\Enums\PaymentStatus;
@@ -26,6 +27,12 @@ use Illuminate\Support\Carbon;
  * @property PaymentStatus $payment_status
  * @property FulfillmentStatus $fulfillment_status
  * @property string $currency
+ * @property string|null $presentment_currency currency the customer was charged in (null = $currency)
+ * @property string|null $exchange_rate locked rate, markup included (decimal string)
+ * @property int|null $presentment_total amount charged, in $presentment_currency
+ * @property string|null $market_rate market rate behind $exchange_rate (no markup)
+ * @property int|null $exchange_markup_bps markup applied at placement
+ * @property Carbon|null $exchange_rate_fetched_at when the market rate was fetched
  * @property int $subtotal
  * @property int $discount_total
  * @property int $shipping_total
@@ -75,6 +82,9 @@ class Order extends Model
             'gift_wrap_tax' => 'integer',
             'tax_total' => 'integer',
             'grand_total' => 'integer',
+            'presentment_total' => 'integer',
+            'exchange_markup_bps' => 'integer',
+            'exchange_rate_fetched_at' => 'datetime',
             'refunded_total' => 'integer',
             'prices_include_tax' => 'boolean',
             'tax_breakdown' => 'array',
@@ -85,6 +95,25 @@ class Order extends Model
             'cancelled_at' => 'datetime',
             'review_requested_at' => 'datetime',
         ];
+    }
+
+    /** The locked conversion when the customer paid in another currency; null otherwise. */
+    public function presentment(): ?Presentment
+    {
+        return $this->presentment_currency && $this->exchange_rate
+            ? new Presentment($this->currency, $this->presentment_currency, $this->exchange_rate)
+            : null;
+    }
+
+    /** What the gateway charges: the converted total abroad, the grand total at home. */
+    public function chargeAmount(): int
+    {
+        return $this->presentment_total ?? $this->grand_total;
+    }
+
+    public function chargeCurrency(): string
+    {
+        return $this->presentment_currency ?? $this->currency;
     }
 
     public function getRouteKeyName(): string

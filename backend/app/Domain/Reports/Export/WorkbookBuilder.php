@@ -87,7 +87,7 @@ class WorkbookBuilder
         $header->getAlignment()->setVertical(Alignment::VERTICAL_CENTER)->setWrapText(true);
         $sheet->getRowDimension(self::HEADER_ROW)->setRowHeight(30);
         foreach ($columns as $i => $column) {
-            if (in_array($column->type, [Column::INT, Column::MONEY, Column::PERCENT], true)) {
+            if (in_array($column->type, [Column::INT, Column::MONEY, Column::PERCENT, Column::NUMBER], true)) {
                 $sheet->getStyle(Coordinate::stringFromColumnIndex($i + 1).self::HEADER_ROW)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
             }
         }
@@ -119,6 +119,7 @@ class WorkbookBuilder
                 Column::MONEY => $style->getNumberFormat()->setFormatCode($this->moneyFormat),
                 Column::INT => $style->getNumberFormat()->setFormatCode('#,##0'),
                 Column::PERCENT => $style->getNumberFormat()->setFormatCode('0.0%'),
+                Column::NUMBER => $style->getNumberFormat()->setFormatCode('#,##0'.($column->decimals > 0 ? '.'.str_repeat('0', $column->decimals) : '')),
                 Column::DATE => $style->getNumberFormat()->setFormatCode('dd mmm yyyy'),
                 Column::DATETIME => $style->getNumberFormat()->setFormatCode('dd mmm yyyy hh:mm'),
                 default => null,
@@ -306,6 +307,7 @@ class WorkbookBuilder
             Column::MONEY => round((int) $value / (10 ** Money::exponent($this->currency)), Money::exponent($this->currency)),
             Column::INT => (int) $value,
             Column::PERCENT => (float) $value,
+            Column::NUMBER => (float) $value, // display only; the exact figure is in the system
             Column::DATE, Column::DATETIME => $this->excelDate($value, $column->type === Column::DATE),
             Column::BOOL => $value ? 'Yes' : 'No',
             default => (string) $value,

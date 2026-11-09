@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Domain\Reports\Export\StoreExports;
 use App\Domain\Reports\Export\WorkbookBuilder;
+use App\Domain\Reports\InternationalReport;
 use App\Domain\Reports\SalesReport;
 use App\Http\Controllers\Controller;
 use App\Support\Audit\Audit;
@@ -32,19 +33,24 @@ class ExportController extends Controller
         $book = new WorkbookBuilder((string) config('commerce.store.name')." — {$label}", $user->name, $currency);
 
         $range = null;
-        if ($type === 'report' || isset($data['from']) || isset($data['to'])) {
+        if ($type === 'international') {
+            $range = InternationalReport::range($data['from'] ?? null, $data['to'] ?? null); // a calendar month by default
+        } elseif ($type === 'report' || isset($data['from']) || isset($data['to'])) {
             $range = SalesReport::range($data['from'] ?? null, $data['to'] ?? null);
         }
 
         match ($type) {
             'report' => $exports->report($book, $range[0], $range[1], $user),
             'orders' => $exports->orders($book, $range[0] ?? null, $range[1] ?? null),
+            'international' => $exports->international($book, $range[0], $range[1]),
             default => $exports->{$type}($book),
         };
 
         Audit::record('export.downloaded', null, null, ['type' => $type, 'from' => $range ? $range[0]->toDateString() : null, 'to' => $range ? $range[1]->toDateString() : null], $user);
 
-        $suffix = $range ? $range[0]->format('Y-m-d').'_to_'.$range[1]->format('Y-m-d') : now()->format('Y-m-d');
+        // Report periods run in store time; their instants are UTC.
+        $zone = (string) config('commerce.store.timezone', 'UTC');
+        $suffix = $range ? $range[0]->copy()->setTimezone($zone)->format('Y-m-d').'_to_'.$range[1]->copy()->setTimezone($zone)->format('Y-m-d') : now()->format('Y-m-d');
 
         return $book->download(Str::slug((string) config('commerce.store.name'))."-{$type}-{$suffix}.xlsx");
     }

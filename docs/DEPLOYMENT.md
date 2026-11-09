@@ -77,6 +77,8 @@ cd tests/e2e && npm install && npx playwright install chromium && npm run e2e
 | `REVALIDATE_URL=https://<domain>/revalidate`, `REVALIDATE_SECRET` | on-demand ISR |
 | `LOG_CHANNEL=stack`, `LOG_LEVEL=info`, `LOG_DAILY_DAYS=30` | |
 | `HEALTH_TOKEN` | detailed `/health` |
+| `FX_RATES_URL` (optional) | Exchange-rate source for international selling; default `https://open.er-api.com/v6/latest/{base}` (free, no key; attribution shown in the footer while selling abroad) |
+| `GEOIP_COUNTRY_HEADER` (optional) | A country header set by a trusted CDN in front of the API (e.g. `CF-IPCountry`); otherwise the local DB-IP file is used. `GEOIP_FAKE_COUNTRY=US` pretends every visitor is in that country — **local only**, ignored in production |
 
 ### Frontend (Vercel project env)
 | Variable | Notes |
@@ -160,7 +162,8 @@ curl -fsS https://api.<domain>/api/v1/health
 - **Restore drill** before launch and quarterly: restore to staging, run smoke tests.
 - Monitoring: uptime checks on `/api/v1/health` and `/` (e.g. UptimeRobot/Better Stack); error alerts from `errors` channel (Slack/email via log handler or Sentry if added); queue lag reported by `/health` and alerted when > 5 min; failed webhook count alert.
 - **In place:** `.github/workflows/monitor.yml` runs every 15 minutes (store pages, API health, a product page and its image; with the `HEALTH_TOKEN` repo secret, also cron age ≤ 5 min and queue lag ≤ 10 min). A failed run emails the repo owner. GitHub pauses scheduled workflows after 60 days without commits; re-enable it in Actions if that happens.
-- **Readiness report:** `php artisan app:launch-check [--mail-to=you@example.com]` on the server prints PASS/WARN/FAIL for environment, demo accounts, staff 2FA, payments, Shiprocket mode, mailer, cron heartbeat, queue, failed jobs and visible TEST products. Read-only except the optional test email; never prints secrets.
+- **International selling (ARCHITECTURE D21):** the scheduler fetches exchange rates at 00:00 and 12:00 (`app:exchange-rates`) and keeps the DB-IP country database fresh (`app:geoip-update --if-stale`, daily 03:30; `deploy.sh` also runs it). Both log to the `orders` channel. Before switching it on in Settings → International: ask Razorpay to activate **International payments**, then open that panel and confirm "the store sees you in India" — if it shows another country (or none) for everyone, the CDN is hiding visitor IPs and `GEOIP_COUNTRY_HEADER` / `TrustProxies` must be set. International orders are not booked with Shiprocket.
+- **Readiness report:** `php artisan app:launch-check [--mail-to=you@example.com]` on the server prints PASS/WARN/FAIL for environment, demo accounts, staff 2FA, payments, Shiprocket mode, international selling (rate freshness, IP database), mailer, cron heartbeat, queue, failed jobs and visible TEST products. Read-only except the optional test email; never prints secrets.
 
 ## 9. Production checklist (Phase 12)
 - [ ] `APP_ENV=production`, `APP_DEBUG=false`, unique `APP_KEY`

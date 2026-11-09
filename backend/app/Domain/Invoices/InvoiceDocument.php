@@ -43,6 +43,7 @@ class InvoiceDocument
         $currency = $order->currency;
         $breakdown = $order->tax_breakdown ?? [];
         $interState = array_key_exists('IGST', $breakdown);
+        $presentment = $order->presentment(); // set when the customer paid in another currency
         $fmt = fn (int $minor) => $this->money($minor, $currency);
 
         $rows = [];
@@ -93,6 +94,15 @@ class InvoiceDocument
                 'refunded' => $order->refunded_total > 0 ? $fmt($order->refunded_total) : null,
             ],
             'amountInWords' => $currency === 'INR' ? AmountInWords::rupees($order->grand_total) : null,
+            // GST invoices stay in rupees; a foreign-currency charge is stated beside them.
+            'charged' => $presentment ? [
+                'currency' => $presentment->currency,
+                'amount' => Money::of($order->chargeAmount(), $order->chargeCurrency())->format(),
+                // Indian GST shown in the customer's currency too; the rupee figures above remain the legal values.
+                'tax' => $presentment->money($order->tax_total)->format(),
+                'taxes' => collect($breakdown)->map(fn (int $amount, string $code) => ['code' => $code, 'amount' => $presentment->money($amount)->format()])->values()->all(),
+                'rate' => '1 '.$currency.' = '.rtrim(rtrim((string) $order->exchange_rate, '0'), '.').' '.$order->presentment_currency,
+            ] : null,
             'paidWith' => $payment ? trim(Str::headline($payment->provider).($payment->method ? ' · '.Str::upper($payment->method) : '')) : null,
             'paymentReference' => $payment?->provider_payment_id,
             'paidAt' => $order->paid_at?->copy()->setTimezone((string) config('commerce.store.timezone', 'UTC')),

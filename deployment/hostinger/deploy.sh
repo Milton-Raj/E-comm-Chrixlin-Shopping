@@ -28,6 +28,9 @@ fi
 echo "→ Migrating the database"
 "$PHP" artisan migrate --force
 
+# Visitor country lookup for international selling; skipped when the file is recent. Never blocks a release.
+"$PHP" artisan app:geoip-update --if-stale || echo "! IP country database not updated; the scheduler retries daily" >&2
+
 echo "→ Linking public storage and caching config"
 "$PHP" artisan storage:link 2>/dev/null || true
 if [ -d "$API_WEB_ROOT" ]; then

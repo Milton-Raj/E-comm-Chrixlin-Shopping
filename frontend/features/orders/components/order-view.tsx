@@ -1,5 +1,6 @@
 "use client";
 
+import { GstLine } from "@/features/localization/components/gst-line";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Package, Star, Truck } from "lucide-react";
 import Image from "next/image";
@@ -152,7 +153,7 @@ export function OrderView({ orderNumber, token, confirmation = false }: { orderN
             <div className="mt-2 flex justify-between border-t border-border pt-3 text-base"><dt>Total</dt><dd className="text-xl font-semibold">{formatMoney(order.totals.total)}</dd></div>
             {order.totals.refunded.amount ? <Row label="Refunded" value={formatMoney(order.totals.refunded)} /> : null}
           </dl>
-            {order.totals.tax.amount ? <p className="text-xs text-muted-foreground">Includes {formatMoney(order.totals.tax)} GST ({order.tax_breakdown.map((t) => `${t.code} ${formatMoney(t.amount)}`).join(", ")})</p> : null}
+            <GstLine tax={order.totals.tax} breakdown={order.tax_breakdown} abroad={order.charged !== null} />
           </div>
           {order.shipping_address ? (
             <div className="border border-border p-5 text-sm">

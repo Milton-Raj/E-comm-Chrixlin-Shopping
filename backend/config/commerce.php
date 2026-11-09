@@ -33,20 +33,16 @@ return [
 
     // ISO-4217 code => minor-unit exponent. Never assume 2 decimals.
     'currencies' => [
-        'INR' => 2,
-        'USD' => 2,
-        'EUR' => 2,
-        'GBP' => 2,
-        'AED' => 2,
+        'INR' => 2, 'USD' => 2, 'EUR' => 2, 'GBP' => 2, 'AED' => 2, 'AUD' => 2, 'CAD' => 2, 'SGD' => 2,
+        'CHF' => 2, 'JPY' => 0, 'NZD' => 2, 'SAR' => 2, 'QAR' => 2, 'MYR' => 2, 'HKD' => 2, 'SEK' => 2,
+        'NOK' => 2, 'DKK' => 2, 'ZAR' => 2, 'THB' => 2, 'LKR' => 2, 'NPR' => 2, 'BDT' => 2,
     ],
 
     // Symbols used where no locale formatter is available (e.g. Excel number formats).
     'currency_symbols' => [
-        'INR' => '₹',
-        'USD' => '$',
-        'EUR' => '€',
-        'GBP' => '£',
-        'AED' => 'AED ',
+        'INR' => '₹', 'USD' => '$', 'EUR' => '€', 'GBP' => '£', 'AED' => 'AED ', 'AUD' => 'A$', 'CAD' => 'C$', 'SGD' => 'S$',
+        'CHF' => 'CHF ', 'JPY' => '¥', 'NZD' => 'NZ$', 'SAR' => 'SAR ', 'QAR' => 'QAR ', 'MYR' => 'RM', 'HKD' => 'HK$', 'SEK' => 'SEK ',
+        'NOK' => 'NOK ', 'DKK' => 'DKK ', 'ZAR' => 'R', 'THB' => '฿', 'LKR' => 'Rs ', 'NPR' => 'NPR ', 'BDT' => '৳',
     ],
 
     'security' => [

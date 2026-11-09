@@ -3,6 +3,7 @@ import Link from "next/link";
 import { env } from "@/lib/env";
 import { t } from "@/lib/i18n";
 import { getSiteContent, siteText } from "@/features/catalog/site-content";
+import { CurrencySwitcher, LocalizationCredits } from "@/features/localization/components/currency-switcher";
 import { footerNav } from "@/lib/navigation";
 
 export async function SiteFooter() {
@@ -15,6 +16,7 @@ export async function SiteFooter() {
           <p className="wordmark text-xl">{env.storeName}</p>
           <p className="font-display-tight text-lg text-brand-cultured/90">{siteText(content, "brand.tagline")}</p>
           <p className="max-w-xs text-sm text-brand-grullo">{siteText(content, "brand.description")}</p>
+          <CurrencySwitcher />
         </div>
         {footerNav.map((group) => (
           <nav key={group.title} aria-label={t(group.title)}>
@@ -32,9 +34,10 @@ export async function SiteFooter() {
         ))}
       </div>
       <div className="border-t border-brand-umber/60">
-        <p className="mx-auto max-w-7xl px-4 py-6 text-xs text-brand-grullo md:px-6">
-          <Copyright />
-        </p>
+        <div className="mx-auto flex max-w-7xl flex-wrap justify-between gap-x-6 gap-y-2 px-4 py-6 text-xs text-brand-grullo md:px-6">
+          <p><Copyright /></p>
+          <LocalizationCredits />
+        </div>
       </div>
     </footer>
   );

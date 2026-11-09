@@ -12,7 +12,13 @@ export const indianStates: { code: string; name: string }[] = [
   { code: "UT", name: "Uttarakhand" }, { code: "WB", name: "West Bengal" },
 ];
 
-export const countries: { code: string; name: string }[] = [
-  { code: "IN", name: "India" }, { code: "AE", name: "United Arab Emirates" }, { code: "GB", name: "United Kingdom" },
-  { code: "US", name: "United States" }, { code: "SG", name: "Singapore" }, { code: "AU", name: "Australia" }, { code: "CA", name: "Canada" },
-];
+const regionNames = typeof Intl.DisplayNames === "function" ? new Intl.DisplayNames(["en"], { type: "region" }) : null;
+
+/** English name of an ISO 3166-1 alpha-2 country code ("US" → "United States"). */
+export function countryName(code: string): string {
+  try {
+    return regionNames?.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}

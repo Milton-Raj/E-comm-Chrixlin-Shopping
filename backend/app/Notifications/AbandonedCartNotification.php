@@ -30,7 +30,8 @@ class AbandonedCartNotification extends Notification implements ShouldQueue
             'name' => $l->item->variant->product->name.($l->item->variant->name ? " ({$l->item->variant->name})" : ''),
             'quantity' => $l->quantity,
         ], $priced->sellableLines());
-        $this->total = Money::of($priced->subtotal, $priced->currency)->format();
+        // In the currency the shopper chose, exactly as their bag shows it.
+        $this->total = Money::of($priced->chargeSubtotal(), $priced->chargeCurrency())->format();
         $this->cartUuid = $priced->cart->uuid;
     }
 

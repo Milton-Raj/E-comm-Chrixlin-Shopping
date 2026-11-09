@@ -3,6 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Domain\Catalog\Enums\ProductStatus;
+use App\Domain\Localization\ExchangeRates;
+use App\Domain\Localization\GeoLocator;
+use App\Domain\Localization\InternationalSettings;
 use App\Domain\Payments\GatewayManager;
 use App\Http\Controllers\Api\V1\System\HealthController;
 use App\Http\Middleware\EnsureAdminAccess;
@@ -39,6 +42,7 @@ class LaunchCheck extends Command
         $this->checkAccounts();
         $this->checkPayments($gateways);
         $this->checkShipping();
+        $this->checkInternational();
         $this->checkMail();
         $this->checkBackgroundWork();
         $this->checkCatalog();
@@ -87,6 +91,22 @@ class LaunchCheck extends Command
 
         $this->add($gateways->razorpayTestMode() ? self::WARN : self::PASS, 'Payments', $gateways->razorpayTestMode() ? 'Razorpay TEST keys (no real money)' : 'Razorpay live keys');
         $this->add(filled(config('payments.razorpay.webhook_secret')) ? self::PASS : self::FAIL, 'Razorpay webhook secret', filled(config('payments.razorpay.webhook_secret')) ? 'set' : 'RAZORPAY_WEBHOOK_SECRET is empty');
+    }
+
+    private function checkInternational(): void
+    {
+        $international = app(InternationalSettings::class);
+        if (! $international->enabled()) {
+            $this->add(self::PASS, 'International selling', 'off: India only, priced in '.$international->storeCurrency());
+
+            return;
+        }
+
+        $rates = app(ExchangeRates::class);
+        $at = $rates->lastFetchedAt();
+        $this->add($rates->stale() ? self::FAIL : self::PASS, 'Exchange rates', $at ? 'updated '.$at->diffForHumans() : 'never fetched: run php artisan app:exchange-rates');
+        $geo = app(GeoLocator::class)->databaseReady();
+        $this->add($geo ? self::PASS : self::WARN, 'Visitor country lookup', $geo ? 'IP country database present' : 'missing: run php artisan app:geoip-update (shoppers see rupees until they pick a currency)');
     }
 
     private function checkShipping(): void

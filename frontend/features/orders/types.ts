@@ -26,6 +26,8 @@ export type OrderSummary = {
   placed_at: string | null;
   paid_at: string | null;
   currency: string;
+  /** Set when the customer paid in another currency: what was charged and at which locked rate. */
+  charged: { amount: Money; exchange_rate: string; base_currency: string } | null;
   totals: { subtotal: Money; discount: Money; shipping: Money; gift_wrap: Money; tax: Money; total: Money; refunded: Money };
   item_count: number | null;
 };

@@ -5,6 +5,7 @@ namespace App\Domain\Payments\Actions;
 use App\Domain\Digital\EntitlementService;
 use App\Domain\Inventory\InventoryService;
 use App\Domain\Invoices\IssueInvoice;
+use App\Domain\Orders\Actions\AlertStaffOfNewOrder;
 use App\Domain\Orders\Enums\OrderStatus;
 use App\Domain\Orders\OrderStateMachine;
 use App\Domain\Payments\Enums\PaymentStatus;
@@ -146,6 +147,7 @@ class ProcessGatewayEvent
         }
 
         DB::afterCommit(function () use ($order) {
+            app(AlertStaffOfNewOrder::class)($order);
             Notification::route('mail', $order->email)->notify(new OrderPaidNotification($order->fresh(['items', 'entitlements', 'invoice']) ?? $order));
         });
 

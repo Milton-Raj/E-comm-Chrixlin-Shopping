@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { useCartMutations } from "@/features/cart/cart-context";
 import { t } from "@/lib/i18n";
-import { formatMoney } from "@/lib/money";
+import { useFormatMoney } from "@/features/localization/use-localization";
 import { cn } from "@/lib/utils";
 import { findVariant, savings } from "../catalog";
 import type { ProductDetail } from "../types";
@@ -16,6 +16,7 @@ import { WishlistButton } from "./wishlist-button";
 
 /** Variant selection, quantity and purchase CTAs (PRD §58). Prices shown come from the API. */
 export function PurchasePanel({ product }: { product: ProductDetail }) {
+  const formatMoney = useFormatMoney();
   const router = useRouter();
   const { add } = useCartMutations();
   const [selected, setSelected] = useState<Record<string, string>>(() => {

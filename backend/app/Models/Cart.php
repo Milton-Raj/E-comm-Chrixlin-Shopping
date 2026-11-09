@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $user_id
  * @property string $status
  * @property string $currency
+ * @property string|null $display_currency shopper's chosen currency (null = store currency)
  * @property string|null $email
  * @property string|null $phone
  * @property array<string, string|null>|null $shipping_address
@@ -32,7 +33,7 @@ class Cart extends Model
 {
     use HasPublicUuid;
 
-    protected $fillable = ['token', 'user_id', 'status', 'currency', 'email', 'phone', 'shipping_address', 'shipping_method_code', 'coupon_code', 'gift_wrap', 'gift_message', 'last_activity_at', 'reminder_sent_at'];
+    protected $fillable = ['token', 'user_id', 'status', 'currency', 'display_currency', 'email', 'phone', 'shipping_address', 'shipping_method_code', 'coupon_code', 'gift_wrap', 'gift_message', 'last_activity_at', 'reminder_sent_at'];
 
     protected function casts(): array
     {

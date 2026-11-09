@@ -2,16 +2,20 @@
 
 use App\Domain\Inventory\InventoryService;
 use App\Models\DigitalFile;
+use App\Models\ExchangeRate;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\TaxClass;
 use App\Models\User;
+use App\Support\Settings\Settings;
 use Database\Seeders\StoreSetupSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use Tests\TestCase;
 
 /*
@@ -92,4 +96,46 @@ function paidOrder($test, Product $product, int $qty = 1): Order
     $test->withHeader('Idempotency-Key', (string) Str::uuid())->postJson("/api/v1/orders/{$number}/payment/confirm", ['outcome' => 'success']);
 
     return Order::query()->where('order_number', $number)->firstOrFail();
+}
+
+/*
+| International selling helpers.
+*/
+/** Switches international selling on with fixed rates (1 INR = $0.012 / €0.011). */
+function sellAbroad(array $rates = ['USD' => '0.012', 'EUR' => '0.011'], int $markupBps = 0): void
+{
+    $settings = app(Settings::class);
+    $settings->set('international.enabled', true);
+    $settings->set('international.currencies', array_keys($rates));
+    $settings->set('international.fallback_currency', array_key_first($rates));
+    $settings->set('international.markup_bps', $markupBps);
+    foreach ($rates as $code => $rate) {
+        ExchangeRate::query()->updateOrCreate(['base_currency' => 'INR', 'currency' => $code], ['rate' => $rate, 'source' => 'test', 'fetched_at' => now()]);
+    }
+}
+
+function usAddress(): array
+{
+    return ['name' => 'Ann', 'line1' => '5 Main St', 'city' => 'New York', 'state_code' => 'NY', 'postal_code' => '10001', 'country_code' => 'US'];
+}
+
+/** A US shopper's bag: 2 × ₹1,180 delivered abroad, priced in USD. */
+function usBag($test): void
+{
+    $test->postJson('/api/v1/cart/items', ['variant_uuid' => variantOf(makeProduct(price: 118_000))->uuid, 'quantity' => 2])->assertCreated();
+    $test->putJson('/api/v1/cart/currency', ['currency' => 'USD'])->assertOk();
+    $test->putJson('/api/v1/checkout/contact', ['email' => 'ann@example.test'])->assertOk();
+    $test->putJson('/api/v1/checkout/address', usAddress())->assertOk();
+}
+
+/** Reads an Excel download (admin exports). */
+function workbook(TestResponse $response): Spreadsheet
+{
+    $response->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    $path = tempnam(sys_get_temp_dir(), 'xlsx');
+    file_put_contents($path, $response->streamedContent());
+    $book = IOFactory::load($path);
+    unlink($path);
+
+    return $book;
 }

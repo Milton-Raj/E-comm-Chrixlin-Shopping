@@ -34,11 +34,18 @@ class OrderPaidNotification extends Notification implements ShouldQueue
             ->greeting('Thank you for your order')
             ->line("We've received your payment for order {$order->order_number}.");
 
+        // Abroad, amounts are shown in the currency the customer paid, at the order's locked rate.
+        $presentment = $order->presentment();
+        $line = fn (int $amount) => ($presentment ? $presentment->money($amount) : Money::of($amount, $order->currency))->format();
         foreach ($order->items as $item) {
-            $mail->line("{$item->quantity} × {$item->name}".($item->variant_name ? " ({$item->variant_name})" : '').' — '.Money::of($item->line_total, $order->currency)->format());
+            $mail->line("{$item->quantity} × {$item->name}".($item->variant_name ? " ({$item->variant_name})" : '').' — '.$line($item->line_total));
         }
 
-        $mail->line('Total paid: '.Money::of($order->grand_total, $order->currency)->format());
+        $mail->line('Total paid: '.Money::of($order->chargeAmount(), $order->chargeCurrency())->format());
+        if ($presentment && $order->tax_total > 0) {
+            $codes = implode(' + ', array_keys($order->tax_breakdown ?? []));
+            $mail->line('This includes '.$line($order->tax_total).' Indian GST'.($codes !== '' ? " ({$codes})" : '').'. We ship from India, so Indian GST applies under Indian law; it is already included in the price.');
+        }
 
         if ($order->entitlements->isNotEmpty()) {
             $mail->line('Your digital items are ready to download from your account or the order page.');

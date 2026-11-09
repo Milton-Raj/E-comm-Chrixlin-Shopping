@@ -2,6 +2,7 @@
 
 namespace App\Domain\Cart;
 
+use App\Domain\Localization\ExchangeRates;
 use App\Domain\Marketing\MarketingSettings;
 use App\Domain\Promotions\CouponService;
 use App\Domain\Shipping\ShippingCalculator;
@@ -25,6 +26,7 @@ class CartPricer
         private readonly CouponService $coupons,
         private readonly Settings $settings,
         private readonly MarketingSettings $marketing,
+        private readonly ExchangeRates $rates,
     ) {}
 
     public function price(Cart $cart, bool $strictCoupon = false): PricedCart
@@ -165,6 +167,8 @@ class CartPricer
             giftWrapped: $giftWrapped,
             giftWrapTotal: $giftWrap,
             giftWrapTax: $giftWrapTax,
+            // Priced in the store currency above; shown and charged in the shopper's currency at today's rate.
+            presentment: $this->rates->presentmentFor($cart->display_currency),
         );
     }
 

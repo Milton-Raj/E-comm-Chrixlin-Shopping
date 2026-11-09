@@ -11,6 +11,7 @@ import { t, type MessageKey } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import type { AdminMe } from "@/types/api";
 import { groupAdminNav, visibleAdminNav } from "../navigation";
+import { NotificationBell } from "./notification-bell";
 
 const label = (key: string) => (key.includes(".") ? t(key as MessageKey) : key);
 
@@ -64,6 +65,7 @@ export function AdminShell({ me, children }: { me: AdminMe; children: ReactNode 
       </aside>
       <div className="min-w-0">
         <header className="flex h-16 items-center justify-end gap-4 border-b px-4 text-sm text-muted-foreground md:px-6">
+          {me.permissions.includes("orders.view") ? <NotificationBell /> : null}
           <Link href="/" className="underline-offset-4 hover:underline">View store</Link>
           <Link href="/admin/account" className="hidden underline-offset-4 hover:underline sm:inline">{t("admin.welcome", { name: me.user.name })}</Link>
           <button

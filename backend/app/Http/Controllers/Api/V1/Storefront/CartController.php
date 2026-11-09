@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Storefront;
 use App\Domain\Cart\CartPricer;
 use App\Domain\Cart\CartService;
 use App\Domain\Catalog\Recommendations;
+use App\Domain\Localization\InternationalSettings;
 use App\Domain\Promotions\CouponService;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
@@ -77,6 +78,20 @@ class CartController extends Controller
     {
         $cart = $this->carts->currentOrCreate($request);
         $cart->forceFill(['coupon_code' => null])->save();
+
+        return ApiResponse::success(new CartResource($this->pricer->price($cart)));
+    }
+
+    /** The currency the shopper sees and pays in: the store currency or one the owner offers. */
+    public function currency(Request $request, InternationalSettings $international): JsonResponse
+    {
+        $data = $request->validate(['currency' => ['required', 'string', 'size:3']]);
+        $code = strtoupper($data['currency']);
+        if ($code !== $international->storeCurrency() && (! $international->enabled() || ! $international->offers($code))) {
+            throw new ApiException('This currency is not available.', 422, 'currency_unavailable', ['currency' => ['This currency is not available.']]);
+        }
+        $cart = $this->carts->currentOrCreate($request);
+        $cart->forceFill(['display_currency' => $code === $international->storeCurrency() ? null : $code])->save();
 
         return ApiResponse::success(new CartResource($this->pricer->price($cart)));
     }

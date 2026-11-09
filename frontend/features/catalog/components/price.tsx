@@ -1,4 +1,6 @@
-import { formatMoney } from "@/lib/money";
+"use client";
+
+import { useFormatMoney } from "@/features/localization/use-localization";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 import type { Money } from "@/types/api";
@@ -6,6 +8,7 @@ import { savings } from "../catalog";
 
 /** Offer price, the struck-through MRP and how much the shopper saves. */
 export function Price({ price, compareAt, className, tone = "light" }: { price: Money; compareAt?: Money | null; className?: string; tone?: "light" | "dark" }) {
+  const formatMoney = useFormatMoney();
   const saved = savings({ price, compare_at_price: compareAt ?? null });
 
   return (
