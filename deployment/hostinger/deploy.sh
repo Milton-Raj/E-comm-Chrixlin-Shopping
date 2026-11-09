@@ -28,8 +28,9 @@ fi
 echo "→ Migrating the database"
 "$PHP" artisan migrate --force
 
-# Visitor country lookup for international selling; skipped when the file is recent. Never blocks a release.
-"$PHP" artisan app:geoip-update --if-stale || echo "! IP country database not updated; the scheduler retries daily" >&2
+# International selling: visitor-country database (skipped when recent) and today's exchange rates. Never block a release.
+"$PHP" artisan app:geoip-update --if-stale || echo "! IP country database not updated; install it from Settings → International or wait for the nightly retry" >&2
+"$PHP" artisan app:exchange-rates || echo "! Exchange rates not fetched; the scheduler retries at 00:00 and 12:00 UTC" >&2
 
 echo "→ Linking public storage and caching config"
 "$PHP" artisan storage:link 2>/dev/null || true

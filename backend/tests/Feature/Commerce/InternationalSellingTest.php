@@ -229,3 +229,26 @@ it('sends the abandoned-bag reminder in the shopper\'s currency', function () {
     $mail = (new AbandonedCartNotification(app(CartPricer::class)->price($cart), false))->toMail(new AnonymousNotifiable);
     expect(implode("\n", $mail->introLines))->toContain('Bag total: $28.32');
 });
+
+it('guesses the country from the browser region only when the IP gives none', function () {
+    sellAbroad();
+
+    $this->getJson('/api/v1/localization?hint=de')->assertOk()
+        ->assertJsonPath('data.detected_country', 'DE')->assertJsonPath('data.detected_by', 'browser')->assertJsonPath('data.default_currency', 'EUR');
+    $this->getJson('/api/v1/localization?hint=ZZ')->assertJsonPath('data.detected_country', null);
+    $this->getJson('/api/v1/localization?hint=<script>')->assertJsonPath('data.detected_country', null);
+
+    config(['localization.geoip.fake_country' => 'US']); // the IP answer wins over the browser
+    $this->getJson('/api/v1/localization?hint=DE')->assertJsonPath('data.detected_country', 'US')->assertJsonPath('data.detected_by', 'ip');
+});
+
+it('installs the IP country database from the admin and explains a failure', function () {
+    config(['localization.geoip.path' => storage_path('framework/testing/geoip-'.Str::random(6).'.mmdb')]);
+    Http::fake(['download.db-ip.com/*' => Http::response('Forbidden', 403)]);
+
+    $this->actingAs(User::factory()->staff('content-manager')->create())->postJson('/api/v1/admin/settings/international/geoip')->assertForbidden();
+    expect($this->actingAs(User::factory()->staff('administrator')->create())->postJson('/api/v1/admin/settings/international/geoip'))
+        ->toBeApiError(502, 'geoip_unavailable')
+        ->and($this->postJson('/api/v1/admin/settings/international/geoip')->json('message'))->toContain('answered HTTP 403');
+    $this->artisan('app:geoip-update')->expectsOutputToContain('answered HTTP 403')->assertFailed();
+});

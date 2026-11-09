@@ -50,6 +50,12 @@ function InternationalForm({ data }: { data: InternationalSettings }) {
     onError: (e) => toast.error(e instanceof ApiError ? e.message : "Could not fetch exchange rates."),
   });
 
+  const installGeo = useMutation({
+    mutationFn: miscAdminApi.installGeoIp,
+    onSuccess: (fresh) => { store(fresh); toast.success("Visitor location lookup installed. Shoppers now get their currency automatically."); },
+    onError: (e) => toast.error(e instanceof ApiError ? e.message : "Could not install the location database.", { duration: 15_000 }),
+  });
+
   const toggleCurrency = (code: string, on: boolean) => setForm((f) => {
     const currencies = on ? [...f.currencies, code] : f.currencies.filter((c) => c !== code);
     return { ...f, currencies, fallback_currency: currencies.includes(f.fallback_currency) ? f.fallback_currency : (currencies[0] ?? f.fallback_currency) };
@@ -116,9 +122,16 @@ function InternationalForm({ data }: { data: InternationalSettings }) {
           <span>
             {data.geoip.your_country ? <>The store sees you in <strong>{countryName(data.geoip.your_country)}</strong>. If that&apos;s wrong, visitors may get the wrong currency.</>
               : data.geoip.ready ? "The store could not tell where you are (a private network or a proxy hides your address)."
-              : <>The IP country database is not installed yet; run <code>php artisan app:geoip-update</code> on the server. Until then shoppers pick their currency in the footer.</>}
+              : <>The visitor location database is not installed yet, so for now the currency is guessed from each shopper&apos;s browser language.</>}
           </span>
         </li>
+        {!data.geoip.ready ? (
+          <li className="pl-6">
+            <Button type="button" size="sm" variant="outline" onClick={() => installGeo.mutate()} disabled={installGeo.isPending}>
+              <Globe className="size-4" aria-hidden /> {installGeo.isPending ? "Installing… (up to a minute)" : "Install location lookup now"}
+            </Button>
+          </li>
+        ) : null}
       </ul>
       <p className="border-l-4 border-amber-500 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-950">
         Before switching on: ask Razorpay to activate <strong>International payments</strong> for your account, or foreign cards will be declined. International orders are not booked with Shiprocket; ship them with your international courier and add the tracking number on the order. GST invoices stay in rupees; check export rules with your accountant.

@@ -20,6 +20,14 @@ class LocalizationController extends Controller
     public function __invoke(Request $request, InternationalSettings $international, ExchangeRates $rates, GeoLocator $geo, CurrencyResolver $resolver): JsonResponse
     {
         $country = $geo->countryFor($request);
+        $detectedBy = $country ? 'ip' : null;
+        // No country from the IP (lookup unavailable, private network): use the browser's region
+        // ("en-US" → US) as a guess. It only picks the currency shown first; delivery is still
+        // checked against the real address at checkout.
+        $hint = strtoupper((string) $request->query('hint', ''));
+        if ($country === null && preg_match('/^[A-Z]{2}$/', $hint) && array_key_exists($hint, (array) config('localization.country_currency'))) {
+            [$country, $detectedBy] = [$hint, 'browser'];
+        }
         $base = $international->storeCurrency();
         $enabled = $international->enabled();
         $offered = $enabled ? $rates->offered() : [];
@@ -30,6 +38,7 @@ class LocalizationController extends Controller
             'store_currency' => $base,
             'store_country' => $international->storeCountry(),
             'detected_country' => $country,
+            'detected_by' => $detectedBy,
             // Only a currency with a stored rate can be the default.
             'default_currency' => in_array($default, array_column($offered, 'code'), true) ? $default : $base,
             'currencies' => [['code' => $base, 'rate' => '1', 'exponent' => (int) config("commerce.currencies.{$base}")], ...$offered],

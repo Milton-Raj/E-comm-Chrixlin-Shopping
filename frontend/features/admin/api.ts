@@ -195,6 +195,7 @@ export const miscAdminApi = {
   international: () => api.get<InternationalSettings>("/admin/settings/international"),
   saveInternational: (body: InternationalSettings["settings"]) => api.put<InternationalSettings>("/admin/settings/international", body),
   refreshRates: () => api.post<InternationalSettings>("/admin/settings/international/rates"),
+  installGeoIp: () => api.post<InternationalSettings>("/admin/settings/international/geoip"),
   notifications: () => api.get<AdminNotifications>("/admin/notifications"),
   readNotification: (id: string) => api.post<{ unread_count: number }>(`/admin/notifications/${id}/read`),
   readAllNotifications: () => api.post<{ unread_count: number }>("/admin/notifications/read-all"),

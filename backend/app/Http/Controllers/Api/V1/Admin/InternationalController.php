@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Domain\Localization\ExchangeRates;
+use App\Domain\Localization\GeoIpDatabase;
 use App\Domain\Localization\GeoLocator;
 use App\Domain\Localization\InternationalSettings;
 use App\Exceptions\ApiException;
@@ -75,6 +76,19 @@ class InternationalController extends Controller
         Audit::record('settings.exchange_rates_refreshed', null, null, ['currencies' => $count], $request->user());
 
         return ApiResponse::success($this->payload($request, $geo), "Updated {$count} exchange rates.");
+    }
+
+    /** Installs the IP country database from the admin, so no one needs the server's command line. */
+    public function installGeoIp(Request $request, GeoLocator $geo, GeoIpDatabase $database): JsonResponse
+    {
+        try {
+            $month = $database->update();
+        } catch (\RuntimeException $e) {
+            throw new ApiException('Could not install the IP country database: '.$e->getMessage(), 502, 'geoip_unavailable');
+        }
+        Audit::record('settings.geoip_installed', null, null, ['month' => $month], $request->user());
+
+        return ApiResponse::success($this->payload($request, $geo), "IP country database installed ({$month}). Shoppers now get their own currency automatically.");
     }
 
     /** @return array<string, mixed> */
